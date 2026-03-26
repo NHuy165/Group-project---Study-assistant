@@ -1,0 +1,37 @@
+### 1. Các "Type" (Loại thay đổi) quan trọng:
+
+- **feat**: Khi thêm một tính năng mới (ví dụ: màn hình login, api tóm tắt).
+- **fix**: Khi sửa một lỗi (bug).
+- **docs**: Thay đổi về tài liệu (file README, hướng dẫn sử dụng).
+- **style**: Thay đổi về giao diện (CSS, Tailwind, định dạng code) mà không thay đổi logic.
+- **refactor**: Tối ưu lại code nhưng không thay đổi tính năng.
+- **chore**: Các việc vặt như cài thư viện, thiết lập môi trường.
+
+### 2. Các "Scope" (Phạm vi) cho dự án:
+
+Vì nhóm chia theo mảng, hãy dùng các scope này để phân loại:
+
+- `FE`: Frontend
+- `BE`: Backend
+- `RAG`: AI/RAG Engine
+- `DB`: Database
+- `General`: Những việc chung cho cả dự án
+
+---
+
+## Ví dụ thực tế cho dự án
+
+Dưới đây là cách các thành viên nên viết commit:
+
+- **Dành cho Frontend:**
+    - `feat(FE): thêm màn hình danh sách bài học và bộ lọc`
+    - `style(FE): đổi màu chủ đạo sang xanh lá cho thân thiện trẻ em`
+- **Dành cho Backend:**
+    - `feat(BE): xây dựng API xác thực người dùng bằng JWT`
+    - `fix(BE): sửa lỗi không lưu được điểm số vào SQL`
+- **Dành cho RAG:**
+    - `feat(RAG): tích hợp Gemini API để tóm tắt văn bản`
+    - `chore(RAG): cài đặt thư viện ChromaDB cho Vector Database`
+- **Dành cho PO:**
+    - `docs(General): cập nhật file README và link Notion dự án`
+    - `chore(RAG): làm sạch dữ liệu 10 file PDF sách giáo khoa lớp 3`

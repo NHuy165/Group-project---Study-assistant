@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="'vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewpoint" content="width=device-width, initial-scale=1.0">
+        <title>EduSpark</title>
+
+        <link rel="stylesheet" href="styles/hoc-tap.css">
+    </head>
+
+    <body>
+
+
+        <header>
+            <h1 id="loi-chao">🌟 Chào mừng bé đến với góc học tập! 🌟</h1>
+            <nav> <!-- Navigation links would go here -->
+                <ul> <!-- List of navigation links -->
+                    <li><a href="#math">Toán học</a></li>
+                    <li><a href="#viet">Tiếng Việt</a></li>
+                    <li><a href="#english">Tiếng anh</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <hr> <main> <!--Đây là phần nội dung chính -->
+            <section id="math">
+                <h2>Bài tập hôm nay: Phép cộng cơ bản</h2>
+                <p>Bé hãy làm phép toán dưới đây nhé:</p>
+
+                <div class="cau-hoi"> 
+                    5 + 3 = ?
+                    <hr style="margin: 30px 0; border: 1px dashed #ccc;">
+
+                    <div class="khu-vuc-rag" style="background-color: #e0f7fa; padding: 20px; border-radius: 15px;">
+                        <h3 style="color: #00383f; margin-top: 0;">Trợ lý cú mèo (Tìm kiếm thông minh) </h3>
+                        <p>Bạn có thắc mắc gì, hãy để mình giải đáp nhé:</p>
+
+                        <input type="text" id="cau-hoi-rag" placeholder="Ví dụ: Tại sao lá cây có màu xanh?" style="width: 70%; margin-bottom: 10px;" >
+                        <button type="button" onclick="xuLyRAG()" style="background-color: #00acc1;">Hỏi Cú Mèo</button> <!-- Hàm xuLyRAG()-->
+
+                        <div id="ket-qua-rag" style="margin-top: 15px; font-size: 1.2em; color: #006064; font-weight: bold; min-height: 30px;"> </div>
+                    </div>  
+                </div>
+
+                <div>
+                    <input type="number" id="dap-an" placeholder="Ví dụ: 2">
+                    <button type="button" id="btn-kiem-tra">Kiểm tra kết quả</button>
+                </div>
+
+                <h3 id="thong-bao" style="margin-top: 20px; height: 30px;">  </h3>
+    
+            </section>
+        </main>
+
+        <br><hr>
+        <footer>
+            <p>© 2024 EduSpark chúc bé học thật giỏi và mạnh khỏe nhé! ❤️</p>
+        </footer>
+    
+    <script> 
+        var tenBe = localStorage.getItem("tenBe");
+        if (tenBe) {
+            document.getElementById("loi-chao").textContent = "🌟 Chào mừng " + tenBe + " đến với góc học tập! 🌟";
+        }
+    </script>
+
+    <script src="scripts/hoc-tap.js"> </script>
+    </body>
+</html>
