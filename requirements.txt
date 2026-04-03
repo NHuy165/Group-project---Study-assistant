@@ -1,0 +1,20 @@
+fastapi[standard]>=0.135.0
+
+# Database
+sqlmodel
+psycopg[binary]
+asyncpg
+
+# Security
+pyjwt
+pwdlib[argon2]
+python-dotenv
+
+# Testing
+pytest
+pytest_asyncio
+
+# AI and RAG
+google-genai
+pypdf
+pgvector
