@@ -5,33 +5,41 @@
 ## 🚀 Cách chạy Frontend Local
 
 ### Yêu cầu
+
 - Node.js 16+ (khuyến nghị 18+)
 - npm 8+ hoặc yarn
 
 ### Bước 1: Cài đặt dependencies
+
 ```bash
 cd frontend
 npm install
 ```
 
 ### Bước 2: Chạy development server
+
 ```bash
 npm run dev
 ```
+
 - Mở browser vào: http://localhost:5173
 - App sẽ auto-reload khi bạn edit file
 
 ### Bước 3: Build production
+
 ```bash
 npm run build
 ```
+
 - Tạo thư mục `dist/` với code tối ưu hóa
 - Sẵn sàng để deploy
 
 ### Bước 4: Serve static build (local testing)
+
 ```bash
 npx http-server dist -p 5173 -c-1
 ```
+
 - Chạy server tĩnh tại port 5173
 - Mở: http://localhost:5173
 
@@ -65,10 +73,12 @@ frontend/
 ## 🔗 Kết nối Backend
 
 ### Hiện tại (Mock API)
+
 - API URL: `http://localhost:3000` (tùy config)
 - File API: `src/features/*/api/*.js`
 
 ### Khi backend sẵn sàng
+
 1. Backend chạy ở: `http://localhost:8000` (FastAPI)
 2. Cập nhật file `.env` nếu có:
    ```
@@ -99,17 +109,20 @@ docker run -p 5173:80 study-assistant-frontend
 ## ⚠️ Vấn đề thường gặp
 
 ### 1. Màn hình trắng khi mở
+
 - Kiểm tra Browser Console (F12) để xem lỗi
 - Đảm bảo backend API đang chạy
 - Clear cache: Ctrl+Shift+Delete rồi refresh
 
 ### 2. Port 5173 đang được dùng
+
 ```bash
 # Chạy ở port khác
 npm run dev -- --port 5174
 ```
 
 ### 3. Dependencies lỗi
+
 ```bash
 # Xóa node_modules và cài lại
 rm -r node_modules
@@ -119,6 +132,7 @@ npm install
 ## 🧪 Testing & Development
 
 ### Một lệnh để chạy toàn bộ quy trình
+
 ```bash
 npm install && npm run build && npx http-server dist -p 5173 -c-1
 ```
@@ -126,12 +140,14 @@ npm install && npm run build && npx http-server dist -p 5173 -c-1
 ## 📝 Commit & GitHub
 
 Khi commit lên GitHub:
+
 1. Tạo branch riêng từ `frontend-main`
 2. Commit từng cụm nhỏ theo tính năng
 3. Mở Pull Request để team review
 4. Merge sau khi được approve
 
 Ví dụ:
+
 ```bash
 git checkout ui-a-integration
 # Sửa code...
@@ -151,6 +167,7 @@ git push origin ui-a-integration
 ## 📞 Liên hệ
 
 Nếu gặp vấn đề, hãy:
+
 1. Kiểm tra terminal log chi tiết
 2. Xem Browser Console (F12)
 3. Hỏi trên Slack hoặc tạo Issue trên GitHub
