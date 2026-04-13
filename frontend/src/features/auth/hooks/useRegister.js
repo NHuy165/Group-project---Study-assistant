@@ -1,20 +1,36 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { registerUser } from '../api/authApi';
+import { useState } from "react";
+import { registerUser } from "../api/authApi";
 
 export const useRegister = () => {
-    // States...
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Hàm submit thông tin đến backend
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-    return {
-        username, setUsername,
-        email, setEmail,
-        password, setPassword,
-        isLoading, error,
-        handleSubmit
-    };
+    try {
+      await registerUser({ username, email, password });
+    } catch (err) {
+      setError(err?.message || "Dang ky that bai. Vui long thu lai.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    username,
+    setUsername,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isLoading,
+    error,
+    handleSubmit,
+  };
 };
