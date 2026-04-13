@@ -4,10 +4,29 @@ import { registerUser } from '../api/authApi';
 
 export const useRegister = () => {
     // States...
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Hàm submit thông tin đến backend
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const userData = { username, email, password };
+            await registerUser(userData);
+            // Chuyển hướng sau khi đăng ký thành công
+            alert('Đăng ký thành công! Hãy đăng nhập.');
+            navigate('/login');
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Đăng ký thất bại');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return {

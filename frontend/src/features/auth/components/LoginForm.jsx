@@ -2,7 +2,7 @@ import {useLogin} from '../hooks/useLogin'
 
 export const LoginForm = () => {
     const {
-    email, setEmail,
+    username, setUsername,
     password, setPassword,
     isLoading, error,
     handleSubmit
