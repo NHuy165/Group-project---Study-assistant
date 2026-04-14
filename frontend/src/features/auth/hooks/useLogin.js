@@ -22,7 +22,7 @@ export const useLogin = () => {
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Dang nhap that bai. Vui long thu lai.",
+          "Đăng nhập thất bại. Vui lòng thử lại",
       );
     } finally {
       setIsLoading(false);

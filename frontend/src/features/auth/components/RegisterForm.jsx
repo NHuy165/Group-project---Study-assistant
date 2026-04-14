@@ -14,68 +14,63 @@ export const RegisterForm = () => {
   } = useRegister();
 
   return (
-    <section className="rounded-[26px] border border-white/60 bg-white/88 p-7 text-left shadow-[0_18px_40px_rgba(0,0,0,0.18)] backdrop-blur-sm md:p-9">
-      <h2 className="mb-2 text-3xl font-extrabold text-[#1a535c]">
-        Tạo Tài Khoản
-      </h2>
-      <p className="mb-6 text-sm text-slate-600">
-        Đăng ký nhanh để bé bắt đầu buổi học cùng Cú Mèo.
-      </p>
+    <form
+      onSubmit={handleSubmit}
+      className="mx-auto flex w-full max-w-[400px] flex-col gap-6 text-center"
+    >
+      <div>
+        <label htmlFor="register-username" className="sr-only">
+          Tên người dùng
+        </label>
+        <input
+          id="register-username"
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Tên người dùng"
+          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-3.5 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
+        />
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-slate-700">
-            Tên người dùng
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Ví dụ: be_bi"
-            className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-[#4ecdc4]"
-          />
-        </div>
+      <div>
+        <label htmlFor="register-email" className="sr-only">
+          Email
+        </label>
+        <input
+          id="register-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="be@eduspark.vn"
+          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-3.5 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
+        />
+      </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-slate-700">
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="be@eduspark.vn"
-            className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-[#4ecdc4]"
-          />
-        </div>
+      <div>
+        <label htmlFor="register-password" className="sr-only">
+          Mật khẩu
+        </label>
+        <input
+          id="register-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Nhập mật khẩu"
+          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-3.5 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
+        />
+      </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-slate-700">
-            Mật khẩu
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Nhập mật khẩu"
-            className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-[#4ecdc4]"
-          />
-        </div>
+      {error && (
+        <p className="mt-2 text-center font-bold text-[#ff4757]">{error}</p>
+      )}
 
-        {error && (
-          <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
-            {error}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full rounded-xl bg-[#00acc1] px-4 py-3 text-base font-bold text-white transition hover:bg-[#008ea0] disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          {isLoading ? "Đang đăng ký..." : "Đăng ký"}
-        </button>
-      </form>
-    </section>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="mx-auto mt-3 w-[92%] rounded-[20px] border-[2px] border-[#005f6d] bg-[#00acc1] px-4 py-3 text-[1.2rem] font-bold leading-tight text-white transition duration-300 hover:scale-105 hover:bg-[#008ea0] disabled:cursor-not-allowed disabled:bg-[#aaa]"
+      >
+        {isLoading ? "Đang đăng ký..." : "Đăng ký"}
+      </button>
+    </form>
   );
 };
