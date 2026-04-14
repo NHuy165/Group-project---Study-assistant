@@ -9,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/dashboard" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
         <Route
           path="/interaction/:interactionId"
