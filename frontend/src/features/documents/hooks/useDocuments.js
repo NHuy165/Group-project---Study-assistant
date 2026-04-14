@@ -1,27 +1,64 @@
-export const useDocuments = (interactionId) => {
-    //
+import { useState, useEffect, useCallback } from 'react';
+import * as api from '../api/documentsApi';
 
-    const readDocuments = async () => {
-        // Hàm này được chạy tại đây bằng useEffect để lấy interactions
-    };
+export const useDocuments = (interactionId) => {
+    const [documents, setDocuments] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const readDocuments = useCallback(async () => {
+        if (!interactionId) return;
+        setIsLoading(true);
+        try {
+            const data = await api.readDocuments(interactionId);
+            setDocuments(data);
+        } catch (err) {
+            setError("Không thể tải danh sách tài liệu");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [interactionId]);
+
+    useEffect(() => {
+        readDocuments();
+    }, [readDocuments]);
 
     const saveDocument = async () => {
-
+        setIsLoading(true);
+        try {
+            const newDoc = await api.saveDocument(interactionId, file, documentInput);
+            setDocuments((prev) => [...prev, newDoc]);
+            return newDoc;
+        } catch (err) {
+            setError("Lỗi khi tải tài liệu lên");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const updateDocument = async () => {
-
+        try {
+            const updated = await api.updateDocument(documentId, updateData);
+            setDocuments((prev) => prev.map(d => d.id === documentId ? updated : d));
+        } catch (err) {
+            setError("Lỗi khi cập nhật thông tin tài liệu");
+        }
     };
 
     const deleteDocument = async () => {
-
+        try {
+            await api.deleteDocument(documentId);
+            setDocuments((prev) => prev.filter(d => d.id !== documentId));
+        } catch (err) {
+            setError("Lỗi khi xóa tài liệu");
+        }
     };
 
     return {
         documents,
         isLoading,
         error,
-        createDocument,
+        createDocument: saveDocument,
         updateDocument,
         deleteDocument
     };
