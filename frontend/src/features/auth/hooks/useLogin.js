@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { loginUser } from "../api/authApi";
 
 export const useLogin = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,17 +15,23 @@ export const useLogin = () => {
     setIsLoading(true);
 
     try {
-      await loginUser({ email, password });
+      const data = await loginUser(username, password);
+      localStorage.setItem("token", data.access_token);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err?.message || "Dang nhap that bai. Vui long thu lai.");
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "Dang nhap that bai. Vui long thu lai.",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return {
-    email,
-    setEmail,
+    username,
+    setUsername,
     password,
     setPassword,
     isLoading,

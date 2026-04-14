@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { registerUser } from "../api/authApi";
 
 export const useRegister = () => {
@@ -7,6 +8,7 @@ export const useRegister = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,8 +17,14 @@ export const useRegister = () => {
 
     try {
       await registerUser({ username, email, password });
+      alert("Đăng ký thành công! Hãy đăng nhập.");
+      navigate("/login");
     } catch (err) {
-      setError(err?.message || "Dang ky that bai. Vui long thu lai.");
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "Dang ky that bai. Vui long thu lai.",
+      );
     } finally {
       setIsLoading(false);
     }

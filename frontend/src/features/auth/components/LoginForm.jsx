@@ -2,8 +2,8 @@ import { useLogin } from "../hooks/useLogin";
 
 export const LoginForm = () => {
   const {
-    email,
-    setEmail,
+    username,
+    setUsername,
     password,
     setPassword,
     isLoading,
@@ -16,11 +16,11 @@ export const LoginForm = () => {
       <h2>Đăng nhập</h2>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "15px" }}>
-          <label>Email:</label>
+          <label>Tên người dùng:</label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </div>
