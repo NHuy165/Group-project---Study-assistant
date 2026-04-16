@@ -23,7 +23,7 @@ export const useDocuments = (interactionId) => {
         readDocuments();
     }, [readDocuments]);
 
-    const saveDocument = async () => {
+    const saveDocument = async (file, documentInput) => {
         setIsLoading(true);
         try {
             const newDoc = await api.saveDocument(interactionId, file, documentInput);
@@ -36,21 +36,27 @@ export const useDocuments = (interactionId) => {
         }
     };
 
-    const updateDocument = async () => {
+    const updateDocument = async (documentId, updateData) => {
+        setIsLoading(true);
         try {
             const updated = await api.updateDocument(documentId, updateData);
             setDocuments((prev) => prev.map(d => d.id === documentId ? updated : d));
         } catch (err) {
             setError("Lỗi khi cập nhật thông tin tài liệu");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const deleteDocument = async () => {
+    const deleteDocument = async (documentId) => {
+        setIsLoading(true);
         try {
             await api.deleteDocument(documentId);
             setDocuments((prev) => prev.filter(d => d.id !== documentId));
         } catch (err) {
             setError("Lỗi khi xóa tài liệu");
+        } finally {
+            setIsLoading(false);
         }
     };
 
