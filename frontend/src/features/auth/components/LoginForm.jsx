@@ -26,7 +26,7 @@ export const LoginForm = () => {
           value={username} // dữ liệu quyết định giao diện
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Tên người dùng"
-          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-20 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
+          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-2 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
         />
       </div>
 
