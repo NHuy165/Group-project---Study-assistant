@@ -12,9 +12,9 @@ export const LoginForm = () => {
   } = useLogin();
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-auto flex w-full max-w-[400px] flex-col gap-6 text-center"
+    <form // đoạn này tạo ra 1 cái khung, kéo từ đầu khung "tên người dùng" đến cuối "vào lớp thôi"
+      onSubmit={handleSubmit} // gọi hành động submit khi bấm enter hoặc submit
+      className="mx-auto flex w-full max-w-[400px] flex-col gap-6 text-center border border-red-500"
     >
       <div>
         <label htmlFor="login-username" className="sr-only">
@@ -23,10 +23,10 @@ export const LoginForm = () => {
         <input
           id="login-username"
           type="text"
-          value={username}
+          value={username} // dữ liệu quyết định giao diện
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Tên người dùng"
-          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-3.5 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
+          className="w-full rounded-[16px] border-[2px] border-[#d0d0d0] bg-[#fafafa] px-4 py-20 text-[1.1rem] font-semibold leading-tight text-[#333] placeholder-[#888] outline-none transition focus:border-[#4ecdc4] focus:bg-white"
         />
       </div>
 

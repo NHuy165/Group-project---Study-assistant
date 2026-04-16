@@ -6,26 +6,26 @@ export const useRegister = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false); // hiển thị khi nào thì đăng nhập
+  const [error, setError] = useState(""); // nhập sai pass 
+  const navigate = useNavigate(); // công cụ chuyển trang của React Router(thay cho thẻ a truyền thống)
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ko cho tải lại trang 
     setError("");
-    setIsLoading(true);
+    setIsLoading(true); // dùng để làm mờ nút bấm 
 
     try {
       await registerUser({ username, email, password });
       alert("Đăng ký thành công! Hãy đăng nhập.");
-      navigate("/login");
+      navigate("/login"); 
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Dang ky that bai. Vui long thu lai.",
+          "Đăng kí thất bại, vui lòng thử lại.",
       );
-    } finally {
+    } finally { //  Dù thành công hay thất bại, cũng phải tắt trạng thái loading đi để nút bấm trở lại bình thường.
       setIsLoading(false);
     }
   };

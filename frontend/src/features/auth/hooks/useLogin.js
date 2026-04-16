@@ -17,7 +17,7 @@ export const useLogin = () => {
     try {
       const data = await loginUser(username, password);
       localStorage.setItem("token", data.access_token);
-      navigate("/dashboard");
+      navigate("/dashboard"); // chuyển hướng sang dashboard
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
