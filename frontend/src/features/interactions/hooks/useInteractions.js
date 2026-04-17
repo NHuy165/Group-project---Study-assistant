@@ -6,6 +6,33 @@ export const useInteractions = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [interactionName, setInteractionName] = useState('Tên cuộc trò chuyện');
+    const [interactionDescription, setInteractionDescription] = useState('Mô tả nội dung cuộc trò chuyện');
+
+    const handleInteractionNameChange = (e) => {
+        setInteractionName(e.target.value);
+    }
+
+    const handleInteractionDescriptionChange = (e) => {
+        setInteractionDescription(e.target.value);
+    }
+
+    const handleSummit = async(e) => {
+        if (e && e.preventDefault) e.preventDefault();
+
+        // Gom dữ liệu từ State của UI thành documentInput
+        const interactionInput = {
+            name: interactionName || file.name, 
+            description: interactionDescription || 0,
+        };
+        await saveDocument(file, documentInput);
+        
+        // Reset form sau khi thành công
+        setDocumentName('');
+        setPageOffset('')
+        fileInputRef.current.value = "";
+    };
+
     const readInteractions = async () => {
         // Hàm này được chạy tại đây bằng useEffect để lấy interactions
         setIsLoading(true);
