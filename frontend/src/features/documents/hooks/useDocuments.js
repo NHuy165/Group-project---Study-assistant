@@ -77,7 +77,31 @@ export const useDocuments = (interactionId) => {
             const data = await api.readDocuments(interactionId);
             setDocuments(data);
         } catch (err) {
-            setError("Không thể tải danh sách tài liệu");
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Lỗi 404 - Not Found (Không tìm thấy tài liệu hoặc Interaction)
+            else if (status === 404) {
+                setError("Tài liệu này không còn trên hệ thống nữa. Có thể nó đã bị xóa. Bé vui lòng chọn tài liệu khác nhé!");
+            } 
+            
+            // 3. Lỗi 422 - Unprocessable Entity (Truyền sai ID của Interaction trên URL (ví dụ ID là chữ thay vì số).)
+            else if (status === 422) {
+                setError("Yêu cầu xem tài liệu không hợp lệ. Bé kiểm tra lại đường dẫn phiên học nhé!");
+            } 
+            
+            // 4. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -94,7 +118,36 @@ export const useDocuments = (interactionId) => {
             setDocuments((prev) => [...prev, newDoc]);
             return newDoc;
         } catch (err) {
-            setError("Lỗi khi tải tài liệu lên");
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 400 - Bad Request (Yêu cầu không hợp lệ, ví dụ: file quá lớn hoặc sai loại file)
+            if (status === 400) {
+                setError(detail || "File này to quá hoặc không đúng định dạng rồi. Bé chọn lại file PDF nhé!");
+            } 
+            
+            // 2. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            else if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 3. Lỗi 404 - Not Found (Không tìm thấy tài liệu hoặc Interaction)
+            else if (status === 404) {
+                setError("Hệ thống không tìm thấy phiên học này. Bé hãy tải lại trang hoặc bắt đầu phiên học mới nhé!");
+            } 
+            
+            // 4. Lỗi 422 - Unprocessable Entity (Lỗi logic, ví dụ: thiếu file hoặc định dạng file không được hỗ trợ)
+            else if (status === 422) {
+                setError("Bé kiểm tra lại nhé, hình như mình chưa chọn file hoặc điền thiếu thông tin tài liệu rồi!");
+            } 
+            
+            // 5. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -106,7 +159,31 @@ export const useDocuments = (interactionId) => {
             const updated = await api.updateDocument(documentId, updateData);
             setDocuments((prev) => prev.map(d => d.id === documentId ? updated : d));
         } catch (err) {
-            setError("Lỗi khi cập nhật thông tin tài liệu");
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Lỗi 404 - Not Found (Không tìm thấy tài liệu hoặc Interaction)
+            else if (status === 404) {
+                setError("Tài liệu này không còn trên hệ thống nữa. Có thể nó đã bị xóa. Bé vui lòng chọn tài liệu khác nhé!");
+            } 
+            
+            // 3. Lỗi 422 - Unprocessable Entity (Tên tài liệu mới quá dài, quá ngắn hoặc chứa ký tự đặc biệt không cho phép.)
+            else if (status === 422) {
+                setError("Thông tin chỉnh sửa không đúng quy định, bé kiểm tra lại nhé!"); // Hiển thị quy định lúc chỉnh sửa file
+            } 
+            
+            // 4. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -118,7 +195,31 @@ export const useDocuments = (interactionId) => {
             await api.deleteDocument(documentId);
             setDocuments((prev) => prev.filter(d => d.id !== documentId));
         } catch (err) {
-            setError("Lỗi khi xóa tài liệu");
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Lỗi 404 - Not Found (Nhấn xóa 2 lần liên tiếp hoặc tài liệu đã biến mất từ trước.)
+            else if (status === 404) {
+                setError("Tài liệu này đã được xóa thành công từ trước đó rồi bé nhé!");
+            } 
+            
+            // 3. Lỗi 422 - Unprocessable Entity (ID tài liệu gửi lên không đúng định dạng UUID/Integer.)
+            else if (status === 422) {
+                setError("Yêu cầu xóa tài liệu không thành công do thông tin nhận diện bị lỗi!");
+            } 
+            
+            // 4. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -128,10 +229,16 @@ export const useDocuments = (interactionId) => {
         documents,
         isLoading,
         error,
+        documentName,
+        pageOffset,
+
         createDocument: handleSummit,
-        updateDocument,
+        updateDocument: handleUpdate,
         deleteDocument,
+        readDocuments,
         handleDocumentNameChange,
-        handlePageOffsetChange
+        handlePageOffsetChange,
+        handleEditClick,
+        cancelEdit
     };
 };
