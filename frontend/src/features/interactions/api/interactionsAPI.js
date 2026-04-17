@@ -1,33 +1,28 @@
-import axios from 'axios';
+import axiosClient from '../../../api/axiosClient';
 
-const API_URL = 'http://localhost:8000/interaction';
-
-// Lấy token từ localStorage (hoặc dùng axios interceptor như đã nói)
-const getAuthHeader = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-});
+const PATH = '/interactions';
 
 // POST: body: interactionData = { title, description, ... }
 export const createInteraction = async (interactionData) => {
-    const response = await axios.post(`${API_URL}`, interactionData, getAuthHeader());
+    const response = await axiosClient.post(PATH, interactionData);
     return response.data;
 };
 
 // GET
 export const readInteractions = async () => {
-    const response = await axios.get(`${API_URL}`, getAuthHeader());
+    const response = await axiosClient.get(PATH);
     return response.data;
 }
 
 // PATCH: parameter: interactionId; body: updateData
-export const updateInteraction = async (id, updateData) => {
-    const response = await axios.patch(`${API_URL}/${id}`, updateData, getAuthHeader());
+export const updateInteraction = async (interactionId, updateData) => {
+    const response = await axiosClient.patch(`${PATH}/${interactionId}`, updateData);
     return response.data;
 };
 
 // DELETE: parameter: interactionId
-export const deleteInteraction = async (id) => {
-    const response = await axios.delete(`${API_URL}/${id}`, getAuthHeader());
+export const deleteInteraction = async (interactionId) => {
+    const response = await axiosClient.delete(`${PATH}/${interactionId}`);
     return response.data;
 };
 
