@@ -1,14 +1,13 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:8000';
-
-// POST: body: { username, password }
-export const loginUser = async (username, password) => {
+import axiosClient from "../../../api/axiosClient";
+// Đổi chữ username thành email ở tham số đầu vào cho đúng với UI
+export const loginUser = async (email, password) => {
     const formData = new URLSearchParams();
-        formData.append('username', username);
-        formData.append('password', password);
+    
+    // Gắn giá trị của biến 'email' vào cái nhãn bắt buộc là 'username'
+    formData.append('username', email); 
+    formData.append('password', password);
 
-    const response = await axios.post(`${API_URL}/login`, formData, {
+    const response = await axiosClient.post('/login', formData, {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -16,8 +15,7 @@ export const loginUser = async (username, password) => {
     return response.data;
 };
 
-// POST: body: userData
 export const registerUser = async (userData) => {
-    const response = await axios.post(`${API_URL}/user/register`, userData);
+    const response = await axiosClient.post('/user/register', userData);
     return response.data;
 };
