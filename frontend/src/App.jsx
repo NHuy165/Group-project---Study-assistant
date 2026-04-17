@@ -1,29 +1,23 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthPage } from "./pages/AuthPage";
+import { HomePage } from "./pages/HomePage";
+import { InteractionPage } from "./pages/InteractionPage";
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/dashboard" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/interaction/:interactionId" element={<InteractionPage />} />
+        <Route
+          path="/interaction/:interactionId"
+          element={<InteractionPage />}
+        />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
-// import TestLogic from './components/TestLogic' // Kiểm tra kỹ đường dẫn này
-
-// function App() {
-//   return (
-//     <div className="App">
-//       {/* Nếu TestLogic có lỗi, nó sẽ làm trắng cả trang. 
-//           Phú có thể tạm thêm dòng chữ này để kiểm tra xem App có chạy không */}
-//       <h1 style={{ textAlign: 'center' }}>Hệ thống AI Tutor - Dev Mode</h1>
-      
-//       <TestLogic />
-//     </div>
-//   )
-// }
-
-// export default App
+export default App;

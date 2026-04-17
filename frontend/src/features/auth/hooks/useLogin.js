@@ -1,15 +1,13 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../api/authApi';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../api/authApi";
 
 export const useLogin = () => {
-    // States...
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const navigate = useNavigate();
-
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
     const handleEmailChange = (e) => {
         console.log(e.target.value);
@@ -32,7 +30,11 @@ export const useLogin = () => {
             localStorage.setItem('token', data.access_token); // Lưu token vào LocalStorage
             navigate('/dashboard'); // Chuyển hướng sau khi đăng nhập thành công
         } catch (err) {
-            setError(err.response?.data?.detail || 'Đăng nhập thất bại');
+            setError(
+                err?.response?.data?.detail ||
+                err?.message ||
+                "Đăng nhập thất bại. Vui lòng thử lại",
+            );
         } finally {
             setIsLoading(false);
         }
@@ -47,3 +49,4 @@ export const useLogin = () => {
         handlePasswordChange
     };
 };
+
