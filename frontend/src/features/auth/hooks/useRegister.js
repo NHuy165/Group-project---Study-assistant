@@ -35,16 +35,26 @@ export const useRegister = () => {
       alert("Đăng ký thành công! Hãy đăng nhập.");
       navigate("/login"); 
     } catch (err) {
-      setError(
-        err?.response?.data?.detail ||
-          err?.message ||
-          "Đăng kí thất bại, vui lòng thử lại.",
-      );
+        // 1. Nếu lỗi là 409 (Trùng Email/Username)
+        if (err.response && err.response.status === 409) {
+            setError("Email này đã được sử dụng. Bé thử một email khác nhé!");
+        }
+        // 2. Nếu lỗi là 422 (Mật khẩu quá ngắn, sai format email...)
+        else if (err.response && err.response.status === 422) {
+            setError("Thông tin đăng ký chưa hợp lệ (Ví dụ: Email sai định dạng)!");
+        }
+        // 3. Các lỗi khác
+        else {
+            setError(
+                err?.response?.data?.detail ||
+                "Đăng ký thất bại. Vui lòng thử lại sau."
+            );
+        }
     } finally { 
-      // Tắt loading dù thành công hay thất bại
-      setIsLoading(false);
-    }
-  };
+          // Tắt loading dù thành công hay thất bại
+          setIsLoading(false);
+        }
+      };
 
   return {
     username, setUsername,

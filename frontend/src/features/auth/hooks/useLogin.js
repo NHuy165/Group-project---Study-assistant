@@ -30,15 +30,27 @@ export const useLogin = () => {
             localStorage.setItem('token', data.access_token); // Lưu token vào LocalStorage
             navigate('/dashboard'); // Chuyển hướng sau khi đăng nhập thành công
         } catch (err) {
-            setError(
-                err?.response?.data?.detail ||
-                err?.message ||
-                "Đăng nhập thất bại. Vui lòng thử lại",
-            );
+            // 1. Nếu lỗi là 401 (Sai thông tin đăng nhập)
+            if (err.response && err.response.status === 401) {
+                setError("Tài khoản hoặc mật khẩu chưa đúng. Bé kiểm tra lại nhé!");
+            } 
+            // 2. Nếu lỗi là 422 (Dữ liệu gửi lên bị thiếu hoặc sai định dạng)
+            else if (err.response && err.response.status === 422) {
+                setError("Thông tin nhập vào chưa hợp lệ!");
+            } 
+            // 3. Các lỗi khác (Server sập, mất mạng...)
+            else {
+                // Ưu tiên lấy chi tiết lỗi từ backend gửi về, nếu không có thì báo câu chung chung
+                // ĐÃ XÓA `err.message` để không bị hiện dòng chữ tiếng Anh "Request failed..."
+                setError(
+                    err?.response?.data?.detail ||
+                    "Lỗi kết nối đến máy chủ. Vui lòng thử lại sau."
+                );
+            }
         } finally {
-            setIsLoading(false);
-        }
-    };
+                    setIsLoading(false);
+                }
+            };
 
     return {
         email, setEmail,
