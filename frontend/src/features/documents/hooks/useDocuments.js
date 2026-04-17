@@ -6,6 +6,38 @@ export const useDocuments = (interactionId) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [documentName, setDocumentName] = useState('');
+    const [pageOffset, setPageOffset] = useState('');
+
+    const handleDocumentNameChange = (e) => {
+        console.log(e.target.value);
+        setDocumentName(e.target.value);
+    };
+
+    const handlePageOffsetChange = (e) => {
+        console.log(e.target.value);
+        setPageOffset(e.target.value);
+    };
+
+    const handleSummit = async(e) => {
+        if (e && e.preventDefault) e.preventDefault();
+
+        const file = fileInputRef.current.files[0];
+        
+        // Gom dữ liệu từ State của UI thành documentInput
+        const documentInput = {
+            name: documentName || file.name, 
+            page_offset: parseInt(pageOffset) || 0,
+        };
+        await saveDocument(file, documentInput);
+        
+        // Reset form sau khi thành công
+        setDocumentName('');
+        setPageOffset('')
+        fileInputRef.current.value = "";
+    };
+
+
     const readDocuments = useCallback(async () => {
         if (!interactionId) return;
         setIsLoading(true);
@@ -64,8 +96,10 @@ export const useDocuments = (interactionId) => {
         documents,
         isLoading,
         error,
-        createDocument: saveDocument,
+        createDocument: handleSummit,
         updateDocument,
-        deleteDocument
+        deleteDocument,
+        handleDocumentNameChange,
+        handlePageOffsetChange
     };
 };

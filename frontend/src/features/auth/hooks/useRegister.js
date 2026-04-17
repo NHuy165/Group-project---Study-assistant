@@ -11,6 +11,21 @@ export const useRegister = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    const handleUsernameChange = (e) => {
+        console.log(e.target.value);
+        setUsername(e.target.value);
+    }
+
+    const handleEmailChange = (e) => {
+        console.log(e.target.value);
+        setEmail(e.target.value);
+    }
+
+    const handlePasswordChange = (e) => {
+        console.log(e.target.value);
+        setPassword(e.target.value);
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -34,6 +49,9 @@ export const useRegister = () => {
         email, setEmail,
         password, setPassword,
         isLoading, error,
-        handleSubmit
+        handleSubmit,
+        handleUsernameChange,
+        handleEmailChange,
+        handlePasswordChange
     };
 };

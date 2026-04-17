@@ -10,6 +10,17 @@ export const useLogin = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+
+    const handleEmailChange = (e) => {
+        console.log(e.target.value);
+        setEmail(e.target.value);
+    }
+
+    const handlePasswordChange = (e) => {
+        console.log(e.target.value);
+        setPassword(e.target.value);
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -18,7 +29,7 @@ export const useLogin = () => {
         try {
             const data = await loginUser(email, password);
             // Xử lý kết quả đăng nhập, ví dụ: lưu token, chuyển hướng
-            localStorage.setItem('token', data.access_token);
+            localStorage.setItem('token', data.access_token); // Lưu token vào LocalStorage
             navigate('/dashboard'); // Chuyển hướng sau khi đăng nhập thành công
         } catch (err) {
             setError(err.response?.data?.detail || 'Đăng nhập thất bại');
@@ -31,6 +42,8 @@ export const useLogin = () => {
         email, setEmail,
         password, setPassword,
         isLoading, error,
-        handleSubmit
+        handleSubmit,
+        handleEmailChange,
+        handlePasswordChange
     };
 };
