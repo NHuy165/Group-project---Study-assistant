@@ -1,14 +1,18 @@
-/* @tailwind base;
-@tailwind components;
-@tailwind utilities; */
 @import "tailwindcss";
+
+@theme {
+  @keyframes meteor-flow {
+    from { background-position: 0% 50%; }
+    to { background-position: 200% 50%; }
+  }
+  --animate-meteor: meteor-flow 4s linear infinite;
+}
+
 * {
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
+html, body, #root {
   margin: 0;
   min-height: 100%;
 }
@@ -18,13 +22,17 @@ body {
   color: #333;
 }
 
-button,
-input {
-  font-family: inherit;
-}
+@layer components {
+  .text-meteor {
+    @apply bg-clip-text text-transparent bg-[length:300%_100%] animate-meteor;
+    background-image: linear-gradient(
+      90deg, #2d7a72, #4ecdc4, #ff6b6b, #feca57, #4ecdc4, #2d7a72
+    );
+  }
 
-/* Ensure AuthPage card is solid white, not transparent */
-.auth-card {
-  background-color: #ffffff !important;
-  opacity: 1 !important;
+
+  .auth-card {
+    /* Trong Tailwind, dùng dấu '!' ở phía trước thay vì '!important' ở phía sau */
+    @apply !bg-white !opacity-100;
+  }
 }
