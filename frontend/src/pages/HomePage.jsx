@@ -5,15 +5,15 @@ import backgroundImg from "../assets/background.png";
 import videoIcon from "../assets/icon/video.svg";
 import slideIcon from "../assets/icon/slide.svg"
 import quizIcon from "../assets/icon/Quiz.svg"
+import { AddSourceModal } from "../components/AddSourceModal";
+import { FilePreviewModal } from "../components/FilePreviewModal";
+
+
 
 export const HomePage = () => {
-  // Data Ảo
-  const initialDocuments = [
-    { id: 1, name: "Tài liệu 01", checked: false },
-    { id: 2, name: "Tài liệu 02", checked: true },
-    { id: 3, name: "Tài liệu 03", checked: false },
-    { id: 4, name: "Tài liệu 04", checked: true },
-  ];
+  // Tài liệu upload
+  const [documents, setDocuments] = useState([]);
+  const [activeViewDoc, setActiveViewDoc] = useState(null); // File đang xem
 
   const initialNotes = [
     { id: 1, name: "Ghi chú 01" },
@@ -30,8 +30,12 @@ export const HomePage = () => {
 ];
 
   // State quản lý tài liệu và ghi chú (để có thể cập nhật khi người dùng tương tác)
-  const [documents, setDocuments] = useState(initialDocuments);
+  // const [documents, setDocuments] = useState(initialDocuments);
   const [notes, setNotes] = useState(initialNotes);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   // Checkbox khi người dùng click vào một tài liệu, sẽ cập nhật trạng thái checked của tài liệu đó
   const handleDocCheck = (id) => {
@@ -42,14 +46,46 @@ export const HomePage = () => {
     );
   };
 
+  // Hàm này truyền xuống Modal 
+  const handleAddDocument = (uploadedFiles) => {
+    const newDocs = uploadedFiles.map(fileObj => ({
+      id: crypto.randomUUID(),
+      name: fileObj.name,
+      file: fileObj, // Lưu lại file thật để xem preview
+      checked: false,
+    }));
+    setDocuments((prev) => [...prev, ...newDocs]);
+  };
+
+    // Xử lý icon định dạng khi thêm file
+  const getFileIcon = (fileName) => {
+    if (!fileName) return "📁";
+    const extension = fileName.split('.').pop().toLowerCase();
+    
+    // Phân loại định dạng
+    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    const videoTypes = ['mp4', 'mov', 'avi', 'mkv'];
+    const audioTypes = ['mp3', 'wav', 'm4a', 'flac'];
+    const docTypes = ['pdf', 'doc', 'docx', 'txt', 'ppt', 'pptx', 'xls', 'xlsx'];
+
+    if (imageTypes.includes(extension)) return "🖼️";  // Hình ảnh
+    if (videoTypes.includes(extension)) return "🎥";  // Video
+    if (audioTypes.includes(extension)) return "🎵";  // Âm thanh
+    if (docTypes.includes(extension)) return "📄";    // Tài liệu
+    if (fileName.startsWith('http')) return "🔗";     // Link
+    
+    return "📁"; // Khác (mặc định là thư mục/tệp lạ)
+
+  };
+
   return (
     <div
       className="flex h-screen w-screen flex-col bg-cover bg-center bg-no-repeat px-10 pb-10 pt-28 font-sans text-gray-800 shadow-inner"
       style={{ backgroundImage: `url(${backgroundImg})` }}
     >
       {/* Header Tên ứng dụng - Giữ nguyên vị trí */}
-      <header className="absolute top-10 left-10 text-4xl font-black tracking-tight text-[#2d7a72] mix-blend-multiply z-50">
-        EduSpark<span className="text-[#4ecdc4]">.AI</span>
+      <header className="absolute top-10 left-10 z-50 text-4xl font-black tracking-tight text-meteor">
+        EduSpark<span>.AI</span>
       </header>
 
       <button className="absolute top-10 right-10 z-50 rounded-full bg-white/60 px-6 py-2.5 text-sm font-bold text-[#888888]-700 shadow-md backdrop-blur-md transition hover:bg-white hover:scale-105 active:scale-95 border border-white/20">
@@ -68,7 +104,10 @@ export const HomePage = () => {
             <hr className="border-t border-gray-400/30" />
           </header>
 
-          <button className="w-full rounded-2xl bg-[#bf94e4] py-3.5 font-bold text-white transition hover:bg-[#b388d8] shadow-md">
+          <button 
+            onClick={() => setIsModalOpen(true)} // Khi bấm thì chuyển thành true (mở)
+            className="w-full rounded-2xl bg-[#bf94e4] py-3.5 font-bold text-white transition hover:bg-[#b388d8] shadow-md"
+          >
             + Thêm nguồn
           </button>
 
@@ -76,7 +115,7 @@ export const HomePage = () => {
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between rounded-2xl bg-[#FFEDE2B2]/70 px-4 py-3 shadow-sm hover:shadow-md transition cursor-pointer"
+                className="flex items-center justify-between rounded-2xl bg-white/50 px-4 py-3 shadow-sm hover:shadow-md transition cursor-pointer"
                 onClick={() => handleDocCheck(doc.id)}
               >
                 <div className="flex items-center space-x-3">
@@ -86,10 +125,25 @@ export const HomePage = () => {
                     onChange={() => {}}
                     className="h-5 w-5 rounded-md border-2 border-gray-300 accent-[#4ecdc4]"
                   />
-                  <span className="font-semibold text-gray-700">{doc.name}</span>
+                  {/* Tên file */}
+                  <span className="font-semibold text-gray-700 truncate max-w-[150px]">
+                    {doc.name}
+                  </span>
                 </div>
-                <span className="text-gray-400">📄</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // NGĂN KHÔNG CHO TICK CHECKBOX
+                    setSelectedDoc(doc);
+                    setIsPreviewOpen(true);
+                  }}
+                  className="p-2 hover:bg-white rounded-xl transition-all hover:scale-125 shadow-sm active:scale-95"
+                  title="Xem chi tiết"
+                >
+                  <span className="text-xl">{getFileIcon(doc.name)}</span>
+                </button>
               </div>
+
+              
             ))}
           </nav>
         </aside>
@@ -191,6 +245,25 @@ export const HomePage = () => {
           </nav>
         </aside>
       </div>
+    <AddSourceModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAdd={handleAddDocument} // Hàm đưa vào để Modal có thể gọi khi thêm tài liệu mới
+      />
+    <FilePreviewModal 
+        isOpen={isPreviewOpen} 
+        onClose={() => setIsPreviewOpen(false)} 
+        doc={selectedDoc} 
+      />
+
+
+      {/* 4. Sửa nút bấm ở cột trái/phải để mở modal */}
+      <button 
+        onClick={() => setIsModalOpen(true)}
+        className="..."
+      >
+        + Thêm nguồn
+      </button>
     </div>
   );
 };
