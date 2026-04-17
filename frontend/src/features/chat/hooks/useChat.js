@@ -23,14 +23,14 @@ export const useChat = (interactionId) => {
         readChat();
     }, [readChat]);
 
-    const askLLM = async () => {
+    const askLLM = async (promptText) => {
         // chatInput khớp với LLMResponseInput ở backend
         try {
             const chatInput = { prompt: promptText };
             const response = await api.askLLM(interactionId, chatInput);
             
             // Cập nhật log chat ngay lập tức với câu trả lời mới
-            setChatLog((prev) => [...prev, response]);
+            setChatlog((prev) => [...prev, response]);
             return response;
         } catch (err) {
             setError("Lỗi khi kết nối với AI");
