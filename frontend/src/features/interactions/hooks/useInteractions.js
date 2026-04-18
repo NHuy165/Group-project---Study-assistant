@@ -9,29 +9,61 @@ export const useInteractions = () => {
     const [interactionName, setInteractionName] = useState('Tên cuộc trò chuyện');
     const [interactionDescription, setInteractionDescription] = useState('Mô tả nội dung cuộc trò chuyện');
 
+    const [editingInteractionID, setEditingInteractionID] = useState(null);
+
+    // Hiển thị tên interaction khi người dùng nhập: Gọi 2 lần: khi create và khi update
     const handleInteractionNameChange = (e) => {
         setInteractionName(e.target.value);
     }
 
+    // Hiển thị mô tả interaction khi người dùng nhập: Gọi 2 lần: khi create và khi update
     const handleInteractionDescriptionChange = (e) => {
         setInteractionDescription(e.target.value);
     }
 
-    const handleSummit = async(e) => {
+    // Xử lý sự kiện khi người dùng ấn "New chat"
+    const handleNewChatClick = async(e) => {
         if (e && e.preventDefault) e.preventDefault();
 
         // Gom dữ liệu từ State của UI thành documentInput
         const interactionInput = {
-            name: interactionName || file.name, 
-            description: interactionDescription || 0,
+            name: interactionName || "Cuộc trò chuyện", 
+            description: interactionDescription || "...",
         };
-        await saveDocument(file, documentInput);
+        await createInteraction(interactionInput);
         
         // Reset form sau khi thành công
-        setDocumentName('');
-        setPageOffset('')
-        fileInputRef.current.value = "";
+        setInteractionName('');
+        setInteractionDescription('');
     };
+
+    // Xử lý sự kiện khi người dùng ấn Edit ở mỗi interaction
+    const handleEditInteractionClick = (interactionEditing) => {
+        setEditingInteractionID(interactionEditing.id);
+        setInteractionName(interactionEditing.name);
+        setInteractionDescription(interactionEditing.description);
+    };
+
+    // Hủy hành động edit
+    const cancelEditInteractionClick = () => {
+        setEditingInteractionID(null);
+        setInteractionName('Tên cuộc trò chuyện');
+        setInteractionDescription('Mô tả nội dung cuộc trò chuyện');
+    }
+
+    // Gọi khi người dùng ấn update (sau khi đã thực hiện edit, ấn update để lưu thay đổi => gọi hàm này)
+    const handleUpdateInteractionClick = async(e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!editingInteractionID) return;
+
+        const updateData = {
+            name: interactionName || "Cuộc trò chuyện",
+            description: interactionDescription || "...",
+        };
+
+        await updateInteraction(editingInteractionID, updateData);
+        cancelEdit(); // Sửa xong thì xóa dấu vết, reset form
+    }
 
     const readInteractions = async () => {
         // Hàm này được chạy tại đây bằng useEffect để lấy interactions
@@ -94,9 +126,16 @@ export const useInteractions = () => {
         interactions,
         isLoading,
         error,
+        interactionName,
+        interactionDescription,
+
+        handleInteractionNameChange,
+        handleInteractionDescriptionChange,
+        handleNewChatClick, // createInteraction
+        handleEditInteractionClick,
+        cancelEditInteractionClick,
+        handleUpdateInteractionClick, // updateInteraction
         readInteractions,
-        createInteraction,
-        updateInteraction,
         deleteInteraction
     };
 };
