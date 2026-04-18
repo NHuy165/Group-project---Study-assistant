@@ -6,6 +6,12 @@ export const useChat = (interactionId) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [promptText, setPromptText] = useState('');
+
+    const handlePrompTextChange = (e) => {
+        setPromptText(e.target.value);
+    }
+
     const readChat = useCallback(async () => {
         if (!interactionId) return;
         setIsLoading(true);
