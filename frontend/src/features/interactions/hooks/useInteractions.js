@@ -72,8 +72,21 @@ export const useInteractions = () => {
             const data = await api.readInteractions();
             setInteractions(data);
         } catch (err) {
-            setError(err.response?.data?.detail || "Không thể tải danh sách tương tác");
-            console.error("Error fetching interactions:", err);
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -89,8 +102,26 @@ export const useInteractions = () => {
             const newInteraction = await api.createInteraction(input);
             setInteractions([...interactions, newInteraction]); // Cập nhật danh sách tại chỗ
         } catch (err) {
-            setError(err.response?.data?.detail || "Lỗi khi tạo mới");
-            console.error("Error creating interaction:", err);
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Lỗi 422 - Unprocessable Entity (Lỗi logic, ví dụ: thiếu file hoặc định dạng file không được hỗ trợ)
+            else if (status === 422) {
+                setError("Bé kiểm tra lại nhé, hình như mình điền thiếu thông tin của phiên học tập rồi!");
+            } 
+            
+            // 3. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -102,8 +133,31 @@ export const useInteractions = () => {
             const updated = await api.updateInteraction(id, updateData);
             setInteractions(interactions.map(item => item.id === id ? updated : item));
         } catch (err) {
-            setError(err.response?.data?.detail || "Lỗi khi cập nhật");
-            console.error("Error updating interaction:", err);
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Lỗi 404 - Not Found (Không tìm thấy tài liệu hoặc Interaction)
+            else if (status === 404) {
+                setError("Hệ thống không tìm thấy phiên học này. Bé hãy tải lại trang hoặc bắt đầu phiên học mới nhé!");
+            } 
+            
+            // 3. Lỗi 422 - Unprocessable Entity (Lỗi logic, ví dụ: thiếu file hoặc định dạng file không được hỗ trợ)
+            else if (status === 422) {
+                setError("Bé kiểm tra lại nhé, hình như mình điền thiếu thông tin phiên học tập rồi!");
+            } 
+            
+            // 4. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
@@ -115,8 +169,31 @@ export const useInteractions = () => {
             await api.deleteInteraction(id);
             setInteractions(interactions.filter(item => item.id !== id));
         } catch (err) {
-            setError(err.response?.data?.detail || "Lỗi khi xóa");
-            console.error("Error deleting interaction:", err);
+            const status = err.response?.status;
+            const detail = err.response?.data?.detail;
+
+            // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
+            if (status === 401) {
+                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
+            } 
+            
+            // 2. Lỗi 404 - Not Found (Không tìm thấy tài liệu hoặc Interaction)
+            else if (status === 404) {
+                setError("Hệ thống không tìm thấy phiên học này. Bé hãy tải lại trang hoặc bắt đầu phiên học mới nhé!");
+            } 
+            
+            // 3. Lỗi 422 - Unprocessable Entity (Lỗi logic, ví dụ: thiếu file hoặc định dạng file không được hỗ trợ)
+            else if (status === 422) {
+                setError("Bé kiểm tra lại nhé, hình như mình điền thiếu thông tin phiên học tập rồi!");
+            } 
+            
+            // 4. Các lỗi khác (500, mất mạng, server bảo trì...)
+            else {
+                setError(
+                    detail || "Máy chủ đang bận một chút hoặc lỗi kết nối. Bé thử lại sau nhé!"
+                );
+            }
         } finally {
             setIsLoading(false);
         }
