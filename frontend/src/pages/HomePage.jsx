@@ -73,8 +73,8 @@ export const HomePage = () => {
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col justify-center pb-8 pt-8 md:pt-14">
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <main className="flex flex-1 flex-col pb-8 pt-8 md:pt-14">
+          <div className="mb-6">
             <div>
               <h2 className="text-[2rem] font-semibold tracking-[-0.03em] text-[#5b5b5b] md:text-[2.6rem]">
                 Sổ ghi chú của tôi
@@ -83,13 +83,6 @@ export const HomePage = () => {
                 Bé tự đặt tên và viết mô tả ngắn cho từng sổ học riêng.
               </p>
             </div>
-
-            <button className="inline-flex min-w-[184px] items-center gap-2 rounded-[10px] bg-[#232323] px-4 py-2.5 text-left text-[0.9rem] font-semibold text-white shadow-[0_10px_20px_rgba(0,0,0,0.14)] transition hover:-translate-y-0.5 hover:bg-[#111]">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white">
-                <PlusCircle size={18} weight="fill" />
-              </span>
-              <span>Tạo sổ mới</span>
-            </button>
           </div>
 
           <form
@@ -97,8 +90,8 @@ export const HomePage = () => {
             className="mb-8 rounded-[24px] border border-white/70 bg-white/65 p-5 shadow-[0_14px_36px_rgba(0,0,0,0.08)] backdrop-blur-md md:p-6"
           >
             <div className="mb-4 flex items-center gap-3 text-[#4f4f4f]">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff4bf] text-[#1d7bd8] shadow-sm">
-                <PlusCircle size={24} weight="fill" />
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#d8f3ff] text-[#1d7bd8] shadow-sm">
+                <BookOpenText size={24} weight="fill" />
               </span>
               <div>
                 <h3 className="text-lg font-bold">Tạo sổ ghi chú mới</h3>
