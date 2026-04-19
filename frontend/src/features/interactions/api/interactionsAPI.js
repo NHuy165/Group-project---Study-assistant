@@ -1,10 +1,10 @@
 import axiosClient from '../../../api/axiosClient';
 
-const PATH = '/interactions';
+const PATH = '/interaction';
 
 // POST: body: interactionData = { title, description, ... }
 export const createInteraction = async (interactionData) => {
-    const response = await axiosClient.post(PATH, interactionData);
+    const response = await axiosClient.post(`${PATH}/create`, interactionData);
     return response.data;
 };
 

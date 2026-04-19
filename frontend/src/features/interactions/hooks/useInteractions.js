@@ -62,12 +62,13 @@ export const useInteractions = () => {
         };
 
         await updateInteraction(editingInteractionID, updateData);
-        cancelEdit(); // Sửa xong thì xóa dấu vết, reset form
+        cancelEditInteractionClick(); // Sửa xong thì xóa dấu vết, reset form
     }
 
     const readInteractions = async () => {
         // Hàm này được chạy tại đây bằng useEffect để lấy interactions
         setIsLoading(true);
+        setError(null);
         try {
             const data = await api.readInteractions();
             setInteractions(data);
@@ -98,22 +99,27 @@ export const useInteractions = () => {
 
     const createInteraction = async (input) => {
         setIsLoading(true);
+        setError(null);
         try {
             const newInteraction = await api.createInteraction(input);
-            setInteractions([...interactions, newInteraction]); // Cập nhật danh sách tại chỗ
+            setInteractions(prevInteractions => [...prevInteractions, newInteraction]); // Cập nhật danh sách dựa trên danh sách cũ
         } catch (err) {
             const status = err.response?.status;
             const detail = err.response?.data?.detail;
 
             // 1. Lỗi 401 - Unauthorized (Token hết hạn hoặc chưa đăng nhập)
             if (status === 401) {
-                setError("Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!");
+                setError(
+                    detail || "Phiên làm việc đã hết hạn. Bé vui lòng đăng nhập lại để tiếp tục nhé!"
+                );
                 // Thường ở đây sẽ có thêm logic đẩy về trang login nếu cần
             } 
             
             // 2. Lỗi 422 - Unprocessable Entity (Lỗi logic, ví dụ: thiếu file hoặc định dạng file không được hỗ trợ)
             else if (status === 422) {
-                setError("Bé kiểm tra lại nhé, hình như mình điền thiếu thông tin của phiên học tập rồi!");
+                setError(
+                    detail || "Bé kiểm tra lại nhé, hình như mình điền thiếu thông tin của phiên học tập rồi!"
+                );
             } 
             
             // 3. Các lỗi khác (500, mất mạng, server bảo trì...)
@@ -129,6 +135,7 @@ export const useInteractions = () => {
 
     const updateInteraction = async (id, updateData) => {
         setIsLoading(true);
+        setError(null);
         try {
             const updated = await api.updateInteraction(id, updateData);
             setInteractions(interactions.map(item => item.id === id ? updated : item));
@@ -165,6 +172,7 @@ export const useInteractions = () => {
 
     const deleteInteraction = async (id) => {
         setIsLoading(true);
+        setError(null);
         try {
             await api.deleteInteraction(id);
             setInteractions(interactions.filter(item => item.id !== id));
