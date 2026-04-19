@@ -1,9 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 export const FilePreviewModal = ({ isOpen, onClose, doc }) => {
-  if (!isOpen || !doc) return null;
+  const fileUrl = useMemo(() => {
+    if (doc?.file && doc.file instanceof Blob) return URL.createObjectURL(doc.file);
+    return null;
+  }, [doc]);
 
-  const fileUrl = URL.createObjectURL(doc.file);
+
+  if (!isOpen || !doc || !fileUrl) return null;
+
   const fileType = doc.file.type;
 
   return (
