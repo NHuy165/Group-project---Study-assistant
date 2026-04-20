@@ -58,15 +58,19 @@ export const InteractionPage = () => {
     setInputText(""); // Reset ô nhập
     setIsLoading(true); // Bật trạng thái chờ
 
-    // Giả lập thời gian LLM xử lý (3 giây)
+    // Thời gian trả lời câu hỏi (VD: max(constTime, llmThinkingTime))
+    const ThinkingTime = Math.floor(Math.random() * (10000 - 2000 + 1)) + 2000;
+    console.log(`AI đang suy nghĩ trong: ${ThinkingTime}ms`);
+
+    // Giả lập thời gian LLM xử lý 
     setTimeout(() => {
       const aiMsg = { 
         role: "ai", 
-        content: `Đây là câu trả lời mẫu từ LLM cho câu hỏi: "${userMsg.content}". Sau này nội dung này sẽ được trả về từ Backend của bạn.` 
+        content: `Robot EduSpark đã giải mã xong câu hỏi của bạn! (Xử lý trong ${ThinkingTime/1000} giây). Đây là câu trả lời mẫu từ LLM cho câu hỏi: "${userMsg.content}". Sau này nội dung này sẽ được trả về từ Backend của bạn.` 
       };
       setMessages((prev) => [...prev, aiMsg]);
       setIsLoading(false); // Tắt trạng thái chờ
-    }, 3000);
+    }, ThinkingTime);
   };
 
 
