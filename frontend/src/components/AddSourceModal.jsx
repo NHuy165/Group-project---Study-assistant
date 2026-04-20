@@ -179,8 +179,8 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
         <div className="mt-10 flex justify-end">
           <button 
             onClick={() => { 
-              const allNames = files.map(f => f.name);
-              onAdd(allNames); 
+              // SỬA TẠI ĐÂY: Gửi nguyên mảng 'files' (chứa dữ liệu thật) đi
+              onAdd(files); 
               
               setFiles([]); // Xóa danh sách file trong modal sau khi thêm thành công
               onClose(); 

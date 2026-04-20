@@ -13,6 +13,9 @@ import { FilePreviewModal } from "../components/FilePreviewModal";
 export const InteractionPage = () => {
   // Tài liệu upload
   const [documents, setDocuments] = useState([]);
+
+  
+
   const [activeViewDoc, setActiveViewDoc] = useState(null); // File đang xem
 
   const initialNotes = [
@@ -37,6 +40,19 @@ export const InteractionPage = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
 
+  const [editingId, setEditingId] = useState(null); // ID tài liệu đang sửa
+  const [tempName, setTempName] = useState(""); // Tên tạm khi sửa
+
+    // Hàm xử lý lưu tên mới
+    const handleRename = (id) => {
+        if (tempName.trim() !== "") {
+        setDocuments(prev => prev.map(doc => 
+            doc.id === id ? { ...doc, name: tempName } : doc
+        ));
+        }
+        setEditingId(null); // Tắt chế độ sửa
+    };
+
   // Checkbox khi người dùng click vào một tài liệu, sẽ cập nhật trạng thái checked của tài liệu đó
   const handleDocCheck = (id) => {
     setDocuments((prevDocs) =>
@@ -48,14 +64,19 @@ export const InteractionPage = () => {
 
   // Hàm này truyền xuống Modal 
   const handleAddDocument = (uploadedFiles) => {
-    const newDocs = uploadedFiles.map(fileObj => ({
-      id: crypto.randomUUID(),
-      name: fileObj.name,
-      file: fileObj, // Lưu lại file thật để xem preview
-      checked: false,
-    }));
-    setDocuments((prev) => [...prev, ...newDocs]);
-  };
+    const newDocs = uploadedFiles.map(fileObj => {
+        // Kiểm tra: nếu fileObj là object thì lấy .name, nếu là string thì lấy chính nó
+        const fileName = typeof fileObj === 'string' ? fileObj : fileObj.name;
+        
+        return {
+            id: crypto.randomUUID(),
+            name: fileName, // Đảm bảo tên luôn có giá trị để hiển thị
+            file: fileObj,   // Lưu lại dữ liệu để xem preview
+            checked: false,
+            };
+        });
+        setDocuments((prev) => [...prev, ...newDocs]);
+    };
 
     // Xử lý icon định dạng khi thêm file
   const getFileIcon = (fileName) => {
@@ -113,43 +134,64 @@ export const InteractionPage = () => {
 
           <nav className="flex-1 space-y-3 overflow-y-auto pr-2">
             {documents.map((doc) => (
-              <div
+                <div
                 key={doc.id}
-                className="flex items-center justify-between rounded-2xl bg-white/50 px-4 py-3 shadow-sm hover:shadow-md transition cursor-pointer"
-                onClick={() => handleDocCheck(doc.id)}
-              >
-                <div className="flex items-center space-x-3">
-                  <input
+                className={`flex items-center justify-between rounded-2xl px-4 py-3 shadow-sm transition cursor-pointer border ${
+                    editingId === doc.id ? "bg-white border-[#4ecdc4]" : "bg-white/60 hover:shadow-md"
+                }`}
+                onClick={() => editingId !== doc.id && handleDocCheck(doc.id)}
+                >
+                <div className="flex items-center space-x-3 flex-1 overflow-hidden">
+                    <input
                     type="checkbox"
                     checked={doc.checked}
                     onChange={() => {}}
                     className="h-5 w-5 rounded-md border-2 border-gray-300 accent-[#4ecdc4]"
-                  />
-                  {/* Tên file */}
-                  <span className="font-semibold text-gray-700 truncate max-w-[150px]">
-                    {doc.name}
-                  </span>
+                    />
+
+                    {/* --- LOGIC ĐỔI TÊN Ở ĐÂY --- */}
+                    {editingId === doc.id ? (
+                    <input
+                        autoFocus
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        onBlur={() => handleRename(doc.id)} // Lưu khi nhấn ra ngoài
+                        onKeyDown={(e) => e.key === "Enter" && handleRename(doc.id)} // Lưu khi nhấn Enter
+                        onClick={(e) => e.stopPropagation()} // Ngăn không cho tick checkbox
+                        className="font-semibold text-gray-700 bg-transparent outline-none border-b border-[#4ecdc4] w-full"
+                    />
+                    ) : (
+                    <span 
+                        className="font-semibold text-gray-700 truncate max-w-[150px] select-none"
+                        onDoubleClick={(e) => {
+                        e.stopPropagation(); // Ngăn tick checkbox khi nhấp đúp
+                        setEditingId(doc.id);
+                        setTempName(doc.name);
+                        }}
+                        title="Nhấp đúp để đổi tên"
+                    >
+                        {doc.name}
+                    </span>
+                    )}
                 </div>
+
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // NGĂN KHÔNG CHO TICK CHECKBOX
+                    onClick={(e) => {
+                    e.stopPropagation();
                     setSelectedDoc(doc);
                     setIsPreviewOpen(true);
-                  }}
-                  className="p-2 hover:bg-white rounded-xl transition-all hover:scale-125 shadow-sm active:scale-95"
-                  title="Xem chi tiết"
+                    }}
+                    className="p-2 hover:bg-white rounded-xl transition-all hover:scale-125"
                 >
-                  <span className="text-xl">{getFileIcon(doc.name)}</span>
+                    <span className="text-xl">{getFileIcon(doc.name)}</span>
                 </button>
-              </div>
-
-              
+                </div>
             ))}
-          </nav>
+            </nav>
         </aside>
 
         {/* VÙNG TRUNG TÂM (Nội dung + Khung Chat) */}
-        <main className="flex flex-col flex-1 h-full items-center justify-between rounded-3xl bg-white/45 p-6 backdrop-md shadow-xl border border-white/20">
+        <main className="flex flex-col flex-1 h-full items-center justify-between rounded-3xl bg-white/60 p-6 backdrop-md shadow-xl border border-white/20">
           <header className="w-full space-y-4 text-center">
             {/* Đặt h-10 để khớp chiều cao hàng với 2 cột bên */}
             <h1 className="text-3xl font-extrabold text-gray-800 flex items-center justify-center h-10">
@@ -182,7 +224,7 @@ export const InteractionPage = () => {
         </main>
 
         {/* CỘT PHẢI (Công cụ & Ghi chú) */}
-        <aside className="flex w-[20%] flex-col space-y-4 rounded-3xl bg-white/45 p-6 backdrop-md shadow-xl border border-white/20">
+        <aside className="flex w-[20%] flex-col space-y-4 rounded-3xl bg-white/60 p-6 backdrop-md shadow-xl border border-white/20">
           {/* Nút New chat đặt tuyệt đối hoặc điều chỉnh để không làm lệch hàng tiêu đề */}
           <div className="relative">
              

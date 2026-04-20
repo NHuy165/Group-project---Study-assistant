@@ -7,7 +7,7 @@ export const FilePreviewModal = ({ isOpen, onClose, doc }) => {
   }, [doc]);
 
 
-  if (!isOpen || !doc || !fileUrl) return null;
+  if (!isOpen || !doc) return null;
 
   const fileType = doc.file.type;
 
