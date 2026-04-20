@@ -102,7 +102,7 @@ export const useInteractions = () => {
         setError(null);
         try {
             const newInteraction = await api.createInteraction(input);
-            setInteractions(prevInteractions => [...prevInteractions, newInteraction]); // Cập nhật danh sách dựa trên danh sách cũ
+            setInteractions((prevInteractions) => [...prevInteractions, newInteraction]); // Cập nhật danh sách dựa trên danh sách cũ
         } catch (err) {
             const status = err.response?.status;
             const detail = err.response?.data?.detail;
