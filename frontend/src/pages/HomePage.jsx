@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BookOpenText,
   Calculator,
@@ -7,8 +8,10 @@ import {
   PlusCircle,
   Scroll,
   SparkleIcon,
+  Trash,
   UserCircle,
 } from "@phosphor-icons/react";
+import { useInteractions } from "../features/interactions/hooks/useInteractions";
 
 const accentColor = "#1d7bd8";
 
@@ -24,29 +27,43 @@ const palette = [
 ];
 
 export const HomePage = () => {
+  const navigate = useNavigate();
   const [noteTitle, setNoteTitle] = useState("");
   const [noteDescription, setNoteDescription] = useState("");
-  const [noteCards, setNoteCards] = useState([]);
+  const {
+    interactions,
+    isLoading,
+    error,
+    createInteraction,
+    deleteInteraction,
+  } = useInteractions();
 
-  const handleCreateNoteCard = (e) => {
+  const handleCreateNoteCard = async (e) => {
     e.preventDefault();
 
     const title = noteTitle.trim();
     const description = noteDescription.trim();
-    if (!title) return;
+    if (!title || !description) return;
 
-    const paletteItem = palette[noteCards.length % palette.length];
-    const newCard = {
-      id: crypto.randomUUID(),
-      title,
-      description: description || "Mô tả ngắn của sổ ghi chú",
-      Icon: paletteItem.Icon,
-      badgeClass: paletteItem.badgeClass,
-    };
+    const createdInteraction = await createInteraction({
+      name: title,
+      description,
+    });
+    if (!createdInteraction) return;
 
-    setNoteCards((prev) => [newCard, ...prev]);
     setNoteTitle("");
     setNoteDescription("");
+
+    navigate(`/interaction/${createdInteraction.id}`);
+  };
+
+  const handleDeleteInteraction = async (e, interactionId) => {
+    e.stopPropagation();
+    await deleteInteraction(interactionId);
+  };
+
+  const openInteraction = (interactionId) => {
+    navigate(`/interaction/${interactionId}`);
   };
 
   return (
@@ -137,32 +154,67 @@ export const HomePage = () => {
           </form>
 
           <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {noteCards.map((card) => (
-              <button
-                key={card.id}
-                type="button"
-                className="flex min-h-[126px] items-center gap-4 rounded-[18px] border border-[#8a8a8a] bg-white px-4 py-4 text-left shadow-[0_2px_0_rgba(255,255,255,0.9)_inset] transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-4 focus:ring-[#1d7bd8]/20"
-              >
+            {interactions.map((interaction, index) => {
+              const paletteItem = palette[index % palette.length];
+              const CurrentIcon = paletteItem.Icon;
+
+              return (
                 <div
-                  className={`flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-2xl ${card.badgeClass}`}
+                  key={interaction.id}
+                  className="relative min-h-[126px] rounded-[18px] border border-[#8a8a8a] bg-white px-4 py-4 text-left shadow-[0_2px_0_rgba(255,255,255,0.9)_inset] transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.1)]"
                 >
-                  <card.Icon size={30} weight="fill" color={accentColor} />
-                </div>
+                  <button
+                    type="button"
+                    onClick={() => openInteraction(interaction.id)}
+                    className="flex w-full items-center gap-4 focus:outline-none focus:ring-4 focus:ring-[#1d7bd8]/20"
+                  >
+                    <div
+                      className={`flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-2xl ${paletteItem.badgeClass}`}
+                    >
+                      <CurrentIcon
+                        size={30}
+                        weight="fill"
+                        color={accentColor}
+                      />
+                    </div>
 
-                <div className="min-w-0">
-                  <p className="max-w-[150px] text-[1.05rem] font-bold leading-tight text-[#4f4f4f] sm:max-w-none">
-                    {card.title}
-                  </p>
-                  <p className="mt-1 text-sm font-medium leading-snug text-[#7a7a7a]">
-                    {card.description}
-                  </p>
-                </div>
-              </button>
-            ))}
+                    <div className="min-w-0 pr-10">
+                      <p className="max-w-[150px] text-[1.05rem] font-bold leading-tight text-[#4f4f4f] sm:max-w-none">
+                        {interaction.name}
+                      </p>
+                      <p className="mt-1 text-sm font-medium leading-snug text-[#7a7a7a]">
+                        {interaction.description || "Mô tả ngắn của sổ ghi chú"}
+                      </p>
+                    </div>
+                  </button>
 
-            {noteCards.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteInteraction(e, interaction.id)}
+                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#ffe6e6] text-[#c63030] transition hover:bg-[#ffd5d5]"
+                    title="Xóa sổ"
+                  >
+                    <Trash size={16} weight="bold" />
+                  </button>
+                </div>
+              );
+            })}
+
+            {error && (
+              <div className="col-span-full rounded-[18px] border border-[#ffd1d1] bg-[#fff5f5] px-5 py-4 text-sm font-semibold text-[#b42b2b]">
+                {error}
+              </div>
+            )}
+
+            {!isLoading && interactions.length === 0 && (
               <div className="col-span-full rounded-[18px] border border-dashed border-[#b7cfd0] bg-white/55 px-5 py-10 text-center text-[#666]">
                 Chưa có sổ nào. Bé hãy tạo sổ đầu tiên ở phía trên nhé.
+              </div>
+            )}
+
+            {isLoading && (
+              <div className="col-span-full rounded-[18px] border border-[#b7cfd0] bg-white/55 px-5 py-10 text-center text-[#666]">
+                Đang tải danh sách sổ ghi chú...
               </div>
             )}
           </section>
