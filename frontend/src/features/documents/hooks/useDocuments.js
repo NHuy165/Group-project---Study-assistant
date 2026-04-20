@@ -44,14 +44,14 @@ export const useDocuments = (interactionId) => {
 
     // Hàm bắt đầu sửa: Gọi khi người dùng ấn "Chỉnh sửa" ngay tại tài liệu muốn chỉnh sửa
     const handleEditClick = (document) => {
-        setEditingId(document.id);              // Đánh dấu đang sửa tài liệu nào
+        setEditingID(document.id);              // Đánh dấu đang sửa tài liệu nào
         setDocumentName(document.name);         // Điền tên cũ vào Input
         setPageOffset(document.page_offset.toString()); // Điền offset cũ vào Input (chuyển về string)
     };
 
     // Hàm hủy sửa: Gọi khi người dùng ấn "Hủy"
     const cancelEdit = () => {
-        setEditingId(null);
+        setEditingID(null);
         setDocumentName('');
         setPageOffset('');
     };
@@ -231,6 +231,7 @@ export const useDocuments = (interactionId) => {
         error,
         documentName,
         pageOffset,
+        editingID,
 
         createDocument: handleSummit,
         updateDocument: handleUpdate,
@@ -239,6 +240,7 @@ export const useDocuments = (interactionId) => {
         handleDocumentNameChange,
         handlePageOffsetChange,
         handleEditClick,
-        cancelEdit
+        cancelEdit,
+        setError // Reset Error khi người dùng tắt thông báo
     };
 };
