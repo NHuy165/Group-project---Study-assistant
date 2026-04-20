@@ -1,16 +1,6 @@
-import axios from 'axios';
+import axiosClient from '../../../api/axiosClient';
 
-// Prefix chính xác từ main.py là /llm-response
-const API_URL = 'http://localhost:8000/llm-response';
-
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return {
-        headers: { 
-            Authorization: `Bearer ${token}` 
-        }
-    };
-};
+const PATH = '/llm-response';
 
 /**
  * Gửi câu hỏi cho AI
@@ -22,8 +12,7 @@ export const askLLM = async (interactionId, promptText) => {
     // chatInput phải khớp với LLMResponseInput (thường là field 'prompt')
     const chatInput = { prompt: promptText };
     
-    const response = await axios.post(`${API_URL}/${interactionId}/chat`, 
-        chatInput, getAuthHeader());
+    const response = await axiosClient.post(`${PATH}/${interactionId}/chat`, chatInput);
     return response.data;
 };
 
@@ -34,13 +23,10 @@ export const askLLM = async (interactionId, promptText) => {
 
 // parameter: interactionId; optional query parameter: limit (số lượng message gần nhất muốn lấy)
 export const readChat = async (interactionId, limit = null) => {
-    const config = { ...getAuthHeader() };
-    
-    if (limit) {
-        config.params = { limit };
-    }
 
     // Lưu ý: Có dấu / ở cuối ${interactionId}/ theo đúng backend router
-    const response = await axios.get(`${API_URL}/${interactionId}/`, config);
+    const response = await axiosClient.get(`${PATH}/${interactionId}/`, {
+        params: limit ? {limit} : {}
+    });
     return response.data;
 };
