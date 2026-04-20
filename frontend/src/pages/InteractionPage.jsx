@@ -8,7 +8,7 @@ import quizIcon from "../assets/icon/Quiz.svg"
 import { AddSourceModal } from "../components/AddSourceModal";
 import { FilePreviewModal } from "../components/FilePreviewModal";
 
-
+import { StairsLoader } from "../components/StairsLoader";
 
 export const InteractionPage = () => {
   // Tài liệu upload
@@ -32,6 +32,7 @@ export const InteractionPage = () => {
   { name: 'Quiz', icon: quizIcon, isSvg: true },
 ];
 
+
   // State quản lý tài liệu và ghi chú (để có thể cập nhật khi người dùng tương tác)
   // const [documents, setDocuments] = useState(initialDocuments);
   const [notes, setNotes] = useState(initialNotes);
@@ -42,6 +43,33 @@ export const InteractionPage = () => {
 
   const [editingId, setEditingId] = useState(null); // ID tài liệu đang sửa
   const [tempName, setTempName] = useState(""); // Tên tạm khi sửa
+
+  // State cho khung chat
+  const [messages, setMessages] = useState([]) // Danh sách tin nhắn
+  const [inputText, setInputText] = useState("") // Nội dung người dùng nhập
+  const [isLoading, setIsLoading] = useState(false) // Trạng thái chờ phản hồi
+
+  // Hàm giả gọi LLM (phải thay bằng API thật sau)
+  const handleSendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    const userMsg = { role: "user", content: inputText };
+    setMessages((prev) => [...prev, userMsg]); // Hiện tin nhắn người dùng ngay lập tức
+    setInputText(""); // Reset ô nhập
+    setIsLoading(true); // Bật trạng thái chờ
+
+    // Giả lập thời gian LLM xử lý (3 giây)
+    setTimeout(() => {
+      const aiMsg = { 
+        role: "ai", 
+        content: `Đây là câu trả lời mẫu từ LLM cho câu hỏi: "${userMsg.content}". Sau này nội dung này sẽ được trả về từ Backend của bạn.` 
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsLoading(false); // Tắt trạng thái chờ
+    }, 3000);
+  };
+
+
 
     // Hàm xử lý lưu tên mới
     const handleRename = (id) => {
@@ -199,23 +227,81 @@ export const InteractionPage = () => {
             </h1>
             <hr className="mx-auto w-full border-t border-gray-400/30" />
           </header>
+        <div className="flex-1 w-full overflow-y-auto mb-4 space-y-6 pr-2 custom-scrollbar flex flex-col pt-4">
+            {messages.length === 0 && !isLoading ? (
+                <div className="flex-1 w-full flex flex-col items-center justify-center text-gray-500/70 space-y-4">
+                    <span className="text-6xl opacity-20">✨</span>
+                    <p className="font-medium italic tracking-wide">Bắt đầu cuộc trò chuyện hoặc chọn một tài liệu...</p>
+                </div>
+            ) : (
+                <>
+                    {messages.map((msg, index) => (
+                        <div 
+                        key={index} 
+                        className={`flex items-end gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"} animate-in fade-in slide-in-from-bottom-4 duration-500`}
+                        >
+                        {/* AVATAR SINH ĐỘNG */}
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-lg border-2 ${
+                            msg.role === "user" ? "bg-blue-400 border-white" : "bg-yellow-400 border-white"
+                        }`}>
+                            {msg.role === "user" ? "👦" : "🤖"}
+                        </div>
 
-          <div className="flex-1 w-full flex items-center justify-center text-gray-600 font-medium italic">
-            <p>Bắt đầu cuộc trò chuyện hoặc chọn một tài liệu...</p>
-          </div>
-          
-          <footer className="w-full max-w-3xl mb-4 mt-auto">
+                        {/* BÓNG THOẠI CÓ ĐỘ NỔI (3D EFFECT) */}
+                        <div className={`relative max-w-[70%] px-6 py-4 rounded-[2rem] shadow-[0_8px_0_0_rgba(0,0,0,0.05)] border-2 text-lg font-medium leading-relaxed ${
+                            msg.role === "user" 
+                            ? "bg-[#4ecdc4] text-white border-[#3dbbb2] rounded-br-none" 
+                            : "bg-white text-gray-700 border-gray-100 rounded-bl-none"
+                        }`}>
+                            {msg.content}
+                            
+                            {/* Đuôi bóng thoại (Tail) */}
+                            <div className={`absolute bottom-0 w-4 h-4 ${
+                            msg.role === "user" 
+                            ? "-right-2 bg-[#4ecdc4] clip-path-right-tail" 
+                            : "-left-2 bg-white clip-path-left-tail"
+                            }`}></div>
+                        </div>
+                        </div>
+                    ))}
+
+                    {/* Hiệu ứng LOADING */}
+                    {isLoading && (
+                        <div className="flex items-end gap-3 flex-row animate-pulse">
+                        <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center text-2xl border-2 border-white shadow-lg">
+                            🤖
+                        </div>
+                        <div className="bg-[#FF758F] border-2 border-white/40 px-8 py-5 rounded-[2.5rem] rounded-bl-none shadow-[0_12px_0_0_#E94E77] flex flex-col items-center gap-3">
+                            <span className="text-white font-black text-xs uppercase tracking-widest italic opacity-90">
+                                Tớ đang tìm đáp án...
+                            </span>
+                            <StairsLoader />
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+          {/* Footer cho khung chat */}
+          <footer className="w-full max-w-3xl mx-auto">
             <div className="relative flex items-center">
-              <input
+            <input
                 type="text"
-                placeholder="Nhập câu hỏi của bạn tại đây..."
-                className="w-full rounded-full border border-gray-200 bg-white/90 px-6 py-4.5 text-[1.1rem] font-medium leading-tight text-[#333] placeholder-gray-400 shadow-lg outline-none transition focus:border-[#4ecdc4] focus:bg-white"
-              />
-              <button className="absolute right-4.5 rounded-full bg-[#4ecdc4] p-3 text-white transition hover:scale-110 hover:bg-[#45b7aa]">
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                placeholder="Nhập câu hỏi về tài liệu của bạn..."
+                className="w-full rounded-full border border-gray-200 bg-white/90 px-6 py-4.5 text-[1.1rem] shadow-lg outline-none focus:border-[#4ecdc4]"
+            />
+            <button 
+                onClick={handleSendMessage}
+                className="absolute right-4.5 rounded-full bg-[#4ecdc4] p-3 text-white transition hover:scale-110 active:scale-95 disabled:grayscale"
+                disabled={isLoading}
+            >
                 <span className="text-xl">✈️</span>
-              </button>
+            </button>
             </div>
-          </footer>
+        </footer>
 
           {/* Ở dưới cùng, chữ nghiêng */}
           <div className="w-full text-center text-xs text-gray-600 mt-2 italic">

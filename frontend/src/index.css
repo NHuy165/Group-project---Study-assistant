@@ -36,3 +36,49 @@ body {
     @apply !bg-white !opacity-100;
   }
 }
+/* Backdrop Blur cho khung chat */
+@layer utilities {
+  .glass_card {
+    @apply bg-white/40 backdrop-blur-md border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)];
+  }
+  .user-glass {
+    @apply bg-[#4ecdc4]/30 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+}
+
+/* Hiệu ứng Loading khi chờ câu trả lời */
+@theme {
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  --animate-shimmer: shimmer 3s infinite linear;
+}
+
+.skeleton-box {
+  @apply relative overflow-hidden bg-white/20 rounded-xl;
+  background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+
+
+@keyframes ball-parabolic-jump {
+  0% { transform: translate(0, 0) scale(1.1, 0.8); } /* Bắt đầu: đang bị nén */
+  10% { transform: translate(12px, -50px) scale(0.9, 1.1); } 
+  20% { transform: translate(32px, -10px) scale(1.1, 0.8); } /* Chạm Bậc 2 */
+  35% { transform: translate(48px, -50px) scale(0.9, 1.1); } 
+  50% { transform: translate(64px, -20px) scale(1.1, 0.8); } /* Chạm Bậc 3 */
+  65% { transform: translate(80px, -45px) scale(0.9, 1.1); } 
+  80% { transform: translate(96px, -30px) scale(1.1, 0.8); } /* Chạm Bậc 4 */
+  92% { transform: translate(48px, -70px) scale(0.9, 1.1); } /* Nhảy vọt về */
+  100% { transform: translate(0, 0) scale(1.1, 0.8); }
+}
+
+/* Hiệu ứng nén và nảy  */
+@keyframes step-impact {
+  0%, 15% { transform: scaleY(1); filter: brightness(1); }
+  20% { transform: scaleY(0.35); filter: brightness(1.3); } /* Lún sâu nhất */
+  26% { transform: scaleY(1.05); filter: brightness(1); }    /* Nảy quá đà một chút để nhìn thật hơn */
+  30%, 100% { transform: scaleY(1); }
+}
