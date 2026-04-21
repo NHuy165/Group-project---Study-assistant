@@ -6,10 +6,10 @@ export const useInteractions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [interactionName, setInteractionName] = useState("Tên cuộc trò chuyện");
+  const [interactionName, setInteractionName] = useState("");
   const [interactionDescription, setInteractionDescription] = useState(
-    "Mô tả nội dung cuộc trò chuyện",
-  );
+    "",
+);
 
   const [editingInteractionID, setEditingInteractionID] = useState(null);
 
