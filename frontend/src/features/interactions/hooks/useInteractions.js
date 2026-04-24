@@ -11,6 +11,8 @@ export const useInteractions = () => {
 
     const [editingInteractionID, setEditingInteractionID] = useState(null);
 
+    const [activeInteractionId, setActiveInteractionId] = useState(null); // State lưu ID của interaction đang mở để truyền xuống useDocuments và useChat
+
     // Hiển thị tên interaction khi người dùng nhập: Gọi 2 lần: khi create và khi update
     const handleInteractionNameChange = (e) => {
         setInteractionName(e.target.value);
@@ -70,8 +72,14 @@ export const useInteractions = () => {
         setIsLoading(true);
         setError(null);
         try {
-        const data = await api.readInteractions();
-        setInteractions(data);
+            const data = await api.readInteractions();
+            setInteractions(data);
+
+            // Nếu có interaction nào đó đã tồn tại và chưa có interaction nào được chọn (activeInteractionId), thì tự động chọn interaction đầu tiên trong danh sách
+            if (data.length > 0 && !activeInteractionId) {
+                setActiveInteractionId(data[0].id);
+            }
+
         } catch (err) {
         const status = err.response?.status;
         const detail = err.response?.data?.detail;
@@ -250,6 +258,9 @@ export const useInteractions = () => {
         cancelEditInteractionClick,
         handleUpdateInteractionClick, // updateInteraction
         createInteraction,
+
+        activeInteractionId, // Trả về để InteractionPage có thể dùng
+        setActiveInteractionId,
         readInteractions,
         deleteInteraction,
         setError // Reset Error khi người dùng tắt thông báo

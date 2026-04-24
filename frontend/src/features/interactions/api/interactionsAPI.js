@@ -25,5 +25,3 @@ export const deleteInteraction = async (interactionId) => {
     const response = await axiosClient.delete(`${PATH}/${interactionId}`);
     return response.data;
 };
-
-

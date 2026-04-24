@@ -9,7 +9,7 @@ export const FilePreviewModal = ({ isOpen, onClose, doc }) => {
 
   if (!isOpen || !doc) return null;
 
-  const fileType = doc.file.type;
+  const fileType = doc.file?.type || "";
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-10">
