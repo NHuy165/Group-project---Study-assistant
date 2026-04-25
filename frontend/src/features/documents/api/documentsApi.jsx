@@ -2,30 +2,30 @@ import axiosClient from '../../../api/axiosClient';
 
 const PATH = '/document';
 
-// POST: parameter: interactionId; body: file, documentInput (metadata)
+// POST: parameter: interactionId; body: file, name, description
 export const saveDocument = async (interactionId, file, documentInput) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('name', documentInput.name);
+    formData.append('description', documentInput.description || '');
 
     const response = await axiosClient.post(
         `${PATH}/${interactionId}/upload`, 
         formData, 
         {
-            params: documentInput, // Truyền metadata của document qua query string
-            // Để Axios tự xử lý Content-Type cho FormData
             headers: { 'Content-Type': 'multipart/form-data' }
         }
     );
     return response.data;
 };
 
-// GET: parameter: interactionId
+// GET: parameter: interactionId - THÊM / CUỐI
 export const readDocuments = async (interactionId) => {
-    const response = await axiosClient.get(`${PATH}/${interactionId}`);
+    const response = await axiosClient.get(`${PATH}/${interactionId}/`);  // ✅ Thêm /
     return response.data;
 };
 
-// PATCH: parameter: documentId; body: updateData (có thể là file mới hoặc metadata mới)
+// PATCH: parameter: documentId
 export const updateDocument = async (documentId, updateData) => {
     const response = await axiosClient.patch(`${PATH}/${documentId}`, updateData);
     return response.data;

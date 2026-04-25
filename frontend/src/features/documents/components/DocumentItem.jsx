@@ -1,57 +1,80 @@
-import React from "react";
+// src/features/documents/components/DocumentItem.jsx
+import React, { useState } from "react";
+import { getFileIcon } from "../../interactions/utils/fileUtils";
+import { DocumentDetailModal } from "./DocumentDetailModal";
 
 export const DocumentItem = ({ 
-  document, 
-  onRename, 
-  onDelete, 
-  onPreview, 
-  onCheck,
-  isSelected,
-  isEditing,
-  tempName,
-  setTempName,
-  setEditingId
+  document, onRename, onDelete, onCheck, onUpdateDescription,
+  isSelected, isEditing, tempName, setTempName, setEditingId
 }) => {
-  return (
-    <div className="group relative flex items-center justify-between rounded-2xl p-3 transition-all hover:bg-white/50 hover:shadow-sm">
-      <div className="flex items-center gap-3 overflow-hidden">
-        {/* Ô tích chọn tài liệu */}
-        <input 
-          type="checkbox" 
-          checked={isSelected}
-          onChange={() => onCheck(document.id)}
-          className="h-4 w-4 rounded-full border-gray-300 text-[#4ecdc4] focus:ring-[#4ecdc4] cursor-pointer"
-        />
+  
+  const [showModal, setShowModal] = useState(false);
+  const isUploading = document.isUploading;
+  
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") onRename(document.id);
+    if (e.key === "Escape") setEditingId(null); 
+  };
 
-        {/* Click vào Icon 📂 để mở xem trước */}
-        <div 
-          onClick={() => onPreview(document)} 
-          className="cursor-pointer text-xl hover:scale-110 transition-transform"
-        >
-          {document.name.toLowerCase().endsWith('.pdf') ? "📄" : "🖼️"}
+  return (
+    <>
+      <div className={`flex items-center justify-between rounded-2xl px-4 py-3 shadow-sm transition border ${
+        isEditing ? "bg-white border-[#4ecdc4]" : "bg-white/60 hover:shadow-md hover:bg-white/80"
+      }`}>
+        
+        <div className="flex items-center space-x-3 flex-1 overflow-hidden">
+          {isUploading ? (
+            <div className="h-5 w-5 rounded-full border-2 border-gray-200 border-t-[#4ecdc4] animate-spin"></div>
+          ) : (
+            <input 
+              type="checkbox" 
+              checked={isSelected}
+              onChange={() => onCheck(document.id)}
+              className="h-5 w-5 rounded-md border-2 border-gray-300 accent-[#4ecdc4] cursor-pointer" 
+            />
+          )}
+
+          {/* Tên file hoặc Ô nhập liệu */}
+          {isEditing ? (
+            <input
+              autoFocus
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              onBlur={() => onRename(document.id)}
+              onKeyDown={handleKeyDown}
+              className="font-semibold text-gray-700 bg-transparent outline-none border-b border-[#4ecdc4] w-full"
+            />
+          ) : (
+            <span 
+              onDoubleClick={() => setEditingId(document)} 
+              className="font-semibold text-gray-700 truncate max-w-[150px] cursor-pointer select-none"
+              title="Nhấp đúp để đổi tên"
+            >
+              {document.name}
+            </span>
+          )}
         </div>
 
-        {isEditing ? (
-          <input
-            autoFocus
-            value={tempName}
-            onChange={(e) => setTempName(e.target.value)}
-            onBlur={() => onRename(document.id)}
-            onKeyDown={(e) => e.key === "Enter" && onRename(document.id)}
-            className="rounded-lg border border-[#4ecdc4] bg-white px-2 py-1 text-sm outline-none w-32"
-          />
-        ) : (
-          <span className="truncate text-sm font-medium text-gray-700">
-            {document.name}
-          </span>
-        )}
+        {/* Nút chức năng - Click vào icon để hiện modal */}
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => setShowModal(true)}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-all hover:scale-110"
+            title="Xem chi tiết"
+          >
+            <span className="text-xl">{getFileIcon ? getFileIcon(document.name) : "📄"}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Các nút chức năng */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => setEditingId(document.id)} className="p-1 hover:text-blue-500">✏️</button>
-        <button onClick={() => onDelete(document.id)} className="p-1 hover:text-red-500">🗑️</button>
-      </div>
-    </div>
+      {/* Modal chi tiết tài liệu */}
+      <DocumentDetailModal
+        document={document}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onRename={onRename}
+        onDelete={onDelete}
+      />
+    </>
   );
 };

@@ -9,7 +9,6 @@ import { SourceSidebar } from "../features/interactions/components/SourceSidebar
 import { ChatArea } from "../features/chat/components/ChatArea";
 import { ToolsSidebar } from "../features/interactions/components/ToolsSidebar";
 import { AddSourceModal } from "../features/documents/components/AddSourceModal";
-import { FilePreviewModal } from "../features/documents/components/FilePreviewModal";
 import backgroundImg from "../assets/background.png";
 
 export const InteractionPage = () => {
@@ -22,15 +21,14 @@ export const InteractionPage = () => {
 
   // 2. Quản lý Tài liệu (Chỉ lấy các biến liên quan đến File)
   const {
-    documents, 
-    selectedDocIds,
-    uploadSingleFile, // Dùng hàm mới đã đổi tên
+    documents, selectedDocIds, uploadMultipleFiles,
     updateDocument: handleRenameDoc,
     documentName: tempName,
     setDocumentName: setTempName,
     editingID: editingDocId,
     setEditingID: setEditingDocId,
     handleDocCheck,
+    deleteDocument,
     isLoading: isDocsLoading,
   } = useDocuments(activeInteractionId);
 
@@ -43,12 +41,6 @@ export const InteractionPage = () => {
     isLoading: isChatLoading,
   } = useChat(activeInteractionId);
 
-  // Hàm xử lý upload nhiều file: Nhận mảng file từ AddSourceModal và gọi uploadSingleFile cho từng file
-  const handleUploadFiles = async (filesArray) => {
-  for (const file of filesArray) {
-    await uploadSingleFile(file); // Gọi hàm upload từng cái từ useDocuments
-  }
-};
 
   // State UI
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,6 +49,23 @@ export const InteractionPage = () => {
 
   // Gộp tất cả trạng thái loading
   const isLoading = isChatLoading || isDocsLoading || isInteractionLoading;
+
+  const handleStartEdit = (doc) => {
+    if (!doc) {
+       setEditingDocId(null);
+       return;
+    }
+    setEditingDocId(doc.id);
+    setTempName(doc.name); 
+  };
+
+  const handleDeleteDoc = async (docId) => {
+        try {
+            await deleteDocument(docId);
+        } catch (err) {
+            console.error("Lỗi xóa tài liệu:", err);
+        }
+    };
 
   return (
     <div className="flex h-screen w-screen flex-col bg-cover bg-center bg-no-repeat px-10 pb-10 pt-28 font-sans text-gray-800 shadow-inner"
@@ -80,11 +89,12 @@ export const InteractionPage = () => {
           selectedDocIds={selectedDocIds}
           onAddClick={() => setIsModalOpen(true)}
           editingId={editingDocId} 
-          setEditingId={setEditingDocId}
+          setEditingId={handleStartEdit}
           tempName={tempName} 
           setTempName={setTempName}
           onRename={handleRenameDoc} 
           onDocCheck={handleDocCheck}
+          onDelete={handleDeleteDoc}
           onPreview={(doc) => { 
             setSelectedDoc(doc); 
             setIsPreviewOpen(true); 
@@ -106,14 +116,9 @@ export const InteractionPage = () => {
       <AddSourceModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onAdd={handleUploadFiles} 
+        onAdd={uploadMultipleFiles} 
       />
       
-      <FilePreviewModal 
-        isOpen={isPreviewOpen} 
-        onClose={() => setIsPreviewOpen(false)} 
-        doc={selectedDoc} 
-      />
     </div>
   );
 };

@@ -1,9 +1,29 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
   const [files, setFiles] = useState([]);
   const [activeTab, setActiveTab] = useState("upload");
+  const [description, setDescription] = useState(""); 
   const fileInputRef = useRef(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Cleanup URL khi files thay đổi hoặc modal đóng
+  useEffect(() => {
+    if (files.length === 1) {
+      const fileType = files[0].type;
+      if (fileType.startsWith("image/") || fileType.startsWith("video/") || fileType.startsWith("audio/") || fileType === "application/pdf") {
+        setPreviewUrl(URL.createObjectURL(files[0]));
+      } else {
+        setPreviewUrl(null);
+      }
+    } else {
+      setPreviewUrl(null);
+    }
+
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [files]);
 
   if (!isOpen) return null;
 
@@ -16,26 +36,25 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const renderPreview = (file) => {
+  const renderPreview = (file, url) => {
     const fileType = file.type;
-    const fileUrl = URL.createObjectURL(file);
 
     if (fileType.startsWith("image/")) {
-      return <img src={fileUrl} alt="preview" className="h-full w-full object-contain rounded-2xl" />;
+      return <img src={url} alt="preview" className="h-full w-full object-contain rounded-2xl" />;
     }
     if (fileType.startsWith("video/")) {
-      return <video controls src={fileUrl} className="h-full w-full rounded-2xl bg-black" />;
+      return <video controls src={url} className="h-full w-full rounded-2xl bg-black" />;
     }
     if (fileType.startsWith("audio/")) {
       return (
         <div className="flex flex-col items-center gap-4">
           <span className="text-6xl animate-bounce">🎵</span>
-          <audio controls src={fileUrl} className="w-64" />
+          <audio controls src={url} className="w-64" />
         </div>
       );
     }
     if (fileType === "application/pdf") {
-      return <iframe src={fileUrl} className="w-full h-full rounded-2xl border-none" title="pdf" />;
+      return <iframe src={url} className="w-full h-full rounded-2xl border-none" title="pdf" />;
     }
 
     return (
@@ -64,9 +83,9 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
           </h2>
         </header>
 
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} hidden multiple />
+        <input type="file" ref={fileInputRef} accept=".pdf,image/*,audio/*,video/*" onChange={handleFileChange} hidden multiple />
 
-        {/* --- 1. DÃY NÚT CHỨC NĂNG (Đã mang trở lại) --- */}
+        {/* --- 1. DÃY NÚT CHỨC NĂNG --- */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { id: 'upload', icon: '☁️', label: 'Tải tệp lên' },
@@ -102,26 +121,18 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
             <div className="space-y-4">
               {/* Thanh thông tin: Tên | Dung lượng | Xóa */}
               <div className="flex items-center justify-between bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100 shadow-sm">
-  
-                {/* Bên trái: Icon và Tên file */}
                 <div className="flex items-center gap-3 overflow-hidden">
                   <span className="text-lg">📂</span>
-                  {/* SỬA: file.name -> files[0].name */}
                   <span className="font-bold text-slate-700 truncate max-w-[250px]">
                     {files[0].name}
                   </span>
                 </div>
                 
-                {/* Bên phải: Dung lượng và Nút xóa (Nằm ngang hàng) */}
                 <div className="flex items-center gap-6">
-                  {/* Ô hiển thị dung lượng */}
-                  {/* SỬA: file.size -> files[0].size */}
                   <span className="text-[10px] font-black text-slate-400 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-50">
                     {(files[0].size / 1024 / 1024).toFixed(2)} MB
                   </span>
 
-                  {/* Nút xóa */}
-                  {/* SỬA: removeFile(index) -> removeFile(0) */}
                   <button 
                     onClick={() => removeFile(0)} 
                     className="text-red-500 font-bold text-sm hover:text-red-700 transition-colors"
@@ -133,7 +144,21 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
 
               {/* Ô XEM TRƯỚC TO */}
               <div className="w-full h-[250px] bg-slate-50/30 rounded-[2rem] flex items-center justify-center overflow-hidden border border-slate-100 shadow-inner">
-                {renderPreview(files[0])}
+                {renderPreview(files[0], previewUrl)}
+              </div>
+
+              {/* ✅ Ô MÔ TẢ - CHỈ HIỆN KHI ĐÃ CHỌN FILE */}
+              <div className="mt-4">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">
+                  Mô tả (tùy chọn)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Nhập mô tả cho tài liệu..."
+                  className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:border-[#4ecdc4] focus:ring-2 focus:ring-[#4ecdc4]/20 resize-none"
+                  rows={3}
+                />
               </div>
             </div>
           ) : (
@@ -145,7 +170,6 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                   key={i} 
                   className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-slate-300 transition-all animate-in slide-in-from-bottom-1"
                 >
-                  {/* Cụm bên trái: Icon + Tên file */}
                   <div className="flex items-center gap-3 overflow-hidden">
                     <span className="text-slate-400 text-sm">📄</span>
                     <span className="font-bold text-slate-700 truncate text-sm max-w-[200px]">
@@ -153,14 +177,11 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                     </span>
                   </div>
 
-                  {/* Cụm bên phải: Dung lượng + Nút gỡ (Ngang hàng giống bản 1 tệp) */}
                   <div className="flex items-center gap-6">
-                    {/* Ô dung lượng: Dùng đúng style 'xịn' của bản 1 tệp */}
                     <span className="text-[10px] font-black text-slate-400 bg-slate-50/50 px-3 py-1.5 rounded-lg shadow-sm border border-slate-100">
                       {(f.size / 1024 / 1024).toFixed(2)} MB
                     </span>
 
-                    {/* Nút gỡ bỏ */}
                     <button 
                       onClick={() => removeFile(i)} 
                       className="text-red-400 hover:text-red-600 font-bold text-xs transition-colors"
@@ -171,6 +192,20 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                 </div>
               ))}
               <button onClick={() => fileInputRef.current.click()} className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 font-bold hover:bg-slate-50 hover:text-slate-400 transition-all">+ Thêm tệp khác</button>
+              
+              {/* ✅ Ô MÔ TẢ CHO NHIỀU FILE */}
+              <div className="mt-4">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">
+                  Mô tả chung (tùy chọn)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Nhập mô tả chung cho các tài liệu..."
+                  className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:border-[#4ecdc4] focus:ring-2 focus:ring-[#4ecdc4]/20 resize-none"
+                  rows={3}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -179,10 +214,15 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
         <div className="mt-10 flex justify-end">
           <button 
             onClick={() => { 
-              // SỬA TẠI ĐÂY: Gửi nguyên mảng 'files' (chứa dữ liệu thật) đi
-              onAdd(files); 
+              const documentInput = { 
+                name: files[0]?.name, 
+                description: description 
+              };
+              onAdd(files, documentInput); 
               
-              setFiles([]); // Xóa danh sách file trong modal sau khi thêm thành công
+              setFiles([]);
+              setDescription("");
+              setPreviewUrl(null);
               onClose(); 
             }}
             disabled={files.length === 0}
