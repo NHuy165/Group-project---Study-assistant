@@ -37,16 +37,30 @@ export const useDocuments = (interactionId) => {
     };
 
     const uploadMultipleFiles = async (files, input) => {
-        for (const file of files) {
-            const tempDoc = { id: `temp-${Date.now()}`, name: file.name, isUploading: true };
-            setDocuments(prev => [...prev, tempDoc]);
-            try {
-                const newDoc = await api.saveDocument(interactionId, file, input);
-                setDocuments(prev => prev.map(d => d.isUploading && d.name === file.name ? newDoc : d));
-            } catch (err) { 
-                setDocuments(prev => prev.filter(d => !d.isUploading)); 
-            }
-        }
+        // 1. Đưa tất cả file vào danh sách hiển thị UI trạng thái "isUploading" ngay lập tức
+        const tempDocs = files.map((file, index) => ({ 
+            id: `temp-${Date.now()}-${index}`, 
+            name: file.name, 
+            isUploading: true 
+        }));
+        
+        setDocuments(prev => [...prev, ...tempDocs]);
+
+        // 2. Chạy tải lên SONG SONG tất cả các file cùng một lúc (All at once)
+        await Promise.all(
+            files.map(async (file) => {
+                try {
+                    const newDoc = await api.saveDocument(interactionId, file, input);
+                    // Cập nhật lại UI khi file này tải xong
+                    setDocuments(prev => prev.map(d => 
+                        (d.isUploading && d.name === file.name) ? newDoc : d
+                    ));
+                } catch (err) { 
+                    // Nếu file này lỗi, xóa file này khỏi danh sách đang tải
+                    setDocuments(prev => prev.filter(d => !(d.isUploading && d.name === file.name))); 
+                }
+            })
+        );
     };
 
     const readDocuments = useCallback(async () => {
