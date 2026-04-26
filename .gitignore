@@ -207,7 +207,6 @@ marimo/_lsp/
 __marimo__/
 
 # Custom:
-.vscode
 node_modules/
 NEED_READ_FILES_GO_HERE/
 structure.txt

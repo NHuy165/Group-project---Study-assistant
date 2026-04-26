@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 from psycopg.abc import NoneType
+=======
+>>>>>>> ui-tailwind-port
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -60,6 +63,7 @@ async def save_multiple_choice_questions(
     if n_items == 0:
         return
 
+<<<<<<< HEAD
     assert study_activity.total_score is not None
     question_score = study_activity.total_score / n_items
 
@@ -67,6 +71,12 @@ async def save_multiple_choice_questions(
         # Saving the item
         exercise_item = ExerciseItem(
             max_score=question_score,
+=======
+    for i_item in range(n_items):
+        # Saving the item
+        exercise_item = ExerciseItem(
+            max_score=study_activity.total_score / n_items,
+>>>>>>> ui-tailwind-port
             question=specific_activity_data.activity_items[i_item].question,
             study_activity=study_activity,
         )
@@ -233,8 +243,13 @@ async def create_study_activity(
 
     if study_activity_input.activity_type == StudyActivityType.EXERCISE:
         query = query.options(
+<<<<<<< HEAD
             selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
                 ExerciseItem.contents  # type: ignore
+=======
+            selectinload(StudyActivity.exercise_items).selectinload(
+                ExerciseItem.contents
+>>>>>>> ui-tailwind-port
             )
         )
 
@@ -242,6 +257,7 @@ async def create_study_activity(
         assert study_activity is not None
 
         items_validator = TypeAdapter(list[ExerciseItemOutput])
+<<<<<<< HEAD
         assert study_activity.id is not None
 
         study_activity_output_complete = StudyActivityOutputComplete(
@@ -256,19 +272,28 @@ async def create_study_activity(
             is_submitted=study_activity.is_submitted,
             submitted_at=study_activity.submitted_at,
             total_score=study_activity.total_score,
+=======
+        study_activity_output_complete = StudyActivityOutputComplete(
+            **study_activity,
+>>>>>>> ui-tailwind-port
             items=items_validator.validate_python(study_activity.exercise_items),
         )
 
         return study_activity_output_complete
     else:
         query = query.options(
+<<<<<<< HEAD
             selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents)  # type: ignore
+=======
+            selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents)
+>>>>>>> ui-tailwind-port
         )
 
         study_activity = (await session.execute(query)).scalars().first()
         assert study_activity is not None
 
         items_validator = TypeAdapter(list[ReviewItemOutput])
+<<<<<<< HEAD
 
         assert study_activity.id is not None
 
@@ -284,6 +309,10 @@ async def create_study_activity(
             is_submitted=study_activity.is_submitted,
             submitted_at=study_activity.submitted_at,
             total_score=study_activity.total_score,
+=======
+        study_activity_output_complete = StudyActivityOutputComplete(
+            **study_activity,
+>>>>>>> ui-tailwind-port
             items=items_validator.validate_python(study_activity.review_items),
         )
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 
-from backend.src.core.dependencies import InteractionDep, SessionDep, UserDep
+from backend.src.core.database import SessionDep
+from backend.src.core.dependencies import InteractionDep, UserDep
 from backend.src.exceptions.core import Responses
 from backend.src.models_schema.note import NoteInput, NoteOutput, NoteUpdate
 from backend.src.services import note
@@ -62,7 +63,6 @@ async def read_all_notes(
     "/{note_id}",
     response_model=NoteOutput,
     responses={
-        400: Responses.RESPONSE_400_BAD_REQUEST,
         401: Responses.RESPONSE_401_UNAUTHORIZED,
         404: Responses.RESPONSE_404_NOT_FOUND,
     },

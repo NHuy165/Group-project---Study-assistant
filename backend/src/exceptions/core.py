@@ -1,9 +1,7 @@
 from enum import Enum
 
-from fastapi import status
 from pydantic import BaseModel
 
-status.HTTP_500_INTERNAL_SERVER_ERROR
 # ----- SCHEMAS ----- #
 
 
@@ -83,11 +81,6 @@ class Responses:
     RESPONSE_422_UNPROCESSABLE_CONTENT = {
         "model": ExceptionResponse,
         "description": "Request validation error.",
-    }
-
-    RESPONSE_500_INTERNAL_SERVER_ERROR = {
-        "model": ExceptionResponse,
-        "description": "Internal server error.",
     }
 
 

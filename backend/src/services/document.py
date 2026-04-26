@@ -5,14 +5,20 @@ from sqlmodel import select
 from backend.src.exceptions.core import ExceptionNotFound_404, ExceptionRequest_400
 from backend.src.models_schema.document import Document, DocumentInput, DocumentUpdate
 from backend.src.models_schema.interaction import Interaction
-from backend.src.models_schema.miscellaneous.enums import DocumentType
 from backend.src.models_schema.user import User
-from backend.src.RAG.chunking.base import DocumentExtractor
-from backend.src.RAG.chunking.image import ImageExtractor
-from backend.src.RAG.chunking.PDF import PdfExtractor
-from backend.src.RAG.chunking.text import TextExtractor
 
 # ----- CREATE ----- #
+
+
+def verify_pdf(file: UploadFile):
+    if file.content_type != "application/pdf":
+        raise ExceptionRequest_400("Invalid PDF file.")
+
+    header = file.file.read(5)
+    file.file.seek(0)
+
+    if header != b"%PDF-":
+        raise ExceptionRequest_400("Invalid PDF file.")
 
 
 async def save_document(
@@ -21,55 +27,21 @@ async def save_document(
     interaction: Interaction,
     document_input: DocumentInput,
 ) -> Document:
+    verify_pdf(file)
 
-    EXTRACTORS: dict[DocumentType, type[DocumentExtractor]] = {
-        DocumentType.PDF: PdfExtractor,
-        DocumentType.IMAGE: ImageExtractor,
-        DocumentType.TEXT: TextExtractor,
-    }
-
-    selected_type = None
-    selected_extractor = None
-
-    for doc_type, extractor in EXTRACTORS.items():
-        if extractor.verify(file):
-            selected_type = doc_type
-            selected_extractor = extractor
-            break
-
-    if selected_type is None or selected_extractor is None:
-        raise ExceptionRequest_400(
-            "Invalid file format.\nAllowed formats are:\n- PDF\n- JPEG, PNGM, WEBP\n- Text files\nPlease recheck file extension and file contents."
-        )
+    assert file.filename is not None
 
     if document_input.name is None:
-        name = file.filename if file.filename else ""
+        name = file.filename
     else:
         name = document_input.name
 
-    page_starts_at = document_input.page_starts_at
-    if selected_type not in (DocumentType.PDF):
-        page_starts_at = 0
-
-    # Saves document
     document = Document(
-        name=name,
-        interaction=interaction,
-        page_starts_at=page_starts_at,
-        type=doc_type,
+        name=name, interaction=interaction, page_offset=document_input.page_offset
     )
 
     session.add(document)
     await session.commit()
-    await session.refresh(document)
-
-    # Saves document contents
-    await selected_extractor.extract(
-        session=session,
-        file=file,
-        document=document,
-    )
-
     await session.refresh(document)
 
     return document
@@ -118,10 +90,6 @@ async def update_document(
 
     # Update logic
     update_data = document_update.model_dump(exclude_unset=True)
-
-    if document.type == DocumentType.IMAGE:
-        update_data["page_starts_at"] = 0
-
     document.sqlmodel_update(update_data)
 
     await session.commit()
