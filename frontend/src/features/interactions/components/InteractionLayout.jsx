@@ -1,20 +1,22 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import backgroundImg from "../../../assets/background.png";
+import { ThemeWrapper, useTheme } from "../../../components/theme/ThemeWrapper";
 
-export const InteractionLayout = ({ 
-  children, 
-  onNewChat, 
-  headerTitle = "EduSpark",
-  modals 
-}) => {
+// Tách phần nội dung ra riêng để có thể sử dụng hook useTheme() từ Context
+const InteractionContent = ({ children, onNewChat, headerTitle = "EduSpark", modals }) => {
+  const { isNight } = useTheme(); // Lấy trạng thái từ ThemeWrapper
+
+  // Adaptive colors
+  const logoColor = isNight ? "#a8c4ff" : "#f97316";
+  const btnBg = isNight ? "rgba(30,50,100,0.55)" : "rgba(255,255,255,0.60)";
+  const btnText = isNight ? "#c8d8ff" : "#374151";
+  const btnHover = isNight ? "rgba(50,80,160,0.75)" : "rgba(255,255,255,1)";
+
   return (
-    <div 
-      className="flex h-screen w-screen flex-col bg-cover bg-center bg-no-repeat px-10 pb-10 pt-28 font-sans text-gray-800 shadow-inner"
-      style={{ backgroundImage: `url(${backgroundImg})` }}
-    >
-      {/* Logo với hiệu ứng chạy màu toàn bộ văn bản */}
-      <Link 
+    // Đưa các class căn lề (padding) đặc thù của trang Interaction vào đây
+    <div className="relative flex h-full w-full flex-col px-10 pb-10 pt-28">
+      {/* Logo */}
+      <Link
         to="/dashboard"
         className="absolute left-10 top-10 z-50 text-4xl font-black tracking-tight drop-shadow-md transition-transform hover:scale-105 active:scale-95"
       >
@@ -23,18 +25,36 @@ export const InteractionLayout = ({
         </span>
       </Link>
 
-      <button 
-        onClick={onNewChat} 
-        className="absolute right-10 top-10 z-50 rounded-full bg-white/60 px-6 py-2.5 text-sm font-bold shadow-md backdrop-blur-md transition hover:scale-105 active:scale-95 text-gray-700 hover:bg-white"
+      {/* New Chat button */}
+      <button
+        onClick={onNewChat}
+        className="absolute right-10 top-10 z-50 rounded-full px-6 py-2.5 text-sm font-bold shadow-md backdrop-blur-md transition hover:scale-105 active:scale-95"
+        style={{
+          background: btnBg,
+          color: btnText,
+          border: isNight ? "1px solid rgba(100,140,255,0.3)" : "1px solid rgba(255,255,255,0.4)",
+          transition: "background 0.5s ease, color 0.5s ease, border 0.5s ease",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = btnHover)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = btnBg)}
       >
         + New chat
       </button>
-      
+
       <main className="flex h-full w-full space-x-6 overflow-hidden">
         {children}
       </main>
 
       {modals}
     </div>
+  );
+};
+
+// Component xuất ra ngoài
+export const InteractionLayout = (props) => {
+  return (
+    <ThemeWrapper showToggle={true}>
+      <InteractionContent {...props} />
+    </ThemeWrapper>
   );
 };
