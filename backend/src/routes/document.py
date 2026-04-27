@@ -1,16 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Form, Query, UploadFile, status
+from fastapi import APIRouter, Query, UploadFile, status
 
-from backend.src.core.database import SessionDep
-from backend.src.core.dependencies import InteractionDep, UserDep
+from backend.src.core.dependencies import InteractionDep, SessionDep, UserDep
 from backend.src.exceptions.core import Responses
 from backend.src.models_schema.document import (
     DocumentInput,
     DocumentOutput,
     DocumentUpdate,
 )
-from backend.src.services import document, document_chunk
+from backend.src.services import document
 
 router = APIRouter()
 
@@ -39,11 +38,6 @@ async def save_document(
     """
     document_output = await document.save_document(
         session, file, interaction, document_input
-    )
-    await document_chunk.save_document_chunks(
-        session,
-        file,
-        document_output,
     )
 
     await session.refresh(document_output)
@@ -81,6 +75,7 @@ async def read_all_documents(
     "/{document_id}",
     response_model=DocumentOutput,
     responses={
+        400: Responses.RESPONSE_400_BAD_REQUEST,
         401: Responses.RESPONSE_401_UNAUTHORIZED,
         404: Responses.RESPONSE_404_NOT_FOUND,
     },

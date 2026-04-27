@@ -13,8 +13,11 @@ python-dotenv
 # Testing
 pytest
 pytest_asyncio
+debugpy
 
 # AI and RAG
 google-genai
+ollama
 pypdf
 pgvector
+langchain-text-splitters
