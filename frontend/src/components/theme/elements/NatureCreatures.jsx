@@ -267,6 +267,143 @@ export const GoldenDust = ({ visible }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════
+   LÁ RƠI THEO GIÓ
+═══════════════════════════════════════════════════════════════════ */
+export const FallingLeaves = ({ visible, cloudDark, isRaining }) => {
+  const canvasRef = useRef(null);
+  const stateRef = useRef({ visible: true, cloudDark: false, isRaining: false });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Bảng màu lá (xanh lá cây pha chút vàng để hợp với cây trong background)
+    const LEAF_COLORS = ['#556b2f', '#6b8e23', '#8fbc8f', '#9acd32', '#7cb342'];
+
+    // Khởi tạo lá cho 2 bên cây
+    const createLeaf = (treeSide) => {
+      // Cây bên trái (0 -> 25% chiều ngang), Cây bên phải (75% -> 100% chiều ngang)
+      const startX = treeSide === 'left' 
+        ? Math.random() * (canvas.width * 0.25) 
+        : canvas.width * 0.75 + Math.random() * (canvas.width * 0.25);
+      
+      return {
+        x: startX,
+        y: Math.random() * (canvas.height * 0.35) - 50, // Xuất phát từ tán cây
+        treeSide,
+        size: 5 + Math.random() * 6,
+        color: LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)],
+        phase: Math.random() * Math.PI * 2, // Lệch pha để không rơi giống hệt nhau
+        phaseSpeed: 0.02 + Math.random() * 0.03,
+        fallSpeed: 0.8 + Math.random() * 1.5,
+        angle: Math.random() * Math.PI * 2,
+        spinSpeed: (Math.random() - 0.5) * 0.1,
+      };
+    };
+
+    // Tạo 40 chiếc lá (20 trái, 20 phải)
+    let leaves = Array.from({ length: 40 }, (_, i) => createLeaf(i % 2 === 0 ? 'left' : 'right'));
+
+    let raf;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!stateRef.current.visible) return;
+
+      const { cloudDark, isRaining } = stateRef.current;
+      const isStormApproaching = cloudDark && !isRaining; // Lúc mây đen chuẩn bị mưa
+
+      // Tạo một biến "Cơn gió" (Gust) dùng sóng Sin để làm gió giật từng cơn (đồng bộ 60% toàn cục)
+      const time = Date.now() / 1000;
+      const globalGust = Math.sin(time * 0.8) * 0.5 + 0.5; // Giá trị từ 0 -> 1
+
+      leaves.forEach(L => {
+        L.phase += L.phaseSpeed;
+        L.angle += L.spinSpeed;
+
+        let windX = 0;
+        let fallY = L.fallSpeed;
+
+        if (isStormApproaching) {
+          // GIÓ LỐC SẮP MƯA (Quỹ đạo Lò xo)
+          windX = 2 + globalGust * 3; // Gió thổi ngang mạnh
+          fallY = 1.5 + globalGust * 2;
+          
+          // Thêm nhiễu loạn sóng vòng tròn (lò xo)
+          L.x += Math.cos(L.phase * 3) * 4; 
+          L.y += Math.sin(L.phase * 3) * 2;
+          L.angle += 0.1; // Xoay tít mù
+        } 
+        else if (isRaining) {
+          // ĐANG MƯA TO (Rơi xéo mạnh xuống đất)
+          windX = 4; // Bị gió mưa đẩy xiên sang phải
+          fallY = L.fallSpeed * 3; // Rơi rất nhanh do hạt mưa đè xuống
+          L.angle = Math.PI / 4; // Lá bị ép chúi đầu xuống
+        } 
+        else {
+          // TRỜI QUANG MÂY TẠNH (Rơi hiu hiu)
+          windX = 0.5 + globalGust; 
+          L.x += Math.sin(L.phase) * 1.5; // Lắc lư ziczac qua lại
+        }
+
+        L.x += windX;
+        L.y += fallY;
+
+        // Nếu lá rớt khỏi màn hình -> Tái sinh lại trên tán cây
+        if (L.y > canvas.height + 20 || L.x > canvas.width + 20) {
+          Object.assign(L, createLeaf(L.treeSide));
+          L.y = -20; // Rơi lại từ trên đỉnh
+        }
+
+        // --- Bắt đầu vẽ lá ---
+        ctx.save();
+        ctx.translate(L.x, L.y);
+        ctx.rotate(L.angle);
+        
+        ctx.fillStyle = L.color;
+        ctx.globalAlpha = 0.85;
+        
+        // Vẽ hình chiếc lá bằng 2 cung tròn (bezier)
+        ctx.beginPath();
+        ctx.ellipse(0, 0, L.size, L.size * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Vẽ gân lá
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(-L.size, 0);
+        ctx.lineTo(L.size, 0);
+        ctx.stroke();
+
+        ctx.restore();
+      });
+    };
+
+    tick();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+
+  // Cập nhật state vào Ref để Canvas đọc được
+  useEffect(() => { stateRef.current.visible = visible; }, [visible]);
+  useEffect(() => { stateRef.current.cloudDark = cloudDark; }, [cloudDark]);
+  useEffect(() => { stateRef.current.isRaining = isRaining; }, [isRaining]);
+
+  return (
+    <canvas ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 6, opacity: visible ? 1 : 0, transition: 'opacity 2s ease' }}
+    />
+  );
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════
    ONG BAY (Bees) - Canvas 2D
 ═══════════════════════════════════════════════════════════════════ */
 export const Bees = ({ visible, hide }) => {

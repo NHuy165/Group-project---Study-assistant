@@ -3,40 +3,29 @@ import React, { useState, createContext, useContext } from "react";
 import backgroundDay from "../../assets/background/background_day.png";
 import backgroundNight from "../../assets/background/background_night.png";
 
-// 1. Import Custom Hook (Chứa toàn bộ logic thời tiết, sấm sét)
 import { useWeatherEngine } from "./hooks/useWeatherEngine";
-
-// 2. Import Các thành phần giao diện (Elements)
 import { DayNightToggle } from "./elements/DayNightToggle";
 import { GlobalStyles } from "./elements/GlobalStyles";
 import { RainCanvas, PuddleSplashes, PetrichorMist } from "./elements/RainSystem";
-import { DriftingClouds, MorningFog, StarField } from "./elements/SkyEffects";
-import { Butterflies, FallingPetals, GoldenDust, Bees, Fireflies } from "./elements/NatureCreatures";
+import { DriftingClouds, MorningFog, StarField, ShootingStars } from "./elements/SkyEffects";
+import { Butterflies, FallingPetals, GoldenDust, Bees, Fireflies, FallingLeaves } from "./elements/NatureCreatures";
 import { Rainbow } from "./elements/Rainbow";
 import { LightningSVG } from "./elements/LightningSVG";
 
-/* ═══════════════════════════════════════════════════════════════════
-   CONTEXT - Chia sẻ trạng thái theme cho toàn bộ ứng dụng
-═══════════════════════════════════════════════════════════════════ */
 export const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
-/* ═══════════════════════════════════════════════════════════════════
-   MAIN WRAPPER - Lắp ráp các tầng hiệu ứng
-═══════════════════════════════════════════════════════════════════ */
 export const ThemeWrapper = ({ children, showToggle = true }) => {
   const [isNight, setIsNight] = useState(false);
   const toggleMode = () => setIsNight(p => !p);
 
-  // Gọi "Cỗ máy thời tiết" để lấy các trạng thái hiện tại
   const { 
-    weather, rainbowPhase, lightningBolts, 
+    weather, rainbowPhase, lightningBolts, shootingStar,
     isRaining, isStopping, showFog, cloudDark 
   } = useWeatherEngine(isNight);
 
   return (
     <ThemeContext.Provider value={{ isNight, toggleMode }}>
-      {/* Nhúng các keyframes CSS dùng chung */}
       <GlobalStyles />
 
       <div
@@ -49,13 +38,17 @@ export const ThemeWrapper = ({ children, showToggle = true }) => {
       >
         {/* ── TẦNG 1: Bầu trời & Mây (Dưới cùng) ── */}
         <StarField visible={isNight && !isRaining} />
+
+        {/* Đã FIX: Truyền object 'star' thay vì boolean 'visible' */}
+        <ShootingStars star={shootingStar} />
+
         <MorningFog visible={showFog} />
         <DriftingClouds darkened={cloudDark} />
 
-        {/* ── TẦNG 2: Cầu vồng (Chỉ hiện ban ngày, sau mưa) ── */}
+        {/* ── TẦNG 2: Cầu vồng ── */}
         {!isNight && <Rainbow phase={rainbowPhase} />}
 
-        {/* ── TẦNG 3: Lớp phủ bóng tối khi trời mưa (Atmospheric Overlay) ── */}
+        {/* ── TẦNG 3: Bóng tối khi trời mưa ── */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -68,34 +61,35 @@ export const ThemeWrapper = ({ children, showToggle = true }) => {
           }}
         />
 
-        {/* ── TẦNG 4: Sinh vật & Đom đóm ── */}
+        {/* ── TẦNG 4: Sinh vật ── */}
         <Fireflies visible={isNight && !isRaining} />
         
         {!isNight && (
           <>
             <Butterflies visible={!isRaining} hide={cloudDark} />
             <FallingPetals visible={true} />
+            <FallingLeaves visible={!isNight} cloudDark={cloudDark} isRaining={isRaining} />  
             <GoldenDust visible={!isRaining} />
             <Bees visible={!isRaining} hide={cloudDark} />
           </>
         )}
 
-        {/* ── TẦNG 5: Hệ thống mưa (Canvas & Splash) ── */}
+        {/* ── TẦNG 5: Nước mưa ── */}
         <RainCanvas active={isRaining} stopping={isStopping} />
         <PuddleSplashes active={isRaining && !isStopping} />
         <PetrichorMist active={weather === "mist"} />
 
-        {/* ── TẦNG 6: Sấm sét ban đêm (Nháy sáng toàn màn) ── */}
+        {/* ── TẦNG 6: Sấm sét ── */}
         {isNight && <LightningSVG bolts={lightningBolts} />}
 
-        {/* ── TẦNG UI: Nút gạt Ngày/Đêm ── */}
+        {/* ── TẦNG UI: Nút chuyển đổi ── */}
         {showToggle && (
           <div className="absolute left-1/2 top-10 z-50" style={{ transform: "translateX(-50%)" }}>
             <DayNightToggle isNight={isNight} onToggle={toggleMode} />
           </div>
         )}
 
-        {/* ── TẦNG NỘI DUNG: Các Form đăng nhập, Chat area... ── */}
+        {/* ── TẦNG NỘI DUNG CHÍNH ── */}
         <div className="relative h-full w-full" style={{ zIndex: 20 }}>
           {children}
         </div>
