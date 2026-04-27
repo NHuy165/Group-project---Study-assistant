@@ -3,22 +3,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.src.core.origins import origins
 from backend.src.exceptions.core import (
     ExceptionCustom,
     ExceptionResponse,
     ExceptionType,
 )
-
-
-def get_cors_headers(request: Request) -> dict:
-    origin = request.headers.get("origin")
-    if origin in origins:
-        return {
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Credentials": "true",
-        }
-    return {}
 
 
 async def custom_exceptions_handler(request: Request, exc: ExceptionCustom):
@@ -27,13 +16,10 @@ async def custom_exceptions_handler(request: Request, exc: ExceptionCustom):
         message=exc.message,
     )
 
-    headers = exc.headers if exc.headers else {}
-    headers.update(get_cors_headers(request))
-
     return JSONResponse(
         status_code=exc.status_code,
         content=exception_response.model_dump(),
-        headers=headers,
+        headers=exc.headers,
     )
 
 
@@ -51,27 +37,20 @@ async def starlette_exceptions_handlers(request: Request, exc: StarletteHTTPExce
         exception_type=exception_type, message=str(exc.detail)
     )
 
-    headers = dict(exc.headers) if exc.headers else {}
-    headers.update(get_cors_headers(request))
-
     return JSONResponse(
         status_code=exc.status_code,
         content=exception_response.model_dump(),
-        headers=headers,
+        headers=exc.headers,
     )
 
 
 async def validation_exceptions_handler(request: Request, exc: RequestValidationError):
     exception_response = ExceptionResponse(
         exception_type=ExceptionType.REQUEST,
-        message="Request validation error.",
+        message=str(exc.errors()),
     )
 
-    return JSONResponse(
-        status_code=400,
-        content=exception_response.model_dump(),
-        headers=get_cors_headers(request),
-    )
+    return JSONResponse(status_code=400, content=exception_response.model_dump())
 
 
 async def generic_exceptions_handler(request: Request, exc: Exception):
@@ -83,5 +62,4 @@ async def generic_exceptions_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content=exception_response.model_dump(),
-        headers=get_cors_headers(request),
     )
