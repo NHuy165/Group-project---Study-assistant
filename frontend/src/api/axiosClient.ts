@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 
 // 1. Khởi tạo một "Trạm kiểm soát" riêng cho dự án
 const axiosClient = axios.create({
@@ -45,5 +45,13 @@ axiosClient.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// Add AxiosResponse to your imports if you want to be extra safe, 
+// though passing <T> directly to the client usually does the trick.
+
+export const customMutator = <T>(config: AxiosRequestConfig): Promise<import('axios').AxiosResponse<T>> => {
+    // Notice the <T> we added right after axiosClient!
+    return axiosClient<T>(config); 
+};
 
 export default axiosClient;
