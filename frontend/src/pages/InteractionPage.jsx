@@ -10,6 +10,8 @@ import { SourceSidebar } from "../features/documents/components/SourceSidebar";
 import { ChatArea } from "../features/chat/components/ChatArea";
 import { ToolsSidebar } from "../features/interactions/components/ToolsSidebar";
 import { AddSourceModal } from "../features/documents/components/AddSourceModal";
+import StudyForm from "../features/flashcard/components/studyForm";
+
 
 export const InteractionPage = () => {
   // BƯỚC 2: Lấy ID trực tiếp từ URL thay vì dựa vào state nội bộ
@@ -56,6 +58,9 @@ export const InteractionPage = () => {
       />
 
       <ToolsSidebar />
+        <div style={{ padding: 16 }}>
+          <StudyForm />
+        </div>
     </InteractionLayout>
   );
 };
