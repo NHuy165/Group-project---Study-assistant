@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from backend.src.models_schema.activity.exercise_item import (
         ExerciseItem,
         ExerciseItemOutput,
-        ExerciseItemOutputAnswer,
     )
     from backend.src.models_schema.activity.review_item import (
         ReviewItem,
@@ -56,11 +55,7 @@ class StudyActivityOutput(StudyActivityBase):
 
 
 class StudyActivityOutputComplete(StudyActivityOutput):
-    items: (
-        list["ReviewItemOutput"]
-        | list["ExerciseItemOutput"]
-        | list["ExerciseItemOutputAnswer"]
-    )
+    items: list["ReviewItemOutput"] | list["ExerciseItemOutput"]
 
 
 # ----- UPDATE ----- #
@@ -111,7 +106,7 @@ class StudyActivity(StudyActivityBase, table=True):
             """
             (activity_type = 'EXERCISE' AND activity_format IN ('MULTIPLE_CHOICE_QUESTIONS', 'OPEN_ENDED'))
             OR
-            (activity_type = 'REVIEW' AND activity_format IN ('FLASHCARDS', 'TAP_TO_REVIEW'))
+            (activity_type = 'REVIEW' AND activity_format IN ('FLASHCARDS', 'GAP_FILL'))
             """,
             name="CK_activity_type_activity_format",
         ),
@@ -125,9 +120,14 @@ class StudyActivity(StudyActivityBase, table=True):
         ),
     )
 
+    @property
+    def items(self) -> list[ExerciseItem] | list[ReviewItem]:
+        if self.activity_type == StudyActivityType.EXERCISE:
+            return self.exercise_items
+        return self.review_items
+
 
 from backend.src.models_schema.activity.exercise_item import (
     ExerciseItemOutput,
-    ExerciseItemOutputAnswer,
 )
 from backend.src.models_schema.activity.review_item import ReviewItemOutput
