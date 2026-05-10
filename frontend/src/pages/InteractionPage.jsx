@@ -1,29 +1,31 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom"; // BƯỚC 1: Import useParams
+import { useParams } from "react-router-dom";
 
 import { useInteractions } from "../features/interactions/hooks/useInteractions";
 import { useDocuments } from "../features/documents/hooks/useDocuments"; 
 import { useChat } from "../features/chat/hooks/useChat"; 
+import useFlashcardManagement from "../features/flashcard/hooks/useFlashcardManagement";
 
 import { InteractionLayout } from "../features/interactions/components/InteractionLayout";
 import { SourceSidebar } from "../features/documents/components/SourceSidebar";
 import { ChatArea } from "../features/chat/components/ChatArea";
 import { ToolsSidebar } from "../features/interactions/components/ToolsSidebar";
 import { AddSourceModal } from "../features/documents/components/AddSourceModal";
-import StudyForm from "../features/flashcard/components/studyForm";
 
+import FlashcardPanel from "../features/flashcard/components/FlashcardPanel";
 
 export const InteractionPage = () => {
-  // BƯỚC 2: Lấy ID trực tiếp từ URL thay vì dựa vào state nội bộ
   const { interactionId } = useParams(); 
 
+  // ========== UI STATE ==========
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [isFlashcardMode, setIsFlashcardMode] = useState(false);
 
+  // ========== HOOKS ==========
   const { handleNewChatClick } = useInteractions();
   
-  // BƯỚC 3: Truyền thẳng interactionId từ URL vào các hook
   const { 
     documents, selectedDocIds, uploadMultipleFiles, updateDocument, 
     documentName, setDocumentName, editingID, handleStartEdit, 
@@ -33,6 +35,13 @@ export const InteractionPage = () => {
   const { 
     chatlog, promptText, setPromptText, askLLM, isLoading: isChatLoading 
   } = useChat(interactionId);
+
+  const {
+    flashcards,
+    isLoading,
+    error,
+    createNewFlashcard,
+  } = useFlashcardManagement(interactionId);
 
   return (  
     <InteractionLayout 
@@ -44,23 +53,45 @@ export const InteractionPage = () => {
       }
     >
       <SourceSidebar 
-        documents={documents} isLoading={isDocsLoading} selectedDocIds={selectedDocIds}
-        onAddClick={() => setIsModalOpen(true)} editingId={editingID} setEditingId={handleStartEdit}
-        tempName={documentName} setTempName={setDocumentName} onRename={updateDocument} 
-        onDelete={deleteDocument} onDocCheck={handleDocCheck}
+        documents={documents} 
+        isLoading={isDocsLoading} 
+        selectedDocIds={selectedDocIds}
+        onAddClick={() => setIsModalOpen(true)} 
+        editingId={editingID} 
+        setEditingId={handleStartEdit}
+        tempName={documentName} 
+        setTempName={setDocumentName} 
+        onRename={updateDocument} 
+        onDelete={deleteDocument} 
+        onDocCheck={handleDocCheck}
         onPreview={(doc) => { setSelectedDoc(doc); setIsPreviewOpen(true); }}
       />
 
       <ChatArea 
-        messages={chatlog} isLoading={isChatLoading} promptText={promptText}
+        messages={chatlog} 
+        isLoading={isChatLoading} 
+        promptText={promptText}
         setPromptText={setPromptText}
         onSend={() => askLLM()} 
       />
 
-      <ToolsSidebar />
-        <div style={{ padding: 16 }}>
-          <StudyForm />
-        </div>
+      {isFlashcardMode ? (
+        <FlashcardPanel
+          flashcards={flashcards}
+          isLoading={isLoading}
+          error={error}
+          onCreateFlashcard={createNewFlashcard}
+          onClose={() => setIsFlashcardMode(false)}
+        />
+      ) : null}     
+
+      <ToolsSidebar 
+        onToolClick={(toolId) => {
+          if (toolId === 'flashcard') {
+            setIsFlashcardMode(!isFlashcardMode);
+          }
+        }}
+      />
     </InteractionLayout>
   );
 };

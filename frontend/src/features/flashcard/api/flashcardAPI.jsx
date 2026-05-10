@@ -37,7 +37,7 @@ export const createFlashcard = async (interactionId, promptData) => {
     };
 
     // const response = await axiosClient.post(`${PATH}/${interactionId}/create`, payload);
-    const response = await axios.post(
+    const response = await axiosClient.post(
             "http://localhost:8000/study-activity/1/create",
             payload
         )

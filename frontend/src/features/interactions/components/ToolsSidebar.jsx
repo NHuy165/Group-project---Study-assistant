@@ -19,8 +19,14 @@ const MOCK_NOTES = [
   { id: 2, name: "Ghi chú 02" }
 ];
 
-export const ToolsSidebar = () => {
+export const ToolsSidebar = ({children, onToolClick}) => {
   const { isNight } = useTheme(); // <--- Gọi hook theme
+
+  const handleToolClick = (toolId) => {
+    if (onToolClick) {
+      onToolClick(toolId);
+    }
+  };
 
   return (
     <aside className={`flex w-[20%] flex-col space-y-4 rounded-3xl p-6 backdrop-md shadow-xl border transition-colors duration-500 ${
@@ -42,11 +48,14 @@ export const ToolsSidebar = () => {
 
         <div className="grid grid-cols-2 gap-3">
           {TOOLS_LIST.map((item) => (
-            <button key={item.id} className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
-              isNight 
-                ? "bg-gray-800/80 border border-gray-700 text-gray-300" // Tối: Nền xám đậm, viền mờ, chữ xám nhạt
-                : "bg-[#FFEDE2B2]/80 text-gray-700"                     // Sáng: Nền cam nhạt, chữ đen
-            }`}>
+            <button 
+              key={item.id} 
+              onClick={() => handleToolClick(item.id)}
+              className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
+                isNight 
+                  ? "bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-gray-700/80" // Tối: Nền xám đậm, viền mờ, chữ xám nhạt
+                  : "bg-[#FFEDE2B2]/80 text-gray-700 hover:bg-[#FFEDE2]/90"                     // Sáng: Nền cam nhạt, chữ đen
+              }`}>
               {item.isSvg ? (
                 <img src={item.icon} alt={item.name} className={`h-8 w-8 object-contain ${isNight ? "opacity-90" : ""}`} />
               ) : (
@@ -57,6 +66,8 @@ export const ToolsSidebar = () => {
           ))}
         </div>
       </section>
+
+      {children}
 
       {/* Section Ghi chú */}
       <section className="flex flex-1 flex-col overflow-hidden pt-2">

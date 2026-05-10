@@ -627,6 +627,7 @@ async def delete_study_activity(
     session: AsyncSession,
     study_activity_id: int,
 ) -> None:
+<<<<<<< Updated upstream
     query = (
         select(StudyActivity)
         .join(Interaction)
@@ -646,3 +647,6 @@ async def delete_study_activity(
 
     await session.delete(study_activity)
     await session.commit()
+=======
+    pass
+>>>>>>> Stashed changes
