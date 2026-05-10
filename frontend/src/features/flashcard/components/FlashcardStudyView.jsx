@@ -1,8 +1,17 @@
 import React from 'react';
 import useFlashcardNavigation from '../hooks/useFlashcard';
 import Flashcard from './Flashcard';
+import useFlashcardManagement from '../hooks/useFlashcardManagement';
 
-const FlashcardStudyView = ({ data, isLoading, error }) => {
+const FlashcardStudyView = ({ selectedSet, onBack }) => {
+
+    const {
+        cardsList,
+        isLoading,
+        error,
+        removeFlashcard,
+    } = useFlashcardManagement(selectedSet?.id);
+    
     const {
         currentCard,
         isFlipped,
@@ -13,7 +22,7 @@ const FlashcardStudyView = ({ data, isLoading, error }) => {
         isLast,
         currentIndex,
         progress,
-    } = useFlashcardNavigation(data);
+    } = useFlashcardNavigation(cardsList);
 
     if (isLoading) {
         return (
@@ -26,7 +35,7 @@ const FlashcardStudyView = ({ data, isLoading, error }) => {
         );
     }
 
-    if (!data || data.length === 0) {
+    if (!cardsList || cardsList.length === 0) {
         return (
             <div className="flex items-center justify-center h-full">
                 <div className="text-center max-w-md">
@@ -44,48 +53,77 @@ const FlashcardStudyView = ({ data, isLoading, error }) => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto p-4">
-            <div className="mb-4 bg-gray-200 rounded-full h-2">
-                <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all"
-                    style={{ width: `${progress}%` }}
-                ></div>
+        <div className="mx-auto flex max-w-2xl flex-col gap-5 p-4">
+        <div className="flex items-start justify-between gap-4">
+            <div>
+            <h3 className="text-lg font-bold text-slate-800">
+                {selectedSet?.name || 'Flashcard set'}
+            </h3>
+            {selectedSet?.description && (
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                {selectedSet.description}
+                </p>
+            )}
             </div>
 
-            <p className="text-center text-sm text-gray-500 mb-6">
-                Thẻ {currentIndex + 1} / {data.length}
-            </p>
-
-            <Flashcard
-                front={currentCard.front}
-                back={currentCard.back}
-                isFlipped={isFlipped}
-                onClick={flipCard}
-            />
-
-            <div className="flex justify-between mt-8 gap-3">
-                <button
-                    onClick={prevCard}
-                    disabled={isFirst}
-                    className="px-4 py-2 bg-gray-100 rounded disabled:opacity-30 hover:bg-gray-200 transition-colors"
-                >
-                    ← Trở về
-                </button>
-                <button
-                    onClick={flipCard}
-                    className="px-6 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-medium hover:bg-indigo-200 transition-colors"
-                >
-                    🔄 Lật thẻ
-                </button>
-                <button
-                    onClick={nextCard}
-                    disabled={isLast}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-30 hover:bg-indigo-700 transition-colors"
-                >
-                    Tiếp theo →
-                </button>
-            </div>
+            <button
+            type="button"
+            onClick={onBack}
+            className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
+            >
+            Trở về
+            </button>
         </div>
+
+        <div>
+            <div className="mb-3 h-2 rounded-full bg-slate-200">
+            <div
+                className="h-2 rounded-full bg-indigo-600 transition-all"
+                style={{ width: `${progress}%` }}
+            />
+            </div>
+
+            <p className="text-center text-sm font-medium text-slate-500">
+            Thẻ {currentIndex + 1} / {cardsList.length}
+            </p>
+        </div>
+
+        <Flashcard
+            front={currentCard.front}
+            back={currentCard.back}
+            isFlipped={isFlipped}
+            onClick={flipCard}
+        />
+
+        <div className="grid grid-cols-3 gap-3">
+            <button
+            type="button"
+            onClick={prevCard}
+            disabled={isFirst}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+            Trước
+            </button>
+
+            <button
+            type="button"
+            onClick={flipCard}
+            className="rounded-lg bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+            >
+            Lật thẻ
+            </button>
+
+            <button
+            type="button"
+            onClick={nextCard}
+            disabled={isLast}
+            className="rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+            Sau
+            </button>
+        </div>
+        </div>
+
     );
 };
 

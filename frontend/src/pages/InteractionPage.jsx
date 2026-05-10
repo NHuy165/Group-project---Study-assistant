@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { useInteractions } from "../features/interactions/hooks/useInteractions";
 import { useDocuments } from "../features/documents/hooks/useDocuments"; 
 import { useChat } from "../features/chat/hooks/useChat"; 
-import useFlashcardManagement from "../features/flashcard/hooks/useFlashcardManagement";
+import useFlashcardSetManagement from "../features/flashcard/hooks/useFlashcardSetManagement";
 
 import { InteractionLayout } from "../features/interactions/components/InteractionLayout";
 import { SourceSidebar } from "../features/documents/components/SourceSidebar";
@@ -37,11 +37,12 @@ export const InteractionPage = () => {
   } = useChat(interactionId);
 
   const {
-    flashcards,
+    flashcardSets,
     isLoading,
     error,
-    createNewFlashcard,
-  } = useFlashcardManagement(interactionId);
+    createNewFlashcardSet,
+    removeFlashcardSet,
+  } = useFlashcardSetManagement(interactionId);
 
   return (  
     <InteractionLayout 
@@ -66,24 +67,25 @@ export const InteractionPage = () => {
         onDocCheck={handleDocCheck}
         onPreview={(doc) => { setSelectedDoc(doc); setIsPreviewOpen(true); }}
       />
-
-      <ChatArea 
-        messages={chatlog} 
-        isLoading={isChatLoading} 
-        promptText={promptText}
-        setPromptText={setPromptText}
-        onSend={() => askLLM()} 
-      />
-
       {isFlashcardMode ? (
         <FlashcardPanel
-          flashcards={flashcards}
+          flashcardSets={flashcardSets}
           isLoading={isLoading}
           error={error}
-          onCreateFlashcard={createNewFlashcard}
+          onCreateFlashcardSet={createNewFlashcardSet}
+          onRemoveFlashcardSet={removeFlashcardSet}
           onClose={() => setIsFlashcardMode(false)}
         />
-      ) : null}     
+      ) : (  
+
+        <ChatArea 
+          messages={chatlog} 
+          isLoading={isChatLoading} 
+          promptText={promptText}
+          setPromptText={setPromptText}
+          onSend={() => askLLM()} 
+        />
+      ) }
 
       <ToolsSidebar 
         onToolClick={(toolId) => {
@@ -92,6 +94,7 @@ export const InteractionPage = () => {
           }
         }}
       />
+      
     </InteractionLayout>
   );
 };

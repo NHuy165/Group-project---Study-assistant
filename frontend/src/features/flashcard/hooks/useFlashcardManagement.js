@@ -1,44 +1,45 @@
 import { useState, useCallback, useEffect } from 'react';
-import { readAllFlashcards, createFlashcard, deleteFlashcard } from '../api/flashcardAPI';
+import { readFlashcard } from '../api/flashcardAPI';
 
 /**
  * Hook quản lý logic flashcard: load, tạo, xóa
- * @param {string} interactionId - ID của interaction
- * @returns {Object} - flashcards, isLoading, error, methods
+ * @param {string} study_activity_id - ID của interaction
+ * @returns {Object} - cardsList, isLoading, error, methods
  */
-const useFlashcardManagement = (interactionId) => {
-    const [flashcards, setFlashcards] = useState([]); // danh sách card
+const useFlashcardManagement = (study_activity_id) => {
+    const [cardsList, setCardsList] = useState([]); // danh sách card
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const [prompt, setPrompt] = useState('');
-
     /**
-     * Tải toàn bộ flashcards từ backend
+     * Tải toàn bộ thẻ từ một bộ flashcard
      */
     const loadFlashcards = useCallback(async () => {
-        if (!interactionId) return;
+        if (!study_activity_id) return;
 
         setIsLoading(true);
         setError('');
         try {
-            const response = await readAllFlashcards(interactionId);
+            const response = await readFlashcard(study_activity_id);
             const data = Array.isArray(response) ? response : [];
-            setFlashcards(data);
+            setCardsList(data);
         } catch (err) {
             console.error("Lỗi tải flashcard:", err);
             setError("Không thể tải flashcard");
-            setFlashcards([]);
+            setCardsList([]);
         } finally {
             setIsLoading(false);
         }
-    }, [interactionId]);
+    }, [study_activity_id]);
 
     /**
      * Tạo flashcard mới từ prompt
      */
-    const createNewFlashcard = useCallback(async (prompt) => {
-        if (!prompt.trim() || !interactionId) {
+    const createNewFlashcard = useCallback(async (front, back) => {
+        const frontText = typeof front === 'string' ? front : front?.content || '';
+        const backText = typeof back === 'string' ? back : back?.content || '';
+
+        if (!frontText.trim() || !backText.trim() || !study_activity_id ) {
             setError('Vui lòng nhập nội dung');
             return null;
         }
@@ -46,32 +47,43 @@ const useFlashcardManagement = (interactionId) => {
         setIsLoading(true);
         setError('');
         try {
+
+            const firstCard = cardsList[0];
+
+            const nextId = cardsList.length > 0
+                ? Math.max (...cardsList.map(card => Number(card.id) || 0)) + 1
+                : 1;
+
             // createFlashcard trả về array of { id, front, back, ... }
-            const newFlashcards = await createFlashcard(interactionId, { prompt });
+            const newFlashcards = {
+                id: nextId,
+                studyActivityId: study_activity_id,
+                name: firstCard?.name || '',
+                description: firstCard?.description || '',
+                front: frontText,
+                back: backText,
+            };
             
-            if (Array.isArray(newFlashcards) && newFlashcards.length > 0) {
-                // Thêm flashcard mới vào danh sách
-                setFlashcards(prev => [...prev, ...newFlashcards]);
-                return newFlashcards;
-            }
+            setCardsList(prev => [...prev, newFlashcards]);
+            return newFlashcards;
+            
         } catch (err) {
             console.error("Lỗi tạo flashcard:", err);
             setError("Lỗi tạo flashcard. Vui lòng thử lại");
+            return null
         } finally {
             setIsLoading(false);
         }
         return null;
-    }, [interactionId]);
+    }, [study_activity_id, cardsList]);
 
     /**
      * Xóa flashcard
      */
     const removeFlashcard = useCallback(async (flashcardId) => {
         try {
-            // Gọi API xóa trước
-            await deleteFlashcard(flashcardId);
             // Xóa từ local state
-            setFlashcards(prev => prev.filter(card => card.id !== flashcardId));
+            setCardsList(prev => prev.filter(card => card.id !== flashcardId));
             setError('');
         } catch (err) {
             console.error("Lỗi xóa flashcard:", err);
@@ -83,18 +95,16 @@ const useFlashcardManagement = (interactionId) => {
      * Tự động tải flashcards khi interactionId thay đổi
      */
     useEffect(() => {
-        if (interactionId) {
+        if (study_activity_id) {
             loadFlashcards();
         }
-    }, [interactionId, loadFlashcards]);
+    }, [study_activity_id, loadFlashcards]);
 
     return {
-        flashcards, 
-        setFlashcards, // Để component có thể update nếu cần
+        cardsList, 
+        setCardsList, // Để component có thể update nếu cần
         isLoading,
         error,
-        prompt, 
-        setPrompt,
         loadFlashcards,
         createNewFlashcard,
         removeFlashcard,

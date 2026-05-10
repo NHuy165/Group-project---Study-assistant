@@ -38,10 +38,11 @@ export const createFlashcard = async (interactionId, promptData) => {
 
     // const response = await axiosClient.post(`${PATH}/${interactionId}/create`, payload);
     const response = await axiosClient.post(
-            "http://localhost:8000/study-activity/1/create",
+            `${PATH}/${interactionId}/create`,
             payload
         )
-    return transformBackendFlashcards(response.data);
+    // return transformBackendFlashcards(response.data);
+    return response.data;
 };
 
 export const readFlashcard = async (id) => {
@@ -65,21 +66,22 @@ export const readAllFlashcards = async (interactionId) => {
             activity.activity_format === "FLASHCARDS"
         ));
 
-        // Lấy chi tiết từng activity
-        const completeActivities = await Promise.all(
-            flashcardActivities.map((activity) => readFlashcard(activity.id)),
-        );
+        // // Lấy chi tiết từng activity
+        // const completeActivities = await Promise.all(
+        //     flashcardActivities.map((activity) => readFlashcard(activity.id)),
+        // );
 
-        return completeActivities.flat();
+        // return completeActivities.flat();
+        return flashcardActivities;
     } catch (error) {
         console.warn('Error reading all flashcards:', error);
         return [];
     }
 };
 
-export const deleteFlashcard = async (flashcardId) => {
+export const deleteFlashcard = async (id) => {
     try {
-        const response = await axiosClient.delete(`${PATH}/${flashcardId}`);
+        const response = await axiosClient.delete(`${PATH}/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error deleting flashcard:", error);
