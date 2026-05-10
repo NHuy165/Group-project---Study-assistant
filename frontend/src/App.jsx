@@ -42,6 +42,7 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
       </Routes>
     </HashRouter>
   );
