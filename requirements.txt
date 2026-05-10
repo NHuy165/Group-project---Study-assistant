@@ -16,5 +16,10 @@ pytest_asyncio
 
 # AI and RAG
 google-genai
+langchain-text-splitters
+ollama
 pypdf
 pgvector
+
+# Debugger for attaching VS Code (optional)
+debugpy
