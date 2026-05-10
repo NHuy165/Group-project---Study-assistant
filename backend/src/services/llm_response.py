@@ -9,7 +9,6 @@ from backend.src.models_schema.llm_response import (
     LLMResponseInput,
 )
 from backend.src.models_schema.RAG.augmentation import AnswerGenerationParams
-from backend.src.RAG.augmentation.chunk_rewriting.rewrite import rewrite_prompt
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     answer_generation_augmentation,
 )
@@ -20,6 +19,7 @@ from backend.src.RAG.augmentation.formatters.conversations.core import (
     conversations_formatter,
 )
 from backend.src.RAG.retrieval.core import retrieval
+from backend.src.RAG.retrieval.prompt_rewrite import rewrite_prompt
 
 # ----- CREATE ----- #
 
@@ -57,7 +57,7 @@ async def create_llm_response(
     final_prompt = answer_generation_augmentation(augmentation_params)
 
     # Generation
-    answer = await GlobalAPI.generate_content(final_prompt)
+    answer = await GlobalAPI.generate_chat(final_prompt)
 
     # Saving response
     llm_response = LLMResponse(

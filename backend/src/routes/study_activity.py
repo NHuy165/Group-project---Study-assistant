@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from backend.src.core.dependencies import InteractionDep, SessionDep, UserDep
+from backend.src.exceptions.core import Responses
 from backend.src.models_schema.activity.exercise_item import (
     ExerciseItemOutput,
     ExerciseItemUpdate,
@@ -21,7 +22,14 @@ router = APIRouter()
 # ----- CREATE ----- #
 
 
-@router.post("/{interaction_id}/create", response_model=StudyActivityOutputComplete)
+@router.post(
+    "/{interaction_id}/create",
+    response_model=StudyActivityOutputComplete,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
 async def create_study_activity(
     user: UserDep,
     session: SessionDep,
@@ -41,7 +49,14 @@ async def create_study_activity(
 # ----- READ ----- #
 
 
-@router.get("/{interaction_id}/", response_model=list[StudyActivityOutput])
+@router.get(
+    "/{interaction_id}/",
+    response_model=list[StudyActivityOutput],
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
 async def read_all_study_activity(
     user: UserDep,
     session: SessionDep,
@@ -56,7 +71,14 @@ async def read_all_study_activity(
     )
 
 
-@router.get("/{study_activity_id}", response_model=StudyActivityOutputComplete)
+@router.get(
+    "/{study_activity_id}",
+    response_model=StudyActivityOutputComplete,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
 async def read_study_activity_complete(
     user: UserDep,
     session: SessionDep,
@@ -75,7 +97,14 @@ async def read_study_activity_complete(
 # ----- UPDATE ----- #
 
 
-@router.patch("/{study_activity_id}", response_model=StudyActivityOutput)
+@router.patch(
+    "/{study_activity_id}/update",
+    response_model=StudyActivityOutput,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
 async def update_study_activity(
     user: UserDep,
     session: SessionDep,
@@ -93,7 +122,15 @@ async def update_study_activity(
     )
 
 
-@router.patch("/{exercise_item_id}", response_model=ExerciseItemOutput)
+@router.patch(
+    "/{exercise_item_id}/answer",
+    response_model=ExerciseItemOutput,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+        409: Responses.RESPONSE_409_CONFLICT,
+    },
+)
 async def answer_exercise_item(
     user: UserDep,
     session: SessionDep,
@@ -111,7 +148,15 @@ async def answer_exercise_item(
     )
 
 
-@router.patch("/{study_activity_id}", response_model=ExerciseItemOutput)
+@router.patch(
+    "/{study_activity_id}/submit",
+    response_model=StudyActivityOutputComplete,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+        409: Responses.RESPONSE_409_CONFLICT,
+    },
+)
 async def submit_exercise_activity(
     user: UserDep,
     session: SessionDep,
@@ -130,14 +175,21 @@ async def submit_exercise_activity(
 # ----- DELETE ----- #
 
 
-@router.delete("/{study_activity_id}", status_code=204)
+@router.delete(
+    "/{study_activity_id}",
+    status_code=204,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
 async def delete_study_activity(
     user: UserDep,
     session: SessionDep,
     study_activity_id: int,
 ):
     """
-    Nộp tài liệu dạng Exercise.
+    Xóa một tài liệu.
     """
     return await study_activity.delete_study_activity(
         user,

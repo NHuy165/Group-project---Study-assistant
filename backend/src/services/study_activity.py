@@ -1,24 +1,33 @@
-from psycopg.abc import NoneType
+from datetime import datetime, timezone
+
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlmodel import select
+from sqlmodel import func, select
 
-from backend.src.core.ai_api import GlobalAPI
+from backend.src.core.ai_api import ExceptionRequest_400, GlobalAPI
 from backend.src.core.config import settings
+from backend.src.exceptions.core import (
+    ExceptionNotFound_404,
+    ExceptionSubmittedExercise_409,
+)
 from backend.src.models_schema.activity.exercise_item import (
     ExerciseItem,
-    ExerciseItemOutput,
     ExerciseItemUpdate,
 )
 from backend.src.models_schema.activity.exercise_item_content import ExerciseItemContent
 from backend.src.models_schema.activity.json_validation import (
     FlashcardsJsonSchema,
+    GapFillJsonSchema,
     MCQJsonSchema,
+    OpenEndedCreationJsonSchema,
+    OpenEndedGradingInitiationJsonSchema,
+    OpenEndedGradingInitiationSchema,
+    OpenEndedGradingResultJsonSchema,
+    OpenEndedGradingResultSchema,
     StudyActivityValidationBase,
-    TapToReviewJsonSchema,
 )
-from backend.src.models_schema.activity.review_item import ReviewItem, ReviewItemOutput
+from backend.src.models_schema.activity.review_item import ReviewItem
 from backend.src.models_schema.activity.review_item_content import ReviewItemContent
 from backend.src.models_schema.activity.study_activity import (
     StudyActivity,
@@ -33,21 +42,43 @@ from backend.src.models_schema.miscellaneous.enums import (
     StudyActivityFormat,
     StudyActivityType,
 )
-from backend.src.models_schema.RAG.augmentation import StudyActivityParams
+from backend.src.models_schema.RAG.augmentation import (
+    AnswersGradingParams,
+    StudyActivityParams,
+)
 from backend.src.models_schema.user import User
-from backend.src.RAG.augmentation.chunk_rewriting.rewrite import rewrite_prompt
 from backend.src.RAG.augmentation.core.specific_augmentations import (
+    answers_grading_augmentation,
     study_activity_augmentation,
 )
 from backend.src.RAG.augmentation.formatters.chunks.core import chunks_formatter
 from backend.src.RAG.augmentation.formatters.conversations.core import (
     conversations_formatter,
 )
-from backend.src.RAG.augmentation.study_activity.type_mappings import schema_map
+from backend.src.RAG.augmentation.prompts_formatting.instruction_schemas import (
+    flashcards_schema,
+    gap_fill_schema,
+    multiple_choice_questions_schema,
+    open_ended_schema,
+)
 from backend.src.RAG.retrieval.core import retrieval
+from backend.src.RAG.retrieval.prompt_rewrite import rewrite_prompt
 from backend.src.services.llm_response import read_llm_responses
 
 # ----- CREATE ----- #
+
+schema_map: dict[
+    StudyActivityFormat | StudyActivityFormat,
+    tuple[str, type[StudyActivityValidationBase]],
+] = {
+    StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS: (
+        multiple_choice_questions_schema,
+        MCQJsonSchema,
+    ),
+    StudyActivityFormat.FLASHCARDS: (flashcards_schema, FlashcardsJsonSchema),
+    StudyActivityFormat.GAP_FILL: (gap_fill_schema, GapFillJsonSchema),
+    StudyActivityFormat.OPEN_ENDED: (open_ended_schema, OpenEndedCreationJsonSchema),
+}
 
 
 async def save_multiple_choice_questions(
@@ -61,8 +92,7 @@ async def save_multiple_choice_questions(
     if n_items == 0:
         return
 
-    assert study_activity.total_score is not None
-    question_score = study_activity.total_score / n_items
+    question_score = settings.DEFAULT_EXERCISE_TOTAL_SCORE / n_items
 
     for i_item in range(n_items):
         # Saving the item
@@ -87,7 +117,8 @@ async def save_multiple_choice_questions(
                 exercise_item=exercise_item,
             )
             session.add(exercise_item_content)
-            await session.commit()
+
+        await session.commit()
 
 
 async def save_open_ended(
@@ -95,7 +126,75 @@ async def save_open_ended(
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    pass
+    assert isinstance(activity_data, OpenEndedCreationJsonSchema)
+
+    n_items = len(activity_data.activity_items)
+    if n_items == 0:
+        return
+
+    question_score = settings.DEFAULT_EXERCISE_TOTAL_SCORE / n_items
+
+    for i_item in range(n_items):
+        # Saving the item
+        exercise_item = ExerciseItem(
+            max_score=question_score,
+            question=activity_data.activity_items[i_item].question,
+            study_activity=study_activity,
+        )
+        session.add(exercise_item)
+
+    await session.commit()
+
+
+async def save_gap_fill(
+    session: AsyncSession,
+    activity_data: StudyActivityValidationBase,
+    study_activity: StudyActivity,
+) -> None:
+    assert isinstance(activity_data, GapFillJsonSchema)
+
+    n_items = len(activity_data.activity_items)
+    if n_items == 0:
+        return
+
+    for i_item in range(n_items):
+        # Saving the item
+        review_item = ReviewItem(
+            study_activity=study_activity,
+        )
+        session.add(review_item)
+        await session.commit()
+        await session.refresh(review_item)
+
+        # Saving the contents of the item
+        text_content = ReviewItemContent(
+            content=activity_data.activity_items[i_item].text,
+            type=ReviewItemContentType.GAP_FILL_TEXT,
+            review_item=review_item,
+        )
+        session.add(text_content)
+
+        n_correct_contents = len(activity_data.activity_items[i_item].correct)
+        for i_correct_content in range(n_correct_contents):
+            review_item_content = ReviewItemContent(
+                content=activity_data.activity_items[i_item].correct[i_correct_content],
+                type=ReviewItemContentType.GAP_FILL_CORRECT,
+                review_item=review_item,
+            )
+            session.add(review_item_content)
+
+        n_distractors_contents = len(activity_data.activity_items[i_item].distractors)
+        for i_distractor_content in range(n_distractors_contents):
+            review_item_content = ReviewItemContent(
+                content=activity_data.activity_items[i_item].distractors[
+                    i_distractor_content
+                ],
+                type=ReviewItemContentType.GAP_FILL_DISTRACTOR,
+                review_item=review_item,
+            )
+            session.add(review_item_content)
+
+        await session.commit()
 
 
 async def save_flashcards(
@@ -132,53 +231,15 @@ async def save_flashcards(
             review_item=review_item,
         )
         session.add(back_content)
+
         await session.commit()
-
-
-async def save_tap_to_review(
-    session: AsyncSession,
-    activity_data: StudyActivityValidationBase,
-    study_activity: StudyActivity,
-) -> None:
-    assert isinstance(activity_data, TapToReviewJsonSchema)
-
-    n_items = len(activity_data.activity_items)
-    if n_items == 0:
-        return
-
-    for i_item in range(n_items):
-        # Saving the item
-        review_item = ReviewItem(
-            study_activity=study_activity,
-        )
-        session.add(review_item)
-        await session.commit()
-        await session.refresh(review_item)
-
-        # Saving the contents of the item
-        text_content = ReviewItemContent(
-            content=activity_data.activity_items[i_item].text,
-            type=ReviewItemContentType.TAP_TO_REVIEW_TEXT,
-            review_item=review_item,
-        )
-        session.add(text_content)
-
-        n_gaps_contents = len(activity_data.activity_items[i_item].gaps)
-        for i_gap_content in range(n_gaps_contents):
-            review_item_content = ReviewItemContent(
-                content=activity_data.activity_items[i_item].gaps[i_gap_content],
-                type=ReviewItemContentType.TAP_TO_REVIEW_GAP,
-                review_item=review_item,
-            )
-            session.add(review_item_content)
-            await session.commit()
 
 
 save_mapper = {
     StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS: save_multiple_choice_questions,
     StudyActivityFormat.OPEN_ENDED: save_open_ended,
     StudyActivityFormat.FLASHCARDS: save_flashcards,
-    StudyActivityFormat.TAP_TO_REVIEW: save_tap_to_review,
+    StudyActivityFormat.GAP_FILL: save_gap_fill,
 }
 
 
@@ -226,7 +287,7 @@ async def create_study_activity(
     final_prompt = study_activity_augmentation(params)
 
     # Generation
-    generated_activity = await GlobalAPI.generate_content(final_prompt)
+    generated_activity = await GlobalAPI.generate_material(final_prompt)
 
     # Validates content from model
     validated_activity = response_validator.model_validate_json(generated_activity)
@@ -240,9 +301,6 @@ async def create_study_activity(
         subject_type=study_activity_input.subject_type,
         name=validated_activity.name,
         description=validated_activity.description,
-        total_score=settings.DEFAULT_EXERCISE_TOTAL_SCORE
-        if study_activity_input.activity_type == StudyActivityType.EXERCISE
-        else None,
         interaction=interaction,
     )
 
@@ -268,56 +326,18 @@ async def create_study_activity(
             )
         )
 
-        study_activity = (await session.execute(query)).scalars().first()
-        assert study_activity is not None
-
-        items_validator = TypeAdapter(list[ExerciseItemOutput])
-        assert study_activity.id is not None
-
-        study_activity_output_complete = StudyActivityOutputComplete(
-            prompt=study_activity.prompt,
-            activity_type=study_activity.activity_type,
-            activity_format=study_activity.activity_format,
-            subject_type=study_activity.subject_type,
-            id=study_activity.id,
-            name=study_activity.name,
-            description=study_activity.description,
-            created_at=study_activity.created_at,
-            is_submitted=study_activity.is_submitted,
-            submitted_at=study_activity.submitted_at,
-            total_score=study_activity.total_score,
-            items=items_validator.validate_python(study_activity.exercise_items),
-        )
-
-        return study_activity_output_complete
     else:
         query = query.options(
             selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents)  # type: ignore
         )
 
-        study_activity = (await session.execute(query)).scalars().first()
-        assert study_activity is not None
+    study_activity = (await session.execute(query)).scalars().first()
 
-        items_validator = TypeAdapter(list[ReviewItemOutput])
+    study_activity_output_complete = StudyActivityOutputComplete.model_validate(
+        study_activity
+    )
 
-        assert study_activity.id is not None
-
-        study_activity_output_complete = StudyActivityOutputComplete(
-            prompt=study_activity.prompt,
-            activity_type=study_activity.activity_type,
-            activity_format=study_activity.activity_format,
-            subject_type=study_activity.subject_type,
-            id=study_activity.id,
-            name=study_activity.name,
-            description=study_activity.description,
-            created_at=study_activity.created_at,
-            is_submitted=study_activity.is_submitted,
-            submitted_at=study_activity.submitted_at,
-            total_score=study_activity.total_score,
-            items=items_validator.validate_python(study_activity.review_items),
-        )
-
-        return study_activity_output_complete
+    return study_activity_output_complete
 
 
 # ----- READ ----- #
@@ -326,16 +346,51 @@ async def create_study_activity(
 async def read_all_study_activity(
     session: AsyncSession,
     interaction: Interaction,
-) -> list[StudyActivity]:  # type: ignore
-    pass
+) -> list[StudyActivity]:
+    query = select(StudyActivity).where(StudyActivity.interaction_id == interaction.id)
+    study_activities = (await session.execute(query)).scalars().all()
+
+    return list(study_activities)
 
 
 async def read_study_activity_complete(
     user: User,
     session: AsyncSession,
     study_activity_id: int,
-) -> StudyActivity:  # type: ignore
-    pass
+) -> StudyActivityOutputComplete:
+
+    query = (
+        select(StudyActivity)
+        .join(Interaction)
+        .where(StudyActivity.id == study_activity_id, Interaction.user_id == user.id)
+        .options(
+            selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents),  # type: ignore
+            selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
+                ExerciseItem.contents  # type: ignore
+            ),
+        )
+    )
+    study_activity = (await session.execute(query)).scalars().first()
+
+    if study_activity is None:
+        raise ExceptionNotFound_404(
+            "StudyActivity",
+            {
+                "id": study_activity_id,
+                "interaction.user_id": user.id,
+            },
+        )
+
+    if study_activity.is_submitted:
+        study_activity_output_complete = StudyActivityOutputComplete.model_validate(
+            study_activity, context={"show_answers": True}
+        )
+    else:
+        study_activity_output_complete = StudyActivityOutputComplete.model_validate(
+            study_activity
+        )
+
+    return study_activity_output_complete
 
 
 # ----- UPDATE ----- #
@@ -347,7 +402,32 @@ async def update_study_activity(
     study_activity_id: int,
     study_activity_update: StudyActivityUpdate,
 ) -> StudyActivity:  # type: ignore
-    pass
+    query = (
+        select(StudyActivity)
+        .join(Interaction)
+        .where(StudyActivity.id == study_activity_id, Interaction.user_id == user.id)
+    )
+
+    study_activity = (await session.execute(query)).scalars().first()
+
+    if study_activity is None:
+        raise ExceptionNotFound_404(
+            "StudyActivity",
+            {
+                "id": study_activity_id,
+                "interaction.user_id": user.id,
+            },
+        )
+
+    update_data = study_activity_update.model_dump(exclude_unset=True)
+
+    study_activity.sqlmodel_update(update_data)
+
+    session.add(study_activity)
+    await session.commit()
+    await session.refresh(study_activity)
+
+    return study_activity
 
 
 async def answer_exercise_item(
@@ -356,15 +436,187 @@ async def answer_exercise_item(
     exercise_item_id: int,
     exercise_item_update: ExerciseItemUpdate,
 ) -> ExerciseItem:  # type: ignore
-    pass
+    query = (
+        select(ExerciseItem, StudyActivity)
+        .join(StudyActivity)
+        .join(Interaction)
+        .where(ExerciseItem.id == exercise_item_id, Interaction.user_id == user.id)
+        .options(selectinload(ExerciseItem.contents))  # type: ignore
+    )
+
+    row = (await session.execute(query)).first()
+
+    if row is None:
+        raise ExceptionNotFound_404(
+            "ExerciseItem",
+            {
+                "id": exercise_item_id,
+                "interaction.user_id": user.id,
+            },
+        )
+
+    exercise_item, study_activity = row
+
+    assert isinstance(exercise_item, ExerciseItem)
+    assert isinstance(study_activity, StudyActivity)
+
+    if study_activity.is_submitted:
+        raise ExceptionSubmittedExercise_409()
+
+    if study_activity.activity_format == StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS:
+        if not isinstance(exercise_item_update.attempt, int):
+            raise ExceptionRequest_400(
+                custom_message="Answers to multiple choice questions need to be an integer pointing to the id of the correct answer."
+            )
+
+        # MCQ questions get graded right as they're answered, just not shown
+        for content in exercise_item.contents:
+            if exercise_item_update.attempt == content.id:
+                if content.is_correct:
+                    exercise_item.user_score = exercise_item.max_score
+                else:
+                    exercise_item.user_score = 0
+                break
+        else:
+            raise ExceptionRequest_400(
+                custom_message="Answer did not match the id of any of the answers of the current question."
+            )
+    else:
+        if not isinstance(exercise_item_update.attempt, str):
+            raise ExceptionRequest_400(
+                custom_message="Answer needs to be of type string."
+            )
+
+    exercise_item.attempt = str(exercise_item_update.attempt)
+
+    session.add(exercise_item)
+    await session.commit()
+    await session.refresh(exercise_item)
+
+    return exercise_item
 
 
 async def submit_exercise_activity(
     user: User,
     session: AsyncSession,
     study_activity_id: int,
-) -> StudyActivity:  # type: ignore
-    pass
+) -> StudyActivityOutputComplete:
+
+    # Fetches study activity
+    query = (
+        select(StudyActivity, Interaction)
+        .join(Interaction)
+        .where(
+            StudyActivity.id == study_activity_id,
+            Interaction.user_id == user.id,
+            StudyActivity.activity_type == StudyActivityType.EXERCISE,
+        )
+        .options(
+            selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
+                ExerciseItem.contents  # type: ignore
+            ),
+        )
+    )
+
+    row = (await session.execute(query)).first()
+
+    if row is None:
+        raise ExceptionNotFound_404(
+            "StudyActivity",
+            {
+                "id": study_activity_id,
+                "interaction.user_id": user.id,
+                "activity_type": StudyActivityType.EXERCISE.value,
+            },
+        )
+
+    study_activity, interaction = row
+
+    assert isinstance(study_activity, StudyActivity)
+    assert isinstance(interaction, Interaction)
+
+    if study_activity.is_submitted:
+        raise ExceptionSubmittedExercise_409()
+
+    # Grades if not yet graded
+    if study_activity.activity_format == StudyActivityFormat.OPEN_ENDED:
+        # === Preparing the json input === #
+        questions = OpenEndedGradingInitiationJsonSchema.model_validate(
+            {
+                "questions_answers": [
+                    item.model_dump() for item in study_activity.exercise_items
+                ]
+            }
+        )
+
+        # === Preparing the context document === #
+        prompt = "\n".join(item.question for item in study_activity.exercise_items)
+        embedded_prompt = await GlobalAPI.embed(prompt)
+        document_chunks = await retrieval(
+            session=session,
+            interaction=interaction,
+            raw_prompt=prompt,
+            embedded_prompt=embedded_prompt,
+        )
+        formatted_chunks = chunks_formatter(document_chunks)
+
+        params = AnswersGradingParams(
+            prompt=questions.model_dump_json(),
+            creation_prompt=study_activity.prompt,
+            context_document=formatted_chunks,
+        )
+
+        final_prompt = answers_grading_augmentation(params)
+
+        # === Grading === #
+        graded_results = await GlobalAPI.grade_answers(final_prompt)
+
+        validated_graded_results = OpenEndedGradingResultJsonSchema.model_validate_json(
+            graded_results
+        )
+
+        # === Updates the results === #
+        results_map: dict[int, OpenEndedGradingResultSchema] = {
+            res.id: res for res in validated_graded_results.grading_results
+        }
+
+        for exercise_item in study_activity.exercise_items:
+            assert exercise_item.id is not None
+            graded_result = results_map.get(exercise_item.id)
+
+            if graded_result is None:
+                raise Exception("Something went wrong with the model exercise grading.")
+
+            exercise_item.sqlmodel_update(graded_result.model_dump(exclude={"id"}))
+            session.add(exercise_item)
+
+        await session.commit()
+
+    # Updates
+    await session.refresh(study_activity)
+    study_activity.is_submitted = True
+    study_activity.submitted_at = datetime.now(timezone.utc)
+    session.add(study_activity)
+    await session.commit()
+
+    # Refetchs
+    query_refetch = (
+        select(StudyActivity)
+        .where(StudyActivity.id == study_activity_id)
+        .options(
+            selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents),  # type: ignore
+            selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
+                ExerciseItem.contents  # type: ignore
+            ),
+        )
+    )
+    study_activity_refetch = (await session.execute(query_refetch)).scalars().first()
+
+    study_activity_output_complete = StudyActivityOutputComplete.model_validate(
+        study_activity_refetch, context={"show_answers": True}
+    )
+
+    return study_activity_output_complete
 
 
 # ----- DELETE ----- #
@@ -375,4 +627,22 @@ async def delete_study_activity(
     session: AsyncSession,
     study_activity_id: int,
 ) -> None:
-    pass
+    query = (
+        select(StudyActivity)
+        .join(Interaction)
+        .where(StudyActivity.id == study_activity_id, Interaction.user_id == user.id)
+    )
+
+    study_activity = (await session.execute(query)).scalars().first()
+
+    if study_activity is None:
+        raise ExceptionNotFound_404(
+            "StudyActivity",
+            {
+                "id": study_activity_id,
+                "interaction.user_id": user.id,
+            },
+        )
+
+    await session.delete(study_activity)
+    await session.commit()
