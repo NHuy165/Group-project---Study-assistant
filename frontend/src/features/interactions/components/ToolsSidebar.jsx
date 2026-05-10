@@ -19,7 +19,8 @@ const MOCK_NOTES = [
   { id: 2, name: "Ghi chú 02" }
 ];
 
-export const ToolsSidebar = () => {
+// 1. NHẬN PROP onOpenTTR TỪ INTERACTION PAGE TRUYỀN XUỐNG
+export const ToolsSidebar = ({ onOpenTTR, ttrTasks, onPlayTTR }) => {
   const { isNight } = useTheme(); // <--- Gọi hook theme
 
   return (
@@ -42,7 +43,15 @@ export const ToolsSidebar = () => {
 
         <div className="grid grid-cols-2 gap-3">
           {TOOLS_LIST.map((item) => (
-            <button key={item.id} className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
+            <button 
+              key={item.id} 
+              // 2. GẮN SỰ KIỆN ONCLICK: Chỉ kích hoạt onOpenTTR nếu bấm vào nút Tap To Review (id là 'mindmap')
+              onClick={() => {
+                if (item.id === 'mindmap' && onOpenTTR) {
+                  onOpenTTR();
+                }
+              }}
+              className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
               isNight 
                 ? "bg-gray-800/80 border border-gray-700 text-gray-300" // Tối: Nền xám đậm, viền mờ, chữ xám nhạt
                 : "bg-[#FFEDE2B2]/80 text-gray-700"                     // Sáng: Nền cam nhạt, chữ đen
@@ -76,6 +85,28 @@ export const ToolsSidebar = () => {
         </button>
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+
+          {/* HIỂN THỊ DANH SÁCH BÀI TTR ĐANG CHẠY NGẦM / ĐÃ TẠO XONG */}
+          {ttrTasks && ttrTasks.map((task) => (
+            <div 
+              key={task.id} 
+              onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
+              className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
+              task.status === 'loading' 
+                ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
+                : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
+            }`}>
+              <span className="mr-3 text-sm flex-shrink-0">
+                {task.status === 'loading' ? (
+                  <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                ) : '🎮'}
+              </span>
+              <span className={`text-sm font-semibold truncate ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
+                {task.name}
+              </span>
+            </div>
+          ))}
+
           {MOCK_NOTES.map((note) => (
             <div key={note.id} className={`flex cursor-pointer items-center rounded-2xl px-4 py-3 shadow-sm border transition-colors ${
               isNight 
