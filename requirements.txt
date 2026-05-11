@@ -13,13 +13,11 @@ python-dotenv
 # Testing
 pytest
 pytest_asyncio
+debugpy
 
 # AI and RAG
 google-genai
-langchain-text-splitters
 ollama
 pypdf
 pgvector
-
-# Debugger for attaching VS Code (optional)
-debugpy
+langchain-text-splitters
