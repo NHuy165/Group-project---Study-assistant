@@ -11,8 +11,16 @@ class Settings(BaseSettings):
     POSTGRES_URL: PostgresDsn
     API_KEY_GEMINI: str
     PRIVATE_KEY: str
+    API_KEY_GROQ: str
+
+    CLOUDFLARE_ACCOUNT_ID: str
+    CLOUDFLARE_API_TOKEN: str
+
+    GITHUB_API_TOKEN: str
 
     # Technical config
+    ERROR_429_COOLDOWN_SEC: int
+    ERROR_503_COOLDOWN_SEC: int
 
     # Auth
     JWT_ALGORITHM: str
@@ -26,6 +34,11 @@ class Settings(BaseSettings):
     MODEL_IN_USE_GENERATE_MATERIAL: str
     MODEL_IN_USE_GRADE_ANSWERS: str
 
+    MODEL_IN_USE_GENERATE_CHAT_BACKUP: str
+    MODEL_IN_USE_REWRITE_PROMPT_BACKUP: str
+    MODEL_IN_USE_GENERATE_MATERIAL_BACKUP: str
+    MODEL_IN_USE_GRADE_ANSWERS_BACKUP: str
+
     EMBED_MODEL_GOOGLE: str
     VISION_MODEL_GOOGLE: str
     ANSWER_MODEL_GOOGLE: str
@@ -34,6 +47,12 @@ class Settings(BaseSettings):
     EMBED_MODEL_OLLAMA: str
     VISION_MODEL_OLLAMA: str
     ANSWER_MODEL_OLLAMA: str
+
+    EMBED_MODEL_CLOUDFLARE: str
+    VISION_MODEL_CLOUDFLARE: str
+    ANSWER_MODEL_CLOUDFLARE: str
+
+    ANSWER_MODEL_GITHUB: str
 
     # RAG
     DEFAULT_CHUNK_SIZE: int

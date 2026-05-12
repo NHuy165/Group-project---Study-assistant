@@ -18,6 +18,8 @@ debugpy
 # AI and RAG
 google-genai
 ollama
+openai
 pypdf
 pgvector
 langchain-text-splitters
+httpx
