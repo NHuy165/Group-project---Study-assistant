@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { fetchStudyActivity } from '../api/ttrApi';
+import { useTTRModeManager } from './useTTRModeManager';
 
+// Dùng để test tính năng trước khi có BE, sẽ xóa sau khi tích hợp API thật
+import { MOCK_BACKEND_DATA } from '../utils/mockData';
 
 const mapBackendDataToGameFormat = (backendData) => {
   const items = backendData.items || [];
-
   return items.map((item, index) => {
     const textContentObj = item.contents.find(c => c.type === 'GAP_FILL_TEXT');
     const correctContents = item.contents.filter(c => c.type === 'GAP_FILL_CORRECT');
@@ -15,21 +17,12 @@ const mapBackendDataToGameFormat = (backendData) => {
     const distractors = distractorContents.map(c => c.content);
 
     const textChunks = textString.split(/\$!BLANK!\$|\[BLANK\]|___/);
-
-    const blanks = correctWords.map((word, i) => ({
-      id: `q${index}-b${i}`,
-      correctWord: word
-    }));
+    const blanks = correctWords.map((word, i) => ({ id: `q${index}-b${i}`, correctWord: word }));
 
     const allOptions = [...correctWords, ...distractors];
     const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
 
-    return {
-      id: `q${index}`,
-      textChunks: textChunks,
-      blanks: blanks,
-      options: shuffledOptions
-    };
+    return { id: `q${index}`, textChunks, blanks, options: shuffledOptions };
   });
 };
 
@@ -52,20 +45,37 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
   const [eliminatedOptions, setEliminatedOptions] = useState([]);
 
   const [isReviewMode, setIsReviewMode] = useState(initialMode === 'review');
-
   const [isCompleted, setIsCompleted] = useState(false);
 
+  // ==========================================
+  // GỌI NÃO BỘ QUẢN LÝ CHẾ ĐỘ CHƠI TẠI ĐÂY
+  // ==========================================
+  const modeManager = useTTRModeManager(initialMode, questions.length, streak);
 
   useEffect(() => {
     const loadData = async () => {
       if (!studyActivityId) return;
       try {
         setIsLoading(true);
+
+        // Dòng này để gọi API thật
         const beData = await fetchStudyActivity(studyActivityId);
         const formattedQuestions = mapBackendDataToGameFormat(beData);
         setQuestions(formattedQuestions);
         setIsLoading(false);
-      } catch (err) {
+
+
+        // Tránh mất thời gian test với API thật, tạm thời dùng mock data với delay giả lập với thời gian là
+        // setTimeout(() => {
+        //   const beData = MOCK_BACKEND_DATA;
+        //   const formattedQuestions = mapBackendDataToGameFormat(beData);
+        //   setQuestions(formattedQuestions);
+        //   setIsLoading(false);
+        // }, 100);
+
+        
+      } 
+      catch (err) {
         setError("Không thể tải dữ liệu bài tập. Vui lòng thử lại!");
         setIsLoading(false);
       }
@@ -77,13 +87,10 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
 
   useEffect(() => {
     if (streak > 0 && totalQuestions > 0) {
-      // Xác định "mốc cơ sở": tối đa là 10, tối thiểu là số lượng câu thực tế
       const base = Math.min(totalQuestions, 10);
-
-      // Tính toán các mốc linh hoạt
-      const step3 = Math.max(1, Math.round(base * 0.3)); // Tương ứng 3/10
-      const step5 = Math.max(1, Math.round(base * 0.5)); // Tương ứng 5/10
-      const step7 = Math.max(1, Math.round(base * 0.7)); // Tương ứng 7/10
+      const step3 = Math.max(1, Math.round(base * 0.3)); 
+      const step5 = Math.max(1, Math.round(base * 0.5)); 
+      const step7 = Math.max(1, Math.round(base * 0.7)); 
 
       if (streak % step3 === 0) setPower5050(prev => prev + 1);
       if (streak % step5 === 0) setPowerMagic(prev => prev + 1);
@@ -93,7 +100,6 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
 
   const currentQuestion = questions.length > 0 ? questions[currentIndex] : null;
 
-  // 3. AUTO ĐIỀN ĐÁP ÁN NẾU LÀ CHẾ ĐỘ REVIEW
   useEffect(() => {
     if (isReviewMode && currentQuestion) {
       const autoFilled = {};
@@ -106,7 +112,6 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
       setConfirmedBlanks(rights);
       setCheckStatus('success');
     } else {
-      // Nếu không phải review (tức là play)
       if (currentQuestion && currentQuestion.blanks.length > 0) setActiveBlankId(currentQuestion.blanks[0].id);
       setFilledBlanks({});
       setWrongBlanks([]);
@@ -116,6 +121,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     }
   }, [currentIndex, currentQuestion, isReviewMode]);
 
+  // ... (Giữ nguyên handleUse5050, handleUseMagic, handleSelectWord, handleDropWord, handleBlankClick) ...
   const handleUse5050 = useCallback(() => {
     if (power5050 <= 0 || checkStatus === 'success' || !currentQuestion) return;
     const correctWords = currentQuestion.blanks.map(b => b.correctWord);
@@ -168,27 +174,48 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     setActiveBlankId(blankId); 
   }, [filledBlanks, checkStatus, confirmedBlanks]);
 
+  // SỬA HÀM NÀY ĐỂ KÍCH HOẠT PHẠT/THƯỞNG TỪ CHẾ ĐỘ MỚI
   const handleCheckAnswer = () => {
-    let wrongs = [], rights = [];
+    let wrongs = [], rights = [], newlyCorrectCount = 0;
     currentQuestion.blanks.forEach(b => {
       if (filledBlanks[b.id] !== b.correctWord) wrongs.push(b.id);
-      else rights.push(b.id); 
+      else {
+        rights.push(b.id);
+        if (!confirmedBlanks.includes(b.id)) newlyCorrectCount++; 
+      }
     });
 
-    if (wrongs.length === 0) {
+    const isFullCorrect = wrongs.length === 0;
+    const isAnyWrong = wrongs.length > 0;
+
+    // GỌI LOGIC CỘNG/TRỪ THỜI GIAN (Speed Mode)
+    modeManager.processAnswerTime(isFullCorrect, isAnyWrong, newlyCorrectCount);
+
+    if (isFullCorrect) {
       setCheckStatus('success');
       setConfirmedBlanks(rights);
       setStreak(prev => prev + 1);
       setActiveBlankId(null);
     } else {
+      // GỌI LOGIC MẤT MẠNG/MẤT KHIÊN (Survival Mode)
+      const isFatal = modeManager.processSurvivalDamage();
+      if (isFatal) return; // Nếu vỡ mạng cuối -> Dừng mọi thứ, Game Over ngay!
+
       setCheckStatus('wrong');
       setWrongBlanks(wrongs);
       setConfirmedBlanks(prev => [...new Set([...prev, ...rights])]); 
       
-      if (shieldActive) {
-        setShieldActive(false); 
+      // SỬA LẠI LOGIC MẤT CHUỖI TẠI ĐÂY
+      if (initialMode === 'survival') {
+        setStreak(0); // SINH TỒN: Chỉ cần sai là mất sạch chuỗi (để Sương mù ập về)
+        if (shieldActive) setShieldActive(false); // Phá luôn khiên thường nếu có
       } else {
-        setStreak(0); 
+        // TỐC ĐỘ / CƠ BẢN: Có khiên thì giữ được chuỗi
+        if (shieldActive) {
+          setShieldActive(false); 
+        } else {
+          setStreak(0); 
+        }
       }
 
       setTimeout(() => {
@@ -208,29 +235,21 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex(prev => prev + 1);
     } else { 
-      // THAY VÌ ALERT, BẬT CỜ HOÀN THÀNH LÊN ĐỂ TTRCARD BÙNG NỔ!
       setIsCompleted(true); 
     }
   };
 
-  const toggleReviewMode = useCallback((active) => {
-    setIsReviewMode(active);
-  }, []);
+  const toggleReviewMode = useCallback((active) => { setIsReviewMode(active); }, []);
 
   return {
     isLoading, error, isReviewMode, toggleReviewMode,
-    isCompleted,
+    isCompleted, mode: initialMode, 
+    ...modeManager,
     currentIndex, totalQuestions, currentQuestion: questions[currentIndex],
     activeBlankId, filledBlanks, wrongBlanks, confirmedBlanks, checkStatus, streak,
     power5050, powerMagic, shieldActive, eliminatedOptions,
-    
-    // TRẢ VỀ ĐÚNG TÊN ĐỂ TTRCARD GỌI
-    onSelectWord: handleSelectWord,     
-    onDropWord: handleDropWord,         
-    onBlankClick: handleBlankClick,    
-    onCheckAnswer: handleCheckAnswer,   
-    onNextQuestion: handleNextQuestion,
-    onExit: onClose, // TRUYỀN HÀM ONCLOSE VÀO NÚT (X) TRÊN THẺ BÀI TẬP
+    onSelectWord: handleSelectWord, onDropWord: handleDropWord, onBlankClick: handleBlankClick,    
+    onCheckAnswer: handleCheckAnswer, onNextQuestion: handleNextQuestion, onExit: onClose,
     handleUse5050, handleUseMagic,
   };
 };

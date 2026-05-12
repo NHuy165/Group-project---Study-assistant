@@ -132,7 +132,8 @@ async def save_open_ended(
     if n_items == 0:
         return
 
-    question_score = settings.DEFAULT_EXERCISE_TOTAL_SCORE / n_items
+    assert study_activity.total_score is not None
+    question_score = study_activity.total_score / n_items
 
     for i_item in range(n_items):
         # Saving the item
@@ -592,8 +593,18 @@ async def submit_exercise_activity(
 
         await session.commit()
 
-    # Updates
+    # Updates total score
+    query_total_score = (
+        select(func.sum(ExerciseItem.user_score))
+        .select_from(ExerciseItem)
+        .where(ExerciseItem.study_activity_id == study_activity_id)
+    )
+    total_score = (await session.execute(query_total_score)).scalars().first()
+
+    assert total_score is not None
+
     await session.refresh(study_activity)
+    study_activity.total_score = total_score
     study_activity.is_submitted = True
     study_activity.submitted_at = datetime.now(timezone.utc)
     session.add(study_activity)

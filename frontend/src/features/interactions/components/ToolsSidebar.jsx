@@ -2,26 +2,22 @@ import React from "react";
 import videoIcon from "../../../assets/icon/video.svg";
 import slideIcon from "../../../assets/icon/slide.svg";
 import quizIcon from "../../../assets/icon/Quiz.svg";
-
-// Lấy Context để biết trời sáng hay tối
+import { Trash } from "@phosphor-icons/react";
 import { useTheme } from "../../../components/theme/ThemeWrapper"; 
 
 const TOOLS_LIST = [
-  { id: 'video', name: 'Video', icon: videoIcon, isSvg: true },
-  { id: 'slide', name: 'Slide', icon: slideIcon, isSvg: true },
   { id: 'mindmap', name: 'Tap To Review', icon: '🧠', isSvg: false },
   { id: 'flashcard', name: 'Flashcard', icon: '📕', isSvg: false },
   { id: 'quiz', name: 'Quiz', icon: quizIcon, isSvg: true },
+  { id: 'essay', name: 'Tự Luận', icon: '📝', isSvg: false },
 ];
 
-const MOCK_NOTES = [
-  { id: 1, name: "Ghi chú 01" }, 
-  { id: 2, name: "Ghi chú 02" }
-];
-
-// 1. NHẬN PROP onOpenTTR TỪ INTERACTION PAGE TRUYỀN XUỐNG
-export const ToolsSidebar = ({ onOpenTTR, ttrTasks, onPlayTTR }) => {
-  const { isNight } = useTheme(); // <--- Gọi hook theme
+// NHẬN GỘP PROPS TỪ CẢ 2 NHÁNH
+export const ToolsSidebar = ({ 
+  onOpenTTR, ttrTasks, onPlayTTR, 
+  onToolClick, toolLoadingStates = {}, activities = [], onActivityClick, onDeleteActivity, isCreatingNewActivity 
+}) => {
+  const { isNight } = useTheme(); 
 
   return (
     <aside className={`flex w-[20%] flex-col space-y-4 rounded-3xl p-6 backdrop-md shadow-xl border transition-colors duration-500 ${
@@ -36,26 +32,28 @@ export const ToolsSidebar = ({ onOpenTTR, ttrTasks, onPlayTTR }) => {
           }`}>
             <span>⚙️</span><h2>Công cụ</h2>
           </div>
-          <hr className={`border-t transition-colors ${
-            isNight ? "border-gray-600/50" : "border-gray-400/30"
-          }`} />
+          <hr className={`border-t transition-colors ${isNight ? "border-gray-600/50" : "border-gray-400/30"}`} />
         </header>
 
         <div className="grid grid-cols-2 gap-3">
           {TOOLS_LIST.map((item) => (
             <button 
               key={item.id} 
-              // 2. GẮN SỰ KIỆN ONCLICK: Chỉ kích hoạt onOpenTTR nếu bấm vào nút Tap To Review (id là 'mindmap')
+              // GỘP LOGIC CLICK: Nếu là TTR thì mở modal setup, nếu công cụ khác thì gọi ToolSetupArea
               onClick={() => {
                 if (item.id === 'mindmap' && onOpenTTR) {
                   onOpenTTR();
+                } else if (onToolClick) {
+                  onToolClick(item.id);
                 }
               }}
+              disabled={toolLoadingStates[item.id]}
               className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
-              isNight 
-                ? "bg-gray-800/80 border border-gray-700 text-gray-300" // Tối: Nền xám đậm, viền mờ, chữ xám nhạt
-                : "bg-[#FFEDE2B2]/80 text-gray-700"                     // Sáng: Nền cam nhạt, chữ đen
-            }`}>
+                isNight 
+                  ? "bg-gray-800/80 border border-gray-700 text-gray-300"
+                  : "bg-[#FFEDE2B2]/80 text-gray-700"
+              }`}
+            >
               {item.isSvg ? (
                 <img src={item.icon} alt={item.name} className={`h-8 w-8 object-contain ${isNight ? "opacity-90" : ""}`} />
               ) : (
@@ -67,29 +65,23 @@ export const ToolsSidebar = ({ onOpenTTR, ttrTasks, onPlayTTR }) => {
         </div>
       </section>
 
-      {/* Section Ghi chú */}
+      {/* Section Học Liệu */}
       <section className="flex flex-1 flex-col overflow-hidden pt-2">
         <header className="mb-4 space-y-4">
           <div className={`flex items-center space-x-2 text-2xl font-bold transition-colors ${
             isNight ? "text-gray-100" : "text-gray-800"
           }`}>
-            <span>📝</span><h2>Ghi chú</h2>
+            <span>📝</span><h2>Học Liệu</h2>
           </div>
-          <hr className={`border-t transition-colors ${
-            isNight ? "border-gray-600/50" : "border-gray-400/30"
-          }`} />
+          <hr className={`border-t transition-colors ${isNight ? "border-gray-600/50" : "border-gray-400/30"}`} />
         </header>
-
-        <button className="mb-3 w-full shrink-0 rounded-2xl bg-[#bf94e4] py-3 font-bold text-white shadow-md transition hover:bg-[#b388d8] active:scale-95 hover:shadow-lg">
-          + Thêm ghi chú
-        </button>
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
 
-          {/* HIỂN THỊ DANH SÁCH BÀI TTR ĐANG CHẠY NGẦM / ĐÃ TẠO XONG */}
+          {/* HIỂN THỊ DANH SÁCH BÀI TTR */}
           {ttrTasks && ttrTasks.map((task) => (
             <div 
-              key={task.id} 
+              key={`ttr-${task.id}`} 
               onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
               className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
               task.status === 'loading' 
@@ -106,17 +98,50 @@ export const ToolsSidebar = ({ onOpenTTR, ttrTasks, onPlayTTR }) => {
               </span>
             </div>
           ))}
-
-          {MOCK_NOTES.map((note) => (
-            <div key={note.id} className={`flex cursor-pointer items-center rounded-2xl px-4 py-3 shadow-sm border transition-colors ${
-              isNight 
-                ? "bg-gray-800/80 border-gray-700 hover:border-[#bf94e4] text-gray-300" // Tối
-                : "bg-white/80 border-transparent hover:border-[#bf94e4]/50 text-gray-700" // Sáng
-            }`}>
-              <span className="mr-3 text-sm opacity-80">✍️</span>
-              <span className="text-sm font-semibold">{note.name}</span>
+        
+          {/* HIỂN THỊ DANH SÁCH BÀI OPEN-ENDED */}
+          {activities && activities.map((act) => (
+            <div key={`oe-${act.id}`} className="group relative flex w-full items-center">
+              <button 
+                onClick={() => onActivityClick && onActivityClick(act.id)} 
+                className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
+                  isNight 
+                    ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
+                    : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
+                }`}
+              >
+                <span className="mr-3 text-sm opacity-80">📝</span>
+                <span className="text-sm font-semibold truncate text-left w-3/4">
+                  {act.name || `Bài tập #${act.id}`}
+                </span>
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); 
+                  if (window.confirm("Bé có chắc chắn muốn xóa bài tập này không?")) {
+                    onDeleteActivity(act.id);
+                  }
+                }}
+                className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                  isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
+                }`}
+              >
+                <Trash size={18} weight="bold" />
+              </button>
             </div>
           ))}
+
+          {/* INDICATOR OPEN ENDED LOADING */}
+          {isCreatingNewActivity && (
+            <div className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
+                isNight ? "bg-gray-800/50 border-gray-600" : "bg-gray-100/80 border-gray-300" 
+            }`}>
+              <span className="mr-3 text-sm opacity-50 animate-spin">⏳</span>
+              <span className="text-sm font-semibold text-gray-400 italic">
+                Cú Mèo đang soạn bài...
+              </span>
+            </div>
+          )}
         </nav>
       </section>
 
