@@ -13,10 +13,12 @@ const parseAttempt = (attempt) => {
   return Number.isNaN(numberValue) ? attempt : numberValue;
 };
 
+// Map data from backend, including user_score and max_score
 export const transformExerciseItem = (item) => ({
   id: item.id,
   text: item.question,
   maxScore: item.max_score,
+  userScore: item.user_score,
   attemptId: parseAttempt(item.attempt),
   options: (item.contents || []).map((content) => ({
     id: content.id,
@@ -42,30 +44,76 @@ export const transformStudyActivitySummary = (activity) => ({
   title: activity.name || `Quiz ${toSubjectLabel(activity.subject_type)}`,
 });
 
-export const computeScoreFromQuestions = (questions) => {
-  const scored = questions.filter((question) =>
-    question.options.some((option) => option.isCorrect !== null),
-  );
-  const total = scored.length;
-  if (total === 0) return { total: 0, correct: 0, percent: 0 };
+// Compute final score using accurate graded values from backend
+const parseScoreValue = (value) =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
-  const correct = scored.reduce((count, question) => {
-    const selected = question.attemptId;
-    const matched = question.options.find((option) => option.id === selected);
-    return matched?.isCorrect ? count + 1 : count;
-  }, 0);
+const normalizeScorePayload = (payload) => {
+  if (!payload) return {};
+  if (typeof payload === "number") return { totalScore: payload };
+  if (typeof payload !== "object") return {};
 
   return {
-    total,
+    totalScore: parseScoreValue(payload.total_score ?? payload.totalScore),
+    totalMaxScore: parseScoreValue(
+      payload.total_max_score ?? payload.totalMaxScore,
+    ),
+    percent: parseScoreValue(
+      payload.percent ?? payload.score_percent ?? payload.percentScore,
+    ),
+    correct: parseScoreValue(payload.correct ?? payload.correctCount),
+    total: parseScoreValue(payload.total ?? payload.totalQuestions),
+  };
+};
+
+export const computeScoreFromQuestions = (questions) => {
+  let totalScore = 0;
+  let totalMaxScore = 0;
+  let correct = 0;
+
+  questions.forEach((q) => {
+    totalMaxScore += q.maxScore || 0;
+    totalScore += q.userScore || 0;
+    if (q.userScore !== null && q.userScore !== undefined && q.maxScore) {
+      if (q.userScore >= q.maxScore) correct += 1;
+    }
+  });
+
+  return {
+    totalScore,
+    totalMaxScore,
+    percent:
+      totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0,
     correct,
-    percent: Math.round((correct / total) * 100),
+    total: questions.length,
   };
 };
 
 export const transformStudyActivityDetail = (activity) => {
   const questions = (activity.items || []).map(transformExerciseItem);
+
+  const computedScore = computeScoreFromQuestions(questions);
+  const topLevelScore = {
+    totalScore: parseScoreValue(activity.total_score ?? activity.totalScore),
+    totalMaxScore: parseScoreValue(
+      activity.total_max_score ?? activity.totalMaxScore,
+    ),
+    percent: parseScoreValue(activity.percent ?? activity.score_percent),
+    correct: parseScoreValue(activity.correct ?? activity.correctCount),
+    total: parseScoreValue(activity.total ?? activity.totalQuestions),
+  };
+  const payloadScore = normalizeScorePayload(activity.score);
+  const mergedScore = { ...topLevelScore, ...payloadScore };
+
+  // Calculate score only if the user has submitted the quiz
   const score = activity.is_submitted
-    ? computeScoreFromQuestions(questions)
+    ? {
+        totalScore: mergedScore.totalScore ?? computedScore.totalScore,
+        totalMaxScore: mergedScore.totalMaxScore ?? computedScore.totalMaxScore,
+        percent: mergedScore.percent ?? computedScore.percent,
+        correct: mergedScore.correct ?? computedScore.correct,
+        total: mergedScore.total ?? computedScore.total,
+      }
     : null;
 
   return {
@@ -76,13 +124,13 @@ export const transformStudyActivityDetail = (activity) => {
   };
 };
 
+// Helper for optimistic UI updates
 export const mergeExerciseItem = (quiz, updatedItem) => {
-  const nextQuestions = quiz.questions.map((question) =>
-    question.id === updatedItem.id ? updatedItem : question,
-  );
-
+  if (!quiz) return null;
   return {
     ...quiz,
-    questions: nextQuestions,
+    questions: quiz.questions.map((q) =>
+      q.id === updatedItem.id ? updatedItem : q,
+    ),
   };
 };

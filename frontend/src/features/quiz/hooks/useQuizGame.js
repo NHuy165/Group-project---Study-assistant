@@ -40,19 +40,26 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     (question) => question.isFlagged,
   ).length;
 
-  const progress =
-    totalQuestions === 0
-      ? 0
-      : Math.round(((currentIndex + 1) / totalQuestions) * 100);
-
   const handleSelectOption = async (optionId) => {
     if (!quiz || quiz.isSubmitted || !currentQuestion) return;
-    const updatedItem = await quizService.submitAnswer(
-      currentQuestion.id,
-      optionId,
-    );
-    if (updatedItem && onQuizUpdate) {
-      onQuizUpdate(mergeExerciseItem(quiz, updatedItem));
+
+    // Optimistic UI Update: reflect changes instantly for the user
+    const optimisticQuestion = { ...currentQuestion, attemptId: optionId };
+    if (onQuizUpdate) {
+      onQuizUpdate(mergeExerciseItem(quiz, optimisticQuestion));
+    }
+
+    try {
+      // Call backend to auto-save attempt
+      const updatedItem = await quizService.submitAnswer(
+        currentQuestion.id,
+        optionId,
+      );
+      if (updatedItem && onQuizUpdate) {
+        onQuizUpdate(mergeExerciseItem(quiz, updatedItem));
+      }
+    } catch (error) {
+      console.error("Failed to auto-save answer", error);
     }
   };
 
@@ -79,21 +86,28 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
 
   const submitQuiz = async () => {
     if (!quiz || quiz.isSubmitted) return;
+
+    // Prevent multiple submissions
     setIsSubmitting(true);
-    const updated = await quizService.submitQuiz(quiz.id);
-    setIsSubmitting(false);
-    if (updated && onQuizUpdate) onQuizUpdate(updated);
+    try {
+      const updated = await quizService.submitQuiz(quiz.id);
+      // The updated quiz payload now unlocks user_score and is_correct flags
+      if (updated && onQuizUpdate) onQuizUpdate(updated);
+    } catch (error) {
+      console.error("Failed to submit quiz", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return {
     currentQuestion,
     currentIndex,
-    selectedOption,
     totalQuestions,
+    selectedOption,
     questionStatus,
     unansweredCount,
     flaggedCount,
-    progress,
     isSubmitting,
     handleSelectOption,
     nextQuestion,
@@ -104,5 +118,3 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     flaggedQuestionIds,
   };
 };
-
-export default useQuizGame;
