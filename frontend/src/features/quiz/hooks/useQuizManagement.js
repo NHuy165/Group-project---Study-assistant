@@ -45,14 +45,59 @@ const useQuizManagement = (interactionId) => {
     }
   };
 
+  const loadQuizDetail = async (studyActivityId) => {
+    if (!interactionId) return null;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const detail = await quizService.readQuiz(studyActivityId);
+      setQuizzes((prev) =>
+        prev.map((item) => (item.id === detail.id ? detail : item)),
+      );
+      return detail;
+    } catch {
+      setError(getErrorMessage());
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const removeQuiz = async (quizId) => {
     if (!interactionId) return null;
     setIsLoading(true);
     setError(null);
     try {
-      await quizService.deleteQuiz(interactionId, quizId);
+      await quizService.deleteQuiz(quizId);
       setQuizzes((prev) => prev.filter((item) => item.id !== quizId));
       return true;
+    } catch {
+      setError(getErrorMessage());
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateQuizMeta = async (quizId, data) => {
+    if (!interactionId) return null;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updated = await quizService.updateQuiz(quizId, data);
+      setQuizzes((prev) =>
+        prev.map((item) =>
+          item.id === updated.id
+            ? {
+                ...item,
+                name: updated.name,
+                title: updated.title,
+                description: updated.description,
+              }
+            : item,
+        ),
+      );
+      return updated;
     } catch {
       setError(getErrorMessage());
       return null;
@@ -74,6 +119,8 @@ const useQuizManagement = (interactionId) => {
     createNewQuiz,
     removeQuiz,
     loadQuizzes,
+    loadQuizDetail,
+    updateQuizMeta,
     updateQuizInList,
   };
 };

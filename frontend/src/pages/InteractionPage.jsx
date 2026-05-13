@@ -96,7 +96,7 @@ export const InteractionPage = () => {
 
       {activeToolId === "quiz" && (
         <QuizPanel
-          interactionId={interactionId || "default"}
+          interactionId={interactionId}
           onClose={() => setActiveToolId(null)}
         />
       )}

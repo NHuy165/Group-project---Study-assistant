@@ -1,91 +1,58 @@
-import { buildQuizFromBank, computeScore } from "../utils/quizHelpers";
+import axiosClient from "../../../api/axiosClient";
+import {
+  transformExerciseItem,
+  transformStudyActivityDetail,
+  transformStudyActivitySummary,
+} from "../utils/quizHelpers";
 
-const STORAGE_KEY = "quiz_store_v1";
-
-const readStore = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { interactions: {} };
-    return JSON.parse(raw);
-  } catch {
-    return { interactions: {} };
-  }
-};
-
-const writeStore = (store) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-};
-
-const getInteractionBucket = (store, interactionId) => {
-  const key = String(interactionId || "default");
-  if (!store.interactions[key]) {
-    store.interactions[key] = [];
-  }
-  return { key, quizzes: store.interactions[key] };
-};
+const PATH = "/study-activity";
 
 export const readQuizzes = async (interactionId) => {
-  const store = readStore();
-  const { quizzes } = getInteractionBucket(store, interactionId);
-  return quizzes;
+  const response = await axiosClient.get(`${PATH}/${interactionId}/`);
+  return response.data.map(transformStudyActivitySummary);
 };
 
 export const createQuiz = async (interactionId, data) => {
-  const store = readStore();
-  const { key, quizzes } = getInteractionBucket(store, interactionId);
+  const payload = {
+    prompt: data.prompt || "",
+    subject_type: data.subjectType,
+    activity_type: "EXERCISE",
+    activity_format: "MULTIPLE_CHOICE_QUESTIONS",
+  };
 
-  const quiz = buildQuizFromBank(data);
-  const next = [quiz, ...quizzes];
-  store.interactions[key] = next;
-  writeStore(store);
-
-  return quiz;
+  const response = await axiosClient.post(
+    `${PATH}/${interactionId}/create`,
+    payload,
+  );
+  return transformStudyActivityDetail(response.data);
 };
 
-export const readQuiz = async (interactionId, quizId) => {
-  const quizzes = await readQuizzes(interactionId);
-  return quizzes.find((item) => item.id === quizId) || null;
+export const readQuiz = async (studyActivityId) => {
+  const response = await axiosClient.get(`${PATH}/${studyActivityId}`);
+  return transformStudyActivityDetail(response.data);
 };
 
-export const deleteQuiz = async (interactionId, quizId) => {
-  const store = readStore();
-  const { key, quizzes } = getInteractionBucket(store, interactionId);
-  store.interactions[key] = quizzes.filter((item) => item.id !== quizId);
-  writeStore(store);
+export const updateQuiz = async (studyActivityId, data) => {
+  const response = await axiosClient.patch(
+    `${PATH}/${studyActivityId}/update`,
+    data,
+  );
+  return transformStudyActivitySummary(response.data);
+};
+
+export const deleteQuiz = async (studyActivityId) => {
+  await axiosClient.delete(`${PATH}/${studyActivityId}`);
   return true;
 };
 
-export const submitAnswer = async (
-  interactionId,
-  quizId,
-  questionId,
-  selectedIndex,
-) => {
-  const store = readStore();
-  const { key, quizzes } = getInteractionBucket(store, interactionId);
-  const updated = quizzes.map((quiz) => {
-    if (quiz.id !== quizId) return quiz;
-    return {
-      ...quiz,
-      answers: { ...quiz.answers, [questionId]: selectedIndex },
-    };
+export const submitAnswer = async (exerciseItemId, attempt) => {
+  const response = await axiosClient.patch(`${PATH}/${exerciseItemId}/answer`, {
+    attempt,
   });
-  store.interactions[key] = updated;
-  writeStore(store);
-
-  return updated.find((quiz) => quiz.id === quizId) || null;
+  return transformExerciseItem(response.data);
 };
 
-export const submitQuiz = async (interactionId, quizId) => {
-  const store = readStore();
-  const { key, quizzes } = getInteractionBucket(store, interactionId);
-  const updated = quizzes.map((quiz) => {
-    if (quiz.id !== quizId) return quiz;
-    const score = computeScore(quiz);
-    return { ...quiz, isSubmitted: true, score };
-  });
-  store.interactions[key] = updated;
-  writeStore(store);
-
-  return updated.find((quiz) => quiz.id === quizId) || null;
+export const submitQuiz = async (studyActivityId) => {
+  const response = await axiosClient.patch(`${PATH}/${studyActivityId}/submit`);
+  return transformStudyActivityDetail(response.data);
 };

@@ -1,5 +1,5 @@
 export const QUIZ_TYPES = {
   ENGLISH: "ENGLISH",
-  MATH: "MATH",
+  MATHS: "MATHS",
   VIETNAMESE: "VIETNAMESE",
 };

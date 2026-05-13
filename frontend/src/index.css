@@ -2,8 +2,12 @@
 
 @theme {
   @keyframes meteor-flow {
-    from { background-position: 0% 50%; }
-    to { background-position: 200% 50%; }
+    from {
+      background-position: 0% 50%;
+    }
+    to {
+      background-position: 200% 50%;
+    }
   }
   --animate-meteor: meteor-flow 4s linear infinite;
 }
@@ -12,7 +16,9 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   margin: 0;
   min-height: 100%;
 }
@@ -26,10 +32,15 @@ body {
   .text-meteor {
     @apply bg-clip-text text-transparent bg-[length:300%_100%] animate-meteor;
     background-image: linear-gradient(
-      90deg, #2d7a72, #4ecdc4, #ff6b6b, #feca57, #4ecdc4, #2d7a72
+      90deg,
+      #2d7a72,
+      #4ecdc4,
+      #ff6b6b,
+      #feca57,
+      #4ecdc4,
+      #2d7a72
     );
   }
-
 
   .auth-card {
     /* Trong Tailwind, dùng dấu '!' ở phía trước thay vì '!important' ở phía sau */
@@ -49,37 +60,199 @@ body {
 /* Hiệu ứng Loading khi chờ câu trả lời */
 @theme {
   @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
   }
   --animate-shimmer: shimmer 3s infinite linear;
 }
 
 .skeleton-box {
   @apply relative overflow-hidden bg-white/20 rounded-xl;
-  background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
   background-size: 200% 100%;
   animation: shimmer 3s infinite;
 }
 
-
 @keyframes ball-sync-pendulum {
-  0%, 100% { transform: translate(0, -35px) scale(1.1, 0.9); background-color: #fbbf24; } /* Bậc 1 */
-  8.3%     { transform: translate(22px, -80px) scale(0.9, 1.1); } 
-  16.6%    { transform: translate(44px, -55px) scale(1.1, 0.9); background-color: #22d3ee; } /* Bậc 2 */
-  25%      { transform: translate(66px, -100px) scale(0.9, 1.1); }
-  33.3%    { transform: translate(88px, -75px) scale(1.1, 0.9); background-color: #4ade80; } /* Bậc 3 */
-  41.6%    { transform: translate(110px, -120px) scale(0.9, 1.1); }
-  50%      { transform: translate(132px, -95px) scale(1.1, 0.9); background-color: #f472b6; } /* Bậc 4 */
-  58.3%    { transform: translate(110px, -120px) scale(0.9, 1.1); }
-  66.6%    { transform: translate(88px, -75px) scale(1.1, 0.9); background-color: #4ade80; } /* Về 3 */
-  75%      { transform: translate(66px, -100px) scale(0.9, 1.1); }
-  83.3%    { transform: translate(44px, -55px) scale(1.1, 0.9); background-color: #22d3ee; } /* Về 2 */
-  91.6%    { transform: translate(22px, -80px) scale(0.9, 1.1); }
+  0%,
+  100% {
+    transform: translate(0, -35px) scale(1.1, 0.9);
+    background-color: #fbbf24;
+  } /* Bậc 1 */
+  8.3% {
+    transform: translate(22px, -80px) scale(0.9, 1.1);
+  }
+  16.6% {
+    transform: translate(44px, -55px) scale(1.1, 0.9);
+    background-color: #22d3ee;
+  } /* Bậc 2 */
+  25% {
+    transform: translate(66px, -100px) scale(0.9, 1.1);
+  }
+  33.3% {
+    transform: translate(88px, -75px) scale(1.1, 0.9);
+    background-color: #4ade80;
+  } /* Bậc 3 */
+  41.6% {
+    transform: translate(110px, -120px) scale(0.9, 1.1);
+  }
+  50% {
+    transform: translate(132px, -95px) scale(1.1, 0.9);
+    background-color: #f472b6;
+  } /* Bậc 4 */
+  58.3% {
+    transform: translate(110px, -120px) scale(0.9, 1.1);
+  }
+  66.6% {
+    transform: translate(88px, -75px) scale(1.1, 0.9);
+    background-color: #4ade80;
+  } /* Về 3 */
+  75% {
+    transform: translate(66px, -100px) scale(0.9, 1.1);
+  }
+  83.3% {
+    transform: translate(44px, -55px) scale(1.1, 0.9);
+    background-color: #22d3ee;
+  } /* Về 2 */
+  91.6% {
+    transform: translate(22px, -80px) scale(0.9, 1.1);
+  }
+}
+
+@keyframes quiz-float-1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(22px, -18px) scale(1.06);
+  }
+}
+
+@keyframes quiz-float-2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-26px, 20px) scale(1.08);
+  }
+}
+
+@keyframes quiz-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@layer utilities {
+  .quiz-aurora {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(55px);
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  .quiz-aurora-a {
+    width: 340px;
+    height: 340px;
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgba(78, 205, 196, 0.62),
+      rgba(78, 205, 196, 0)
+    );
+    animation: quiz-float-1 9s ease-in-out infinite;
+  }
+
+  .quiz-aurora-b {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(
+      circle at 40% 40%,
+      rgba(255, 107, 107, 0.48),
+      rgba(255, 107, 107, 0)
+    );
+    animation: quiz-float-2 11s ease-in-out infinite;
+  }
+
+  .quiz-aurora-c {
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(
+      circle at 35% 35%,
+      rgba(254, 202, 87, 0.52),
+      rgba(254, 202, 87, 0)
+    );
+    animation: quiz-pulse 6s ease-in-out infinite;
+  }
 }
 
 /* LOGIC CỘT: Nảy lò xo cực nhanh đúng nhịp bóng đáp */
-@keyframes pillar-1-sync { 0%, 100%, 5% { transform: scaleY(0.4); } 10%, 95% { transform: scaleY(1); } }
-@keyframes pillar-2-sync { 0%, 100%, 16.6% { transform: scaleY(0.4); } 11%, 22%, 78%, 88% { transform: scaleY(1); } 83.3% { transform: scaleY(0.4); } }
-@keyframes pillar-3-sync { 0%, 100%, 33.3% { transform: scaleY(0.4); } 28%, 38%, 61%, 71% { transform: scaleY(1); } 66.6% { transform: scaleY(0.4); } }
-@keyframes pillar-4-sync { 0%, 100%, 50% { transform: scaleY(0.4); } 45%, 55% { transform: scaleY(1); } }
+@keyframes pillar-1-sync {
+  0%,
+  100%,
+  5% {
+    transform: scaleY(0.4);
+  }
+  10%,
+  95% {
+    transform: scaleY(1);
+  }
+}
+@keyframes pillar-2-sync {
+  0%,
+  100%,
+  16.6% {
+    transform: scaleY(0.4);
+  }
+  11%,
+  22%,
+  78%,
+  88% {
+    transform: scaleY(1);
+  }
+  83.3% {
+    transform: scaleY(0.4);
+  }
+}
+@keyframes pillar-3-sync {
+  0%,
+  100%,
+  33.3% {
+    transform: scaleY(0.4);
+  }
+  28%,
+  38%,
+  61%,
+  71% {
+    transform: scaleY(1);
+  }
+  66.6% {
+    transform: scaleY(0.4);
+  }
+}
+@keyframes pillar-4-sync {
+  0%,
+  100%,
+  50% {
+    transform: scaleY(0.4);
+  }
+  45%,
+  55% {
+    transform: scaleY(1);
+  }
+}

@@ -139,6 +139,5 @@ function MyInteractionPage() {
 - [ ] Submit quiz + scoring
 - [ ] Show results page
 - [ ] Save quiz progress
-- [ ] Open-ended questions support
 - [ ] Quiz retake logic
 - [ ] Analytics/tracking
