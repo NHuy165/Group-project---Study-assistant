@@ -101,6 +101,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     jumpToQuestion,
     toggleFlagCurrentQuestion,
     submitQuiz,
+    flaggedQuestionIds,
   };
 };
 
