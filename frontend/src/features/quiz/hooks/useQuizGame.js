@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { quizService } from "../services/quiz.service";
 import { mergeExerciseItem } from "../utils/quizHelpers";
 
-export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào từ quizHelpers
+export const useQuizGame = (quiz, onQuizUpdate) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [flaggedQuestionIds, setFlaggedQuestionIds] = useState([]); // mảng chứa các câu phân vân
+  const [flaggedQuestionIds, setFlaggedQuestionIds] = useState([]);
+
+  // --- STATE MỚI: Quản lý cột mốc (Milestones) ---
+  const [notifiedMilestones, setNotifiedMilestones] = useState([]);
+  const [milestoneMessage, setMilestoneMessage] = useState(null);
 
   const questions = quiz?.questions || [];
   const totalQuestions = questions.length;
@@ -13,6 +17,8 @@ export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào t�
   useEffect(() => {
     setCurrentIndex(0);
     setFlaggedQuestionIds([]);
+    setNotifiedMilestones([]); // Reset mốc thưởng khi đổi quiz
+    setMilestoneMessage(null);
   }, [quiz?.id]);
 
   const currentQuestion = useMemo(
@@ -32,7 +38,6 @@ export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào t�
     [questions, flaggedQuestionIds],
   );
 
-  // đếm số câu chưa làm hoặc phân vân 
   const unansweredCount = questionStatus.filter(
     (question) => !question.isAnswered,
   ).length;
@@ -41,17 +46,52 @@ export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào t�
     (question) => question.isFlagged,
   ).length;
 
-  const handleSelectOption = async (optionId) => {
-    if (!quiz || quiz.isSubmitted || !currentQuestion) return; // nếu bài đã nộp thì ko cho tương tác 
+  // Tính toán tiến độ %
+  const progress =
+    totalQuestions > 0
+      ? Math.round(((totalQuestions - unansweredCount) / totalQuestions) * 100)
+      : 0;
 
-    // Optimistic UI Update: reflect changes instantly for the user
+  // --- LOGIC MỚI: Bắn Popup Lời chúc theo tiến độ ---
+  useEffect(() => {
+    // Chỉ kích hoạt khi bài CHƯA nộp
+    if (quiz?.isSubmitted) return;
+
+    if (progress >= 80 && !notifiedMilestones.includes(80)) {
+      setMilestoneMessage({
+        title: "Sắp xong rồi!",
+        body: "Bạn đã hoàn thành 80% bài làm. Cố lên nhé! 🚀",
+        tone: "sky",
+      });
+      setNotifiedMilestones((prev) => [...prev, 80]);
+    } else if (progress >= 50 && !notifiedMilestones.includes(50)) {
+      setMilestoneMessage({
+        title: "Tuyệt vời!",
+        body: "Bạn đã đi được một nửa chặng đường rồi đấy! ⭐",
+        tone: "emerald",
+      });
+      setNotifiedMilestones((prev) => [...prev, 50]);
+    } else if (progress >= 20 && !notifiedMilestones.includes(20)) {
+      setMilestoneMessage({
+        title: "Khởi đầu tốt!",
+        body: "Tiếp tục giữ vững phong độ này nhé! 🌱",
+        tone: "amber",
+      });
+      setNotifiedMilestones((prev) => [...prev, 20]);
+    }
+  }, [progress, notifiedMilestones, quiz?.isSubmitted]);
+
+  const clearMilestoneMessage = () => setMilestoneMessage(null);
+
+  const handleSelectOption = async (optionId) => {
+    if (!quiz || quiz.isSubmitted || !currentQuestion) return;
+
     const optimisticQuestion = { ...currentQuestion, attemptId: optionId };
     if (onQuizUpdate) {
       onQuizUpdate(mergeExerciseItem(quiz, optimisticQuestion));
     }
 
     try {
-      // Call backend to auto-save attempt
       const updatedItem = await quizService.submitAnswer(
         currentQuestion.id,
         optionId,
@@ -76,7 +116,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào t�
     setCurrentIndex(Math.min(Math.max(index, 0), totalQuestions - 1));
   };
 
-  const toggleFlagCurrentQuestion = () => { // Phân vân, xem lại sau
+  const toggleFlagCurrentQuestion = () => {
     if (!currentQuestion) return;
     setFlaggedQuestionIds((prev) =>
       prev.includes(currentQuestion.id)
@@ -88,11 +128,9 @@ export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào t�
   const submitQuiz = async () => {
     if (!quiz || quiz.isSubmitted) return;
 
-    // Prevent multiple submissions
     setIsSubmitting(true);
     try {
       const updated = await quizService.submitQuiz(quiz.id);
-      // The updated quiz payload now unlocks user_score and is_correct flags
       if (updated && onQuizUpdate) onQuizUpdate(updated);
     } catch (error) {
       console.error("Failed to submit quiz", error);
@@ -109,6 +147,9 @@ export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào t�
     questionStatus,
     unansweredCount,
     flaggedCount,
+    progress, // Export progress ra để UI sử dụng
+    milestoneMessage, // Export message để hiện Popup
+    clearMilestoneMessage, // Export hàm tắt Popup
     isSubmitting,
     handleSelectOption,
     nextQuestion,

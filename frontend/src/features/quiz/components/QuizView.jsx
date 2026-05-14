@@ -1,4 +1,14 @@
 import React, { useEffect, useState } from "react";
+import Confetti from "react-confetti";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Send, 
+  Flag, 
+  CheckCircle2, 
+  XCircle, 
+  X 
+} from "lucide-react";
 import QuestionCard from "./QuestionCard";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 
@@ -9,6 +19,20 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
   const [draftName, setDraftName] = useState("");
   const [draftDescription, setDraftDescription] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
+  
+  // State quản lý kích thước màn hình cho hiệu ứng pháo giấy
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (!quiz) return;
@@ -26,6 +50,8 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
     unansweredCount,
     flaggedCount,
     progress,
+    milestoneMessage,
+    clearMilestoneMessage,
     isSubmitting,
     handleSelectOption,
     nextQuestion,
@@ -35,6 +61,24 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
     submitQuiz,
     flaggedQuestionIds,
   } = game;
+
+  // LOGIC: ĐIỀU HƯỚNG BÀN PHÍM
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea") return;
+      if (isConfirmOpen) return;
+
+      if (event.key === "ArrowLeft") {
+        if (canGoPrev) handlePrevQuestion();
+      } else if (event.key === "ArrowRight") {
+        if (canGoNext) handleNextQuestion();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentIndex, isConfirmOpen]);
 
   const handleSave = async () => {
     if (!onUpdateMeta) return;
@@ -201,7 +245,43 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
   }
 
   return (
-    <div className="flex h-full flex-col gap-5">
+    <div className="flex h-full flex-col gap-5 relative">
+      {/* HIỆU ỨNG PHÁO GIẤY: Nổ khi điểm >= 85% */}
+      {isSubmitted && scorePercent >= 85 && (
+        <div className="pointer-events-none fixed inset-0 z-[100]">
+          <Confetti
+            width={windowSize.width}
+            height={windowSize.height}
+            recycle={false}
+            numberOfPieces={400}
+            gravity={0.15}
+          />
+        </div>
+      )}
+
+      {/* POPUP CỘT MỐC (Milestone Toast) */}
+      {milestoneMessage && (
+        <div className="fixed bottom-10 right-10 z-[100] animate-bounce">
+          <div
+            className={`flex max-w-xs items-start gap-3 rounded-2xl border-2 p-4 shadow-2xl ${
+              praiseToneStyles[milestoneMessage.tone]
+            }`}
+          >
+            <div className="pt-1">⭐</div>
+            <div>
+              <p className="text-sm font-bold">{milestoneMessage.title}</p>
+              <p className="text-xs opacity-90">{milestoneMessage.body}</p>
+            </div>
+            <button
+              onClick={clearMilestoneMessage}
+              className="rounded-full p-1 hover:bg-black/10"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         className={`rounded-3xl border p-5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ${
           isNight
@@ -405,7 +485,7 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
               className={`mt-3 h-2 w-full overflow-hidden rounded-full ${isNight ? "bg-slate-700" : "bg-gray-200"}`}
             >
               <div
-                className="h-full bg-[#4ecdc4]"
+                className="h-full bg-[#4ecdc4] transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -443,7 +523,7 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                   </button>
                   <button
                     onClick={() => setResultFilter("correct")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all border shadow-sm hover:-translate-y-0.5 ${
+                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all border shadow-sm hover:-translate-y-0.5 ${
                       resultFilter === "correct"
                         ? "bg-green-500 text-white border-green-500 shadow-[0_12px_26px_rgba(34,197,94,0.35)]"
                         : isNight
@@ -451,11 +531,11 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                           : "border-gray-200/80 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-[#f0fdf4]"
                     }`}
                   >
-                    Câu đúng
+                    <CheckCircle2 size={16} /> Câu đúng
                   </button>
                   <button
                     onClick={() => setResultFilter("wrong")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all border shadow-sm hover:-translate-y-0.5 ${
+                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all border shadow-sm hover:-translate-y-0.5 ${
                       resultFilter === "wrong"
                         ? "bg-red-500 text-white border-red-500 shadow-[0_12px_26px_rgba(239,68,68,0.35)]"
                         : isNight
@@ -463,11 +543,11 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                           : "border-gray-200/80 bg-white/80 text-gray-700 hover:border-red-300 hover:bg-[#fff1f2]"
                     }`}
                   >
-                    Câu sai
+                    <XCircle size={16} /> Câu sai
                   </button>
                   <button
                     onClick={() => setResultFilter("flagged")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all border shadow-sm hover:-translate-y-0.5 ${
+                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all border shadow-sm hover:-translate-y-0.5 ${
                       resultFilter === "flagged"
                         ? "bg-yellow-500 text-white border-yellow-500 shadow-[0_12px_26px_rgba(234,179,8,0.35)]"
                         : isNight
@@ -475,7 +555,7 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                           : "border-gray-200/80 bg-white/80 text-gray-700 hover:border-yellow-300 hover:bg-[#fffbeb]"
                     }`}
                   >
-                    Câu phân vân
+                    <Flag size={16} /> Câu phân vân
                   </button>
                 </div>
                 {quiz.score && (
@@ -516,31 +596,31 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                   <button
                     onClick={handlePrevQuestion}
                     disabled={!canGoPrev}
-                    className={`rounded-xl border px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`flex items-center gap-1 rounded-xl border px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
                       isNight
                         ? "border-[#7d95e2]/45 bg-[#1a254f] text-slate-100"
-                        : "border-gray-200 bg-white text-gray-600"
+                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                   >
-                    Trước
+                    <ChevronLeft size={18} /> Trước
                   </button>
                   <button
                     onClick={handleNextQuestion}
                     disabled={!canGoNext}
-                    className={`rounded-xl border px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`flex items-center gap-1 rounded-xl border px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
                       isNight
                         ? "border-[#7d95e2]/45 bg-[#1a254f] text-slate-100"
-                        : "border-gray-200 bg-white text-gray-600"
+                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                   >
-                    Tiếp
+                    Tiếp <ChevronRight size={18} />
                   </button>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={toggleFlagCurrentQuestion}
                     disabled={quiz.isSubmitted}
-                    className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60 ${
+                    className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60 ${
                       currentStatus?.isFlagged
                         ? "border-yellow-400 bg-yellow-100 text-yellow-700"
                         : isNight
@@ -548,13 +628,15 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                           : "border-gray-200 bg-white text-gray-600"
                     }`}
                   >
+                    <Flag size={16} fill={currentStatus?.isFlagged ? "currentColor" : "none"} />
                     {currentStatus?.isFlagged ? "Bỏ phân vân" : "Phân vân"}
                   </button>
                   <button
                     onClick={() => setIsConfirmOpen(true)}
                     disabled={quiz.isSubmitted || isSubmitting}
-                    className="rounded-xl bg-[#ff6b6b] px-4 py-2 text-sm font-bold text-white shadow-[0_10px_20px_rgba(255,107,107,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(255,107,107,0.35)] disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-5 py-2 text-sm font-bold text-white shadow-[0_10px_20px_rgba(244,63,94,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(244,63,94,0.35)] active:scale-95 disabled:opacity-60"
                   >
+                    <Send size={16} />
                     Nộp bài
                   </button>
                 </div>
@@ -573,16 +655,15 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                   const isCurrent = index === currentIndex;
                   const isMatch =
                     !isFilterActive || filteredIndexSet.has(index);
-                  const baseStyle = status.isFlagged
-                    ? "border-yellow-400 bg-yellow-100 text-yellow-700"
-                    : status.isAnswered
-                      ? "border-green-500 bg-green-100 text-green-700"
-                      : isNight
-                        ? "border-[#7d95e2]/45 bg-[#1a254f] text-slate-100"
-                        : "border-gray-200 bg-white text-gray-600";
+                  
+                  let baseStyle = "border-gray-200 bg-white text-gray-600";
+                  if (isNight) baseStyle = "border-[#7d95e2]/45 bg-[#1a254f] text-slate-100";
+                  if (status.isAnswered) baseStyle = "border-green-500 bg-green-100 text-green-700";
+                  if (status.isFlagged) baseStyle = "border-yellow-400 bg-yellow-100 text-yellow-700";
+
                   const filterStyle =
                     isFilterActive && !isMatch
-                      ? "opacity-40 cursor-not-allowed"
+                      ? "opacity-30 cursor-not-allowed grayscale"
                       : "hover:-translate-y-0.5 hover:shadow-sm";
 
                   return (
@@ -592,7 +673,7 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                         if (!isMatch) return;
                         jumpToQuestion(index);
                       }}
-                      className={`rounded-lg border px-0 py-2 text-xs font-semibold transition-all ${baseStyle} ${
+                      className={`relative flex items-center justify-center rounded-lg border px-0 py-2 text-xs font-semibold transition-all ${baseStyle} ${
                         isCurrent
                           ? "ring-2 ring-offset-1 ring-[#4ecdc4]/70"
                           : ""
@@ -600,6 +681,12 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                       disabled={!isMatch}
                     >
                       {index + 1}
+                      {/* Huy hiệu nhỏ (Mini Badge) khi nộp bài */}
+                      {isSubmitted && (
+                        <div className="absolute -top-1 -right-1">
+                           {/* Logic huy hiệu có thể được thêm vào đây dựa trên đúng/sai */}
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -610,37 +697,34 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
       )}
 
       {isConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div
-            className={`w-full max-w-sm rounded-2xl border p-5 shadow-xl ${
+            className={`w-full max-w-sm rounded-3xl border p-6 shadow-2xl ${
               isNight
                 ? "border-[#7d95e2]/45 bg-[#111a38]"
                 : "border-white/30 bg-white"
             }`}
           >
             <h3
-              className={`text-lg font-bold ${isNight ? "text-slate-100" : "text-gray-800"}`}
+              className={`text-xl font-black ${isNight ? "text-slate-100" : "text-gray-800"}`}
             >
-              Xác nhận nộp bài?
+              Nộp bài ngay? 🚀
             </h3>
-            <p
-              className={`mt-2 text-sm ${isNight ? "text-slate-300" : "text-gray-600"}`}
-            >
-              Chưa trả lời:{" "}
-              <span className="font-semibold">{unansweredCount}</span>
-            </p>
-            <p
-              className={`text-sm ${isNight ? "text-slate-300" : "text-gray-600"}`}
-            >
-              Phân vân: <span className="font-semibold">{flaggedCount}</span>
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
+            <div className="mt-4 space-y-2 text-sm">
+              <p className={isNight ? "text-slate-300" : "text-gray-600"}>
+                • Còn <span className="font-bold text-rose-500">{unansweredCount}</span> câu chưa làm.
+              </p>
+              <p className={isNight ? "text-slate-300" : "text-gray-600"}>
+                • Có <span className="font-bold text-yellow-500">{flaggedCount}</span> câu đang phân vân.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 onClick={() => setIsConfirmOpen(false)}
-                className={`rounded-xl border px-3 py-2 text-sm font-semibold ${
+                className={`flex-1 rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
                   isNight
-                    ? "border-[#7d95e2]/45 bg-[#1a254f] text-slate-100"
-                    : "border-gray-200 bg-white text-gray-600"
+                    ? "border-[#7d95e2]/45 bg-[#1a254f] text-slate-100 hover:bg-[#253468]"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 Hủy
@@ -651,9 +735,9 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
                   submitQuiz();
                 }}
                 disabled={isSubmitting}
-                className="rounded-xl bg-[#ff6b6b] px-3 py-2 text-sm font-bold text-white disabled:opacity-60"
+                className="flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-rose-200 transition-all hover:scale-105 active:scale-95 disabled:opacity-60"
               >
-                Nộp bài
+                Xác nhận
               </button>
             </div>
           </div>
