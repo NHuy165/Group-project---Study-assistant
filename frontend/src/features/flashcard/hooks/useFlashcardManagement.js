@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { readFlashcard } from '../api/flashcardAPI';
+import { readFlashcard, addCard, updateFlashcard } from '../api/flashcardAPI';
 
 /**
  * Hook quản lý logic flashcard: load, tạo, xóa

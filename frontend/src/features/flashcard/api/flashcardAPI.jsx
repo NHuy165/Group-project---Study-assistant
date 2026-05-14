@@ -89,3 +89,61 @@ export const deleteFlashcard = async (id) => {
     }
 };
 
+export const createEmptyFlashcard = async (interactionId, formData) => {
+    try {
+
+        const payload = {
+            subject_type = formData.subject_type,
+            name = formData.name,
+            description = formData.description,
+        };
+
+        const response = await axiosClient.post(
+                `${PATH}/${interactionId}/flashcards/create`,
+                payload
+            );
+
+        return response.data;
+    } catch (error) {
+        console.error("Error create empty flashcard:", error);
+        throw error;
+    }
+}
+
+export const addCard = async (flashcardId, formData) => {
+    try {
+        const payload = {
+            front = formData.front,
+            back = formData.back,
+        };
+
+        const response = await axiosClient.post(
+                `${PATH}/${flashcardId}/add-cards`,
+                payload
+            );
+
+        return response;
+    } catch (error) {
+        console.error("Error add card:", error);
+        throw error;
+    } 
+}
+
+export const updateFlashcard = async (flashcardId, formData) => {
+    try {
+        const payload = {
+            front = formData.front,
+            back = formData.back,
+        };
+
+        const response = await axiosClient.post(
+                `${PATH}/flashcards/${flashcardId}`,
+                payload
+            );
+
+        return response;
+    } catch (error) {
+        console.error("Error update card:", error);
+        throw error;
+    }
+}

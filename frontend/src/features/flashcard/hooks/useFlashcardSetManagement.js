@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { readAllFlashcards, createFlashcard, deleteFlashcard } from '../api/flashcardAPI';
+import { readAllFlashcards, createFlashcard, deleteFlashcard, createEmptyFlashcard } from '../api/flashcardAPI';
 
 /**
  * Hook quản lý logic bộ flashcard: load, tạo, xóa
@@ -12,6 +12,10 @@ const useFlashcardSetManagement = (interactionId) => {
     const [error, setError] = useState('');
 
     const [prompt, setPrompt] = useState('');
+
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [subject, setSubject] = useState('')
 
     /**
      * Tải toàn bộ flashcards từ backend
@@ -39,7 +43,7 @@ const useFlashcardSetManagement = (interactionId) => {
      */
     const createNewFlashcardSet = useCallback(async (prompt) => {
         if (!prompt.trim() || !interactionId) {
-            setError('Vui lòng nhập nội dung');
+            setError('Bé vui lòng nhập nội dung nhé');
             return null;
         }
 
@@ -64,7 +68,43 @@ const useFlashcardSetManagement = (interactionId) => {
     }, [interactionId, loadFlashcardSets]);
 
     /**
-     * Xóa flashcard
+     * Tạo bộ flashcard trống
+     */
+    const createEmptyFlashcardSet = useCallback(async (formData) => {
+        if (!formData.subject_type.trim() || 
+        !formData.name.trim() ||
+        !formData.description.trim() ||
+        !interactionId) {
+            setError('Bé vui lòng nhập nội dung nhé');
+            return null;
+        }
+
+        setIsLoading(true);
+        setError('');
+        try {
+            formData = {
+                subject_type: subject,
+                name: name,
+                description: description,
+            }
+            const newFlashcardSet = await createEmptyFlashcard(interactionId, formData);
+
+            await loadFlashcardSets();
+
+            setPrompt('');
+            return newFlashcardSet;
+
+        } catch (err) {
+            console.error("Lỗi tạo flashcard:", err);
+            setError("Lỗi tạo flashcard. Vui lòng thử lại");
+        } finally {
+            setIsLoading(false);
+        }
+        return null;
+    }, [interactionId, loadFlashcardSets]);
+
+    /**
+     * Xóa bộ flashcard
      */
     const removeFlashcardSet = useCallback(async (study_activity_id) => {
         try {
@@ -95,8 +135,11 @@ const useFlashcardSetManagement = (interactionId) => {
         error,
         prompt, 
         setPrompt,
+        name, description, subject,
+        setName, setDescription, setSubject,
         loadFlashcardSets,
         createNewFlashcardSet,
+        createEmptyFlashcardSet,
         removeFlashcardSet,
     };
 };
