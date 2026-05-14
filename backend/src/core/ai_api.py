@@ -1,3 +1,6 @@
+import base64
+
+import httpx
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -10,7 +13,6 @@ from backend.src.exceptions.core import ExceptionRequest_400
 
 ai_client = genai.Client(api_key=settings.API_KEY_GEMINI)
 ollama_client = ollama.AsyncClient(host=settings.OLLAMA_HOST)
-
 
 class API(ABC):
     @classmethod
@@ -168,12 +170,111 @@ class OllamaAPI(API):
             )
 
         return result_text
+    
+
+class CloudFlareAPI(API):
+    @classmethod
+    async def embed(cls, content: str) -> list[float]:
+        url = f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run/{settings.EMBED_MODEL_CLOUDFLARE}"
+        headers = {
+            "Authorization": f"Bearer {settings.CLOUDFLARE_API_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        json_data = {
+            "text": [content]
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=json_data)
+            
+            # Bắt lỗi HTTP nếu request thất bại (VD: sai token, lỗi mạng)
+            if response.status_code != 200:
+                raise ExceptionRequest_400(f"Cloudflare API Error: {response.text}")
+                
+            response_data = response.json()
+            # response_data có dạng: 
+            # {
+            #     "result": {'meta', 'data', 'response', 'shape', 'pooling'},
+            #     "success": ,
+            #     "errors": ,
+            #     "messages": ,
+            # }
+
+        if not response_data.get("success"):
+            raise ExceptionRequest_400("Không thể tạo embedding từ Cloudflare.")
+        
+        result_data = response_data.get("result", {}).get("data")
+
+        assert result_data is not None
+        assert isinstance(result_data, list)
+        assert isinstance(result_data[0], list)
+
+        return result_data[0]
+
+    @classmethod
+    async def caption_image(cls, file: UploadFile) -> str:
+        url = f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run/{settings.VISION_MODEL_CLOUDFLARE}"
+        headers = {
+            "Authorization": f"Bearer {settings.CLOUDFLARE_API_TOKEN}",
+            "Content-Type": "application/json"
+        }
+
+        # Cloudflare không còn trường image riêng biệt, giờ gửi ảnh thông qua json nên cần encode về chuỗi base64
+        image_bytes = await file.read()
+        mime_type = file.content_type or "image/jpeg"
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+        system_prompt = (
+            "You are an expert AI vision assistant specialized in OCR, document transcription, "
+            "and detailed visual analysis. Extract text exactly as written and describe layouts, "
+            "data points, charts, and visual elements with exhaustive precision."
+        )
+        prompt_text = "Extract all readable text from this image exactly as written.\nThen, describe the layout, charts, figures, subjects, and any data points in exhaustive detail."
+        
+        json_data = {
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": [
+                    {
+                        "type": "text",
+                        "text": prompt_text
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{base64_image}"
+                        }
+                    }
+                ]}
+            ]
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=json_data)
+                
+            response_data = response.json()
+        
+        if not response_data.get("success"):
+            raise ExceptionRequest_400("Không thể tạo captioning từ Cloudflare.")
+        
+        result_data = response_data.get("result", {}).get("data")
+
+        assert result_data is not None
+        assert isinstance(result_data, list)
+        assert isinstance(result_data[0], list)
+
+        return result_data[0]
+
+    @classmethod
+    async def generate_content(cls, prompt: str, json_required: bool = False) -> str:
+        pass
 
 
 class GlobalAPI:
     models: dict[str, type[API]] = {
         "GOOGLE": GoogleAPI,
         "OLLAMA": OllamaAPI,
+        "CLOUDFLARE": CloudFlareAPI,
     }
 
     @classmethod
@@ -186,7 +287,7 @@ class GlobalAPI:
 
     @classmethod
     async def generate_chat(cls, prompt: str) -> str:
-        return await cls.models[settings.MODEL_IN_USE_EMBED].generate_content(prompt)
+        return await cls.models[settings.MODEL_IN_USE_GENERATE_CHAT].generate_content(prompt)
 
     @classmethod
     async def rewrite_prompt(cls, prompt: str) -> str:

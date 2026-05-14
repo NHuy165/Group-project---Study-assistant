@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     API_KEY_GEMINI: str
     PRIVATE_KEY: str
 
+    CLOUDFLARE_ACCOUNT_ID: str
+    CLOUDFLARE_API_TOKEN: str
+    GITHUB_API_TOKEN: str
     # Technical config
 
     # Auth
@@ -34,6 +37,9 @@ class Settings(BaseSettings):
     EMBED_MODEL_OLLAMA: str
     VISION_MODEL_OLLAMA: str
     ANSWER_MODEL_OLLAMA: str
+
+    EMBED_MODEL_CLOUDFLARE: str
+    VISION_MODEL_CLOUDFLARE: str
 
     # RAG
     DEFAULT_CHUNK_SIZE: int
