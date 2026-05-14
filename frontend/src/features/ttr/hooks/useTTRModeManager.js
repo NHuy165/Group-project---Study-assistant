@@ -1,101 +1,104 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-export const useTTRModeManager = (mode, totalQuestions, streak) => {
-  // --- STATE CHẾ ĐỘ TỐC ĐỘ (SPEED) ---
-  const [timeLeft, setTimeLeft] = useState(45); // Quỹ thời gian 45s
-  const [isTimeFrozen, setIsTimeFrozen] = useState(false);
+export const useTTRModeManager = (mode, totalQuestions, streak, isCompleted, checkStatus) => {
+  // Cập nhật công thức: 80s mặc định + 10s cho mỗi câu hỏi
+  const maxTime = totalQuestions > 0 ? 40 + (10 * totalQuestions) : 0;
 
-  // --- STATE CHẾ ĐỘ SINH TỒN (SURVIVAL) ---
-  const [shields, setShields] = useState(0); // Số lớp khiên
-  const [isFogActive, setIsFogActive] = useState(mode === 'survival'); // Bật sương mù mặc định
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [freezeTimeLeft, setFreezeTimeLeft] = useState(0);
+  const isTimeFrozen = freezeTimeLeft > 0;
 
-  // --- STATE KẾT THÚC ---
+  const [shields, setShields] = useState(0);
+  const [isFogActive, setIsFogActive] = useState(mode === 'survival');
+
   const [isGameOver, setIsGameOver] = useState(false);
-  const [gameOverReason, setGameOverReason] = useState(''); // 'time_up' hoặc 'one_hit_ko'
+  const [gameOverReason, setGameOverReason] = useState('');
 
-  // Tính mốc linh hoạt (Áp dụng chung logic với TTRCard)
-  const baseStreak = totalQuestions > 0 ? Math.min(totalQuestions, 10) : 10;
-  const streakMid = Math.max(1, Math.round(baseStreak * 0.4));
-  const streakHigh = Math.max(2, Math.round(baseStreak * 0.7));
+  const timerRef = useRef(null);
+  const freezeTimeLeftRef = useRef(0);
 
-  // ==========================================
-  // LOGIC 1: ĐẾM NGƯỢC THỜI GIAN (SPEED MODE)
-  // ==========================================
   useEffect(() => {
-    if (mode !== 'speed' || isGameOver || isTimeFrozen) return;
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIsGameOver(true);
-          setGameOverReason('time_up');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [mode, isGameOver, isTimeFrozen]);
+    if (maxTime > 0) setTimeLeft(maxTime);
+  }, [maxTime]);
 
-  // ==========================================
-  // LOGIC 2: ĐẶC QUYỀN STREAK (ĐÓNG BĂNG & KHIÊN & LỬA)
-  // ==========================================
+  useEffect(() => {
+    freezeTimeLeftRef.current = freezeTimeLeft;
+  }, [freezeTimeLeft]);
+
   useEffect(() => {
     if (streak === 0) {
-      if (mode === 'survival') setIsFogActive(true); // Mất chuỗi -> Sương mù ập lại
+      if (mode === 'survival') setIsFogActive(true);
       return;
     }
-
-    // Đặc quyền Tốc Độ: Đóng băng
     if (mode === 'speed') {
-      if (streak === streakMid || streak === streakHigh) {
-        setIsTimeFrozen(true);
-        const freezeTime = streak === streakHigh ? 5000 : 3000; // Mốc cao đóng băng 5s, vừa thì 3s
-        setTimeout(() => setIsTimeFrozen(false), freezeTime);
+      if (streak === Math.max(1, Math.round(totalQuestions * 0.4)) || 
+          streak === Math.max(2, Math.round(totalQuestions * 0.7))) {
+        setFreezeTimeLeft(streak >= Math.round(totalQuestions * 0.7) ? 5 : 3);
       }
     }
-
-    // Đặc quyền Sinh Tồn: Khiên & Xóa sương mù
     if (mode === 'survival') {
-      if (streak === streakMid) setShields(prev => prev + 1); // Được +1 Khiên bảo mệnh
-      if (streak >= streakHigh) setIsFogActive(false);        // Đánh tan sương mù
+      if (streak === Math.max(1, Math.round(totalQuestions * 0.4))) setShields(prev => prev + 1);
+      if (streak >= Math.max(2, Math.round(totalQuestions * 0.7))) setIsFogActive(false);
     }
-  }, [streak, mode, streakMid, streakHigh]);
+  }, [streak, mode, totalQuestions]);
 
-  // ==========================================
-  // LOGIC 3: XỬ LÝ PHẠT/THƯỞNG KHI BẤM "KIỂM TRA"
-  // ==========================================
+  // BỘ ĐẾM GIỜ CHÍNH - ĐÃ FIX LỖI ĐẾM NHANH
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const isPaused = checkStatus !== 'idle';
+    if (mode !== 'speed' || isGameOver || isCompleted || isPaused || totalQuestions === 0) return;
+
+    timerRef.current = setInterval(() => {
+      if (freezeTimeLeftRef.current > 0) {
+        setFreezeTimeLeft(prevFreeze => {
+          const nextFreeze = Math.max(prevFreeze - 1, 0);
+          freezeTimeLeftRef.current = nextFreeze;
+          return nextFreeze;
+        });
+      } else {
+        setTimeLeft(prevTime => {
+          if (prevTime <= 1) {
+            clearInterval(timerRef.current);
+            setIsGameOver(true);
+            setGameOverReason('time_up');
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [mode, isGameOver, isCompleted, checkStatus, totalQuestions]);
+
   const processAnswerTime = useCallback((isFullCorrect, isAnyWrong, newlyCorrectCount) => {
     if (mode !== 'speed') return;
     setTimeLeft(prev => {
       let newTime = prev;
-      if (isFullCorrect) newTime += 5; // Hoàn thành cả câu: +5s
-      else if (newlyCorrectCount > 0) newTime += (newlyCorrectCount * 2); // Đúng 1 ô: +2s
-      
-      if (isAnyWrong) newTime -= 5; // Có ô sai: Trừ 5s
-      return Math.max(newTime, 0);  // Không cho âm
+      if (isFullCorrect) newTime += 5;
+      else if (newlyCorrectCount > 0) newTime += newlyCorrectCount * 2;
+      if (isAnyWrong) newTime -= 5;
+      return Math.min(Math.max(newTime, 0), maxTime);
     });
-  }, [mode]);
+  }, [mode, maxTime]);
 
   const processSurvivalDamage = useCallback(() => {
-    if (mode !== 'survival') return false; // Không phải sinh tồn -> Không xử lý sát thương
-    
+    if (mode !== 'survival') return false;
     if (shields > 0) {
       setShields(prev => prev - 1);
-      return false; // Còn khiên -> Phá 1 khiên, sống sót!
+      return false;
     }
-    
-    // Hết khiên mà sai -> Tạch luôn
     setIsGameOver(true);
     setGameOverReason('one_hit_ko');
-    return true; 
+    return true;
   }, [mode, shields]);
 
   return {
-    timeLeft, isTimeFrozen,
-    shields, isFogActive,
-    isGameOver, gameOverReason,
-    processAnswerTime, processSurvivalDamage
+    timeLeft, maxTime, isTimeFrozen, freezeTimeLeft,
+    shields, isFogActive, isGameOver, gameOverReason,
+    processAnswerTime, processSurvivalDamage,
   };
 };

@@ -50,7 +50,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
   // ==========================================
   // GỌI NÃO BỘ QUẢN LÝ CHẾ ĐỘ CHƠI TẠI ĐÂY
   // ==========================================
-  const modeManager = useTTRModeManager(initialMode, questions.length, streak);
+  const modeManager = useTTRModeManager(initialMode, questions.length, streak, isCompleted, checkStatus);
 
   useEffect(() => {
     const loadData = async () => {
@@ -65,7 +65,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
         setIsLoading(false);
 
 
-        // Tránh mất thời gian test với API thật, tạm thời dùng mock data với delay giả lập với thời gian là
+        // Tránh mất thời gian test với API thật, tạm thời dùng mock data với delay giả lập với thời gian là 
         // setTimeout(() => {
         //   const beData = MOCK_BACKEND_DATA;
         //   const formattedQuestions = mapBackendDataToGameFormat(beData);
@@ -121,7 +121,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     }
   }, [currentIndex, currentQuestion, isReviewMode]);
 
-  // ... (Giữ nguyên handleUse5050, handleUseMagic, handleSelectWord, handleDropWord, handleBlankClick) ...
+
   const handleUse5050 = useCallback(() => {
     if (power5050 <= 0 || checkStatus === 'success' || !currentQuestion) return;
     const correctWords = currentQuestion.blanks.map(b => b.correctWord);
@@ -174,7 +174,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     setActiveBlankId(blankId); 
   }, [filledBlanks, checkStatus, confirmedBlanks]);
 
-  // SỬA HÀM NÀY ĐỂ KÍCH HOẠT PHẠT/THƯỞNG TỪ CHẾ ĐỘ MỚI
+
   const handleCheckAnswer = () => {
     let wrongs = [], rights = [], newlyCorrectCount = 0;
     currentQuestion.blanks.forEach(b => {
@@ -205,7 +205,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
       setWrongBlanks(wrongs);
       setConfirmedBlanks(prev => [...new Set([...prev, ...rights])]); 
       
-      // SỬA LẠI LOGIC MẤT CHUỖI TẠI ĐÂY
+      // Mất chuỗi hoặc khiên tùy theo chế độ
       if (initialMode === 'survival') {
         setStreak(0); // SINH TỒN: Chỉ cần sai là mất sạch chuỗi (để Sương mù ập về)
         if (shieldActive) setShieldActive(false); // Phá luôn khiên thường nếu có
@@ -231,13 +231,17 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     }
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
+    if (checkStatus !== 'success') return;
+
+    setCheckStatus('idle'); 
+
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex(prev => prev + 1);
     } else { 
       setIsCompleted(true); 
     }
-  };
+  }, [currentIndex, totalQuestions, checkStatus]);
 
   const toggleReviewMode = useCallback((active) => { setIsReviewMode(active); }, []);
 

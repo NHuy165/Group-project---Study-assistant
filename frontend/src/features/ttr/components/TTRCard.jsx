@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BlankSlot } from './BlankSlot';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
+import { SmartContent } from "../../../components/SmartContent";
 
 // ====================================================================
-// HOOK VẼ SÉT PHÂN NHÁNH TRÊN CANVAS (BAN ĐÊM - LOGIC TỪ HTML)
+// HOOK VẼ SÉT PHÂN NHÁNH TRÊN CANVAS
 // ====================================================================
 const useLightningCanvas = (canvasRef, active) => {
   useEffect(() => {
@@ -19,7 +20,7 @@ const useLightningCanvas = (canvasRef, active) => {
       const segs = [];
       function buildBolt(x, y, targetY, depth, maxDepth, branchFactor) {
         if (y >= targetY || depth > maxDepth || !isMounted) return;
-        const segLen = 18 + Math.random() * 22; // Độ dài tia sét chuẩn
+        const segLen = 18 + Math.random() * 22; 
         const jitter = (Math.random() - 0.5) * 60 * (1 - depth / maxDepth * 0.5);
         const nx = x + jitter;
         const ny = Math.min(y + segLen, targetY);
@@ -58,7 +59,6 @@ const useLightningCanvas = (canvasRef, active) => {
 
     function doFlash(startX, numBranches, flashEl) {
       if (!isMounted) return;
-      // Cập nhật lại H để đảm bảo đánh tới đáy
       W = canvas.width; H = canvas.height;
       const bolt = buildLightningTree(startX, 0, H, numBranches);
       let opacity = 1;
@@ -113,7 +113,7 @@ const useLightningCanvas = (canvasRef, active) => {
 };
 
 // ====================================================================
-// HOOK VẼ VẾT NỨT ĐẤT (BAN NGÀY - LOGIC TỪ HTML)
+// HOOK VẼ VẾT NỨT ĐẤT (BAN NGÀY)
 // ====================================================================
 const useCrackCanvas = (canvasRef, active) => {
   useEffect(() => {
@@ -165,33 +165,46 @@ const useCrackCanvas = (canvasRef, active) => {
 // COMPONENT CHÍNH TTRCARD
 // ====================================================================
 export const TTRCard = ({ 
-  isCompleted, mode, timeLeft, isTimeFrozen, shields, isFogActive, isGameOver, gameOverReason,
+  isCompleted, mode, timeLeft, maxTime, isTimeFrozen, freezeTimeLeft, shields, isFogActive, isGameOver, gameOverReason,
   currentIndex, totalQuestions, currentQuestion, activeBlankId, filledBlanks, wrongBlanks, confirmedBlanks, checkStatus, 
   streak, onSelectWord, onBlankClick, onDropWord, onCheckAnswer, onNextQuestion, onExit,
   power5050, powerMagic, shieldActive, eliminatedOptions, handleUse5050, handleUseMagic 
 }) => {
   const { isNight } = useTheme();
-  
-  // 1. KHAI BÁO TẤT CẢ HOOKS Ở TRÊN CÙNG
   const lightningCanvasRef = useRef(null);
-  const crackCanvasRef     = useRef(null);
-  const containerRef       = useRef(null);
+  const crackCanvasRef = useRef(null);
+  const containerRef = useRef(null);
   const [debrisList, setDebrisList] = useState([]);
   const [glowIntensity, setGlowIntensity] = useState(1);
 
-  // Tính toán mốc & cờ trạng thái
   const baseStreak = totalQuestions > 0 ? Math.min(totalQuestions, 10) : 10;
   const stepGlowSmall = Math.max(1, Math.round(baseStreak * 0.4)); 
   const stepGlowBig = Math.max(2, Math.round(baseStreak * 0.7));   
-  
   const isWaitingForNext = checkStatus === 'success';
   const isHighStreakSuccess = streak >= stepGlowBig && isWaitingForNext;
   const isIntenseMode = mode === 'speed' || mode === 'survival';
-  
   const nightLightningActive = isHighStreakSuccess && isNight && isIntenseMode;
-  const dayQuakeActive       = isHighStreakSuccess && !isNight && isIntenseMode;
+  const dayQuakeActive = isHighStreakSuccess && !isNight && isIntenseMode;
 
-  // 2. CHẠY CÁC EFFECT (SẼ KHÔNG BỊ NGẮT QUÃNG BỞI LỆNH RETURN SỚM NỮA)
+  const usedWords = currentQuestion ? Object.values(filledBlanks) : [];
+  const isAllFilled = currentQuestion ? Object.keys(filledBlanks).length === currentQuestion.blanks.length : false;
+
+  // Xử lý nút Enter qua câu tiếp theo
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault(); 
+        if (checkStatus !== 'success' && isAllFilled && checkStatus !== 'checking') {
+          onCheckAnswer();
+        } else if (checkStatus === 'success') {
+          onNextQuestion();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [checkStatus, isAllFilled, onCheckAnswer, onNextQuestion]);
+
   useEffect(() => {
     const resize = () => {
       const el = containerRef.current;
@@ -212,7 +225,6 @@ export const TTRCard = ({
   useLightningCanvas(lightningCanvasRef, nightLightningActive);
   useCrackCanvas(crackCanvasRef, dayQuakeActive);
 
-  // Mảnh vỡ bay
   useEffect(() => {
     if (!dayQuakeActive) { setDebrisList([]); return; }
     const colors = ['#92400e','#b45309','#d97706','#78350f','#fbbf24'];
@@ -235,7 +247,6 @@ export const TTRCard = ({
     return () => clearInterval(interval);
   }, [dayQuakeActive]);
 
-  // Hào quang nhấp nháy ban ngày
   useEffect(() => {
     if (!dayQuakeActive) return;
     let rafId;
@@ -247,22 +258,7 @@ export const TTRCard = ({
     return () => cancelAnimationFrame(rafId);
   }, [dayQuakeActive]);
 
-  // 3. CÁC ĐIỀU KIỆN RETURN (RENDER)
   if (!currentQuestion) return null;
-
-  if (isGameOver) {
-    const isTimeUp = gameOverReason === 'time_up';
-    return (
-      <main className={`flex w-full min-h-[580px] flex-col items-center justify-center rounded-[2.5rem] p-8 backdrop-blur-md shadow-2xl transition-all duration-700 relative overflow-hidden ${isNight ? 'bg-[#2a0808]/95 border-red-900 shadow-[0_0_100px_rgba(220,38,38,0.4)]' : 'bg-red-50/95 border-red-200 shadow-[0_0_100px_rgba(220,38,38,0.6)]'}`}>
-        <div className="z-10 flex flex-col items-center animate-in zoom-in duration-500">
-          <div className="text-[100px] mb-2 leading-none drop-shadow-2xl animate-bounce">{isTimeUp ? '⏰' : '💔'}</div>
-          <h2 className="text-6xl font-black mb-4 drop-shadow-md text-center text-red-500">{isTimeUp ? 'HẾT GIỜ!' : 'TIẾC QUÁ!'}</h2>
-          <p className={`text-2xl font-bold mb-8 ${isNight ? 'text-red-200' : 'text-red-800'}`}>Bé dừng chân tại câu số {currentIndex + 1} rồi. Lần sau cố lên nhé!</p>
-          <button onClick={onExit} className="px-12 py-5 font-black text-2xl rounded-2xl transition-all shadow-xl hover:scale-110 active:scale-95 border-b-4 bg-red-600 text-white border-red-800 hover:bg-red-500">QUAY VỀ HỌC LIỆU</button>
-        </div>
-      </main>
-    );
-  }
 
   if (isCompleted) {
     const isTier2 = streak >= stepGlowSmall && streak < stepGlowBig; 
@@ -300,18 +296,32 @@ export const TTRCard = ({
               <span className="text-3xl animate-pulse">{isTier3 ? '🔥' : '🎯'}</span> Chuỗi đúng: <span className={`text-3xl font-black ml-1 ${isTier3 ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-500' : (isNight ? 'text-purple-400' : 'text-purple-600')}`}>{streak}</span> câu
             </span>
           </div>
-          <button onClick={onExit} className={`px-10 py-4 font-black text-xl rounded-2xl transition-all shadow-xl hover:scale-110 active:scale-95 border-b-4 ${isTier3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-orange-700 hover:brightness-110' : (isNight ? 'bg-purple-600 text-white border-purple-800 hover:bg-purple-500' : 'bg-gray-900 text-white border-gray-700 hover:bg-black')}`}>QUAY VỀ</button>
+          <button onClick={onExit} className={`px-10 py-4 font-black text-xl rounded-2xl transition-all shadow-xl hover:scale-110 active:scale-95 border-b-4 ${isTier3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-orange-700 hover:brightness-110' : (isNight ? 'bg-purple-600 text-white border-purple-800 hover:bg-purple-500' : 'bg-gray-900 text-white border-gray-700 hover:bg-black')}`}>QUAY VỀ BÀI HỌC</button>
         </div>
       </main>
     );
   }
 
-  // 4. RENDER GIAO DIỆN CHƠI CHÍNH
-  const usedWords = Object.values(filledBlanks);
-  const isAllFilled = Object.keys(filledBlanks).length === currentQuestion.blanks.length;
+
+
+  if (isGameOver) {
+    const isTimeUp = gameOverReason === 'time_up';
+    return (
+      <main className={`flex w-full min-h-[580px] flex-col items-center justify-center rounded-[2.5rem] p-8 backdrop-blur-md shadow-2xl transition-all duration-700 relative overflow-hidden ${isNight ? 'bg-[#2a0808]/95 border-red-900 shadow-[0_0_100px_rgba(220,38,38,0.4)]' : 'bg-red-50/95 border-red-200 shadow-[0_0_100px_rgba(220,38,38,0.6)]'}`}>
+        <div className="z-10 flex flex-col items-center animate-in zoom-in duration-500">
+          <div className="text-[100px] mb-2 leading-none drop-shadow-2xl animate-bounce">{isTimeUp ? '⏰' : '💔'}</div>
+          <h2 className="text-6xl font-black mb-4 drop-shadow-md text-center text-red-500">{isTimeUp ? 'HẾT GIỜ!' : 'TIẾC QUÁ!'}</h2>
+          <p className={`text-2xl font-bold mb-8 ${isNight ? 'text-red-200' : 'text-red-800'}`}>Bé dừng chân tại câu số {currentIndex + 1} rồi. Lần sau cố lên nhé!</p>
+          <button onClick={onExit} className="px-12 py-5 font-black text-2xl rounded-2xl transition-all shadow-xl hover:scale-110 active:scale-95 border-b-4 bg-red-600 text-white border-red-800 hover:bg-red-500">QUAY VỀ HỌC LIỆU</button>
+        </div>
+      </main>
+    );
+  }
+
+  
+
   const progressPercent = ((currentIndex + 1) / totalQuestions) * 100;
 
-  // Hào quang
   let glowEffect = '';
   if (isTimeFrozen) glowEffect = isNight ? 'shadow-[0_0_50px_rgba(56,189,248,0.4)] ring-2 ring-sky-400/80' : 'shadow-[0_0_50px_rgba(56,189,248,0.6)] ring-2 ring-sky-400';
   else if (mode === 'survival' && !isFogActive && streak > 0) glowEffect = isNight ? 'shadow-[inset_0_0_80px_rgba(249,115,22,0.15),0_0_50px_rgba(249,115,22,0.4)] ring-2 ring-orange-500/80' : 'shadow-[inset_0_0_80px_rgba(249,115,22,0.2),0_0_50px_rgba(249,115,22,0.5)] ring-2 ring-orange-400';
@@ -320,7 +330,6 @@ export const TTRCard = ({
 
   const dayCardGlow = dayQuakeActive ? { boxShadow: `0 0 ${40 * glowIntensity}px rgba(251,191,36,0.9), 0 0 ${80 * glowIntensity}px rgba(251,191,36,0.4)`, transition: 'box-shadow 0.1s' } : {};
 
-  // Chuỗi Streak
   let streakContainerClass = `relative flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 z-10 ${isNight ? 'bg-[#1e293b] text-gray-300' : 'bg-gray-800 text-gray-100'} ${(shieldActive || shields > 0) ? 'shadow-[0_0_15px_rgba(56,189,248,0.6)] ring-2 ring-sky-400' : ''}`;
   let streakColorClass = "text-orange-500 drop-shadow-[0_0_5px_rgba(249,115,22,0.8)]";
 
@@ -380,26 +389,23 @@ export const TTRCard = ({
 
       {/* HEADER CARD */}
       <div className="relative z-10 flex w-full items-center justify-between mb-8 px-2 gap-4">
-        <button onClick={onExit} className={`flex items-center justify-center w-10 h-10 rounded-[14px] border transition-all ${isNight ? 'border-gray-600 bg-gray-800/80 text-gray-400 hover:text-white' : 'border-gray-300 bg-gray-100 text-gray-600 hover:text-red-500'}`}>✕</button>
+        <button onClick={onExit} className="w-10 h-10 rounded-[14px] border border-gray-300 hover:text-red-500">✕</button>
 
         {mode === 'speed' ? (
-          <div className={`flex-1 h-6 rounded-full relative overflow-hidden shadow-inner flex items-center justify-center border ${isNight ? 'bg-gray-900 border-gray-700' : 'bg-gray-200 border-gray-300'} ${timeLeft <= 10 && !isTimeFrozen ? 'animate-pulse ring-2 ring-red-500' : ''}`}>
-            <div className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-linear ${timeLeft <= 10 && !isTimeFrozen ? 'bg-red-500' : isTimeFrozen ? 'bg-blue-400' : 'bg-orange-500'}`} style={{ width: `${Math.min((timeLeft / 45) * 100, 100)}%` }} />
-            <span className={`relative z-10 text-[12px] font-black tracking-widest drop-shadow-md ${isTimeFrozen ? 'text-blue-100' : 'text-white'}`}>{isTimeFrozen ? '❄️ ĐÓNG BĂNG' : `⏳ ${timeLeft}s`}</span>
+          <div className="flex-1 h-6 rounded-full relative overflow-hidden shadow-inner flex items-center justify-center bg-gray-200 border border-gray-300">
+            <div className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-linear ${isTimeFrozen ? 'bg-blue-400' : 'bg-orange-500'}`} style={{ width: `${Math.min((timeLeft / (maxTime || 1)) * 100, 100)}%` }} />
+            <span className="relative z-10 text-[12px] font-black text-white">
+              {isTimeFrozen ? `❄️ ĐÓNG BĂNG (${freezeTimeLeft}s)` : `⏳ ${timeLeft}s`}
+            </span>
           </div>
         ) : (
-          <div className={`flex-1 h-5 rounded-full relative overflow-hidden shadow-inner ${isNight ? 'bg-[#1e293b]' : 'bg-gray-200'}`}>
-            <div className="absolute top-0 left-0 h-full bg-[#1de9b6] transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
-            <span className={`absolute inset-0 flex items-center justify-center text-[11px] font-black tracking-[0.2em] z-10 ${isNight ? 'text-white drop-shadow-lg' : 'text-teal-950 drop-shadow-sm'}`}>{currentIndex + 1} / {totalQuestions}</span>
+          <div className="flex-1 h-5 rounded-full relative overflow-hidden bg-gray-200">
+            <div className="absolute top-0 left-0 h-full bg-[#1de9b6]" style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }} />
           </div>
         )}
 
-        <div className={streakContainerClass}>
-          {(shieldActive || shields > 0) && <div className="absolute inset-[-4px] rounded-full border-2 border-dashed border-sky-300 animate-spin-slow opacity-50 pointer-events-none" />}
-          <span className={streak > 0 ? `${streakColorClass} text-lg` : 'text-gray-500 opacity-50'}>🔥</span>
-          {streak >= stepGlowBig ? <span className={streakColorClass}>x{streak}</span> : <span className="text-lg">x{streak}</span>}
-          {shieldActive && <span className="text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,0.8)] ml-1">🛡️</span>}
-          {mode === 'survival' && shields > 0 && <span className="text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,0.8)] ml-1">🛡️x{shields}</span>}
+        <div className="flex items-center gap-1.5 px-4 py-2 rounded-full font-bold bg-gray-800 text-gray-100">
+          🔥 x{streak}
         </div>
       </div>
 
@@ -407,7 +413,11 @@ export const TTRCard = ({
       <div className={`relative z-10 w-full mt-2 mb-10 px-8 text-center text-[1.4rem] font-medium leading-[4rem] tracking-wide ${isNight ? 'text-gray-100' : 'text-gray-900'}`}>
         {currentQuestion.textChunks.map((chunk, idx) => (
           <React.Fragment key={`chunk-${idx}`}>
-            <span className={`transition-all duration-300 ${isFogActive ? 'blur-[6px] opacity-60 hover:blur-none hover:opacity-100 cursor-help grayscale hover:grayscale-0' : ''}`}>{chunk}</span>
+            <span className={`transition-all duration-300 inline-block ${isFogActive ? 'blur-[6px] opacity-60 hover:blur-none hover:opacity-100 cursor-help grayscale hover:grayscale-0' : ''}`}>
+              <SmartContent inline className="text-[1.4rem]">
+                {chunk}
+              </SmartContent>
+            </span>
             {idx < currentQuestion.blanks.length && (
               <BlankSlot
                 isActive={activeBlankId === currentQuestion.blanks[idx].id} filledWord={filledBlanks[currentQuestion.blanks[idx].id]}
@@ -440,7 +450,9 @@ export const TTRCard = ({
                 }
               `}
             >
-              {word}
+              <SmartContent inline className="text-inherit font-bold pointer-events-none">
+                {word}
+              </SmartContent>
             </button>
           );
         })}
@@ -474,11 +486,11 @@ export const TTRCard = ({
             <button onClick={onCheckAnswer} disabled={!isAllFilled || checkStatus === 'checking'}
               className={`w-[80%] max-w-[280px] py-4 rounded-2xl text-xl font-extrabold transition-all duration-300 border-2 ${
                 isAllFilled ? 'bg-purple-600 border-purple-500 text-white hover:bg-purple-500 hover:scale-105 active:scale-95 shadow-[0_8px_20px_rgba(147,51,234,0.4)]' : 'bg-gray-100/10 border-gray-600/30 text-gray-500 cursor-not-allowed shadow-none'
-              }`}>Kiểm tra đáp án</button>
+              }`}>Kiểm tra (Enter)</button>
           ) : (
             <button onClick={onNextQuestion}
               className="w-[80%] max-w-[280px] py-4 rounded-2xl text-xl font-extrabold text-white transition-all duration-300 bg-[#1de9b6] hover:bg-[#15c39a] hover:scale-105 active:scale-95 border-2 border-teal-400 shadow-[0_8px_30px_rgba(29,233,182,0.5)] animate-in slide-in-from-bottom-4">
-              Tiếp tục ➔
+              Tiếp tục ➔ (Enter)
             </button>
           )}
         </div>

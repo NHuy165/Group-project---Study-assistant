@@ -12,19 +12,14 @@ export const OpenEndedContainer = ({ activityId, onClose }) => {
     submitActivity 
   } = useOpenEnded(activityId);
 
-  // Nếu không có ID thì không render gì cả
   if (!activityId) return null;
 
-  // Render Portal thẳng từ đây
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex h-screen w-screen overflow-hidden bg-white dark:bg-[#1a1c1e] animate-in fade-in duration-300">
+
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center h-screen w-screen overflow-hidden bg-black/30 backdrop-blur-sm animate-in fade-in duration-300">
       <OpenEndedArea 
-        activityData={activityData}
-        isLoading={isLoading}
-        isSubmitting={isSubmitting}
-        onSaveDraft={saveAnswerDraft}
-        onSubmit={submitActivity}
-        onExit={onClose} // Truyền hàm đóng từ cha xuống
+        activityData={activityData} isLoading={isLoading} isSubmitting={isSubmitting}
+        onSaveDraft={saveAnswerDraft} onSubmit={submitActivity} onExit={onClose} 
       />
     </div>,
     document.body

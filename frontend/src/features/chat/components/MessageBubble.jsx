@@ -1,4 +1,6 @@
 import React from 'react';
+import { SmartContent } from "../../../components/SmartContent";
+
 
 export const MessageBubble = ({ role, content, isNight }) => {
   const isUser = role === "user";
@@ -29,7 +31,7 @@ export const MessageBubble = ({ role, content, isNight }) => {
               // Bong bóng AI ban ngày
               : "rounded-tl-none border-gray-100 bg-white text-gray-700 shadow-[0_8px_0_0_rgba(0,0,0,0.05)]")
       }`}>
-        {content}
+        <SmartContent>{content}</SmartContent>
         
         {/* Cái đuôi nhọn của bong bóng chat - Cần đổi màu nền khớp với khung */}
         <div className={`absolute bottom-0 h-4 w-4 ${
