@@ -56,12 +56,14 @@ const QuizPanel = ({ interactionId, onClose }) => {
             : "border-white/50 bg-gradient-to-br from-[#dcfff7]/95 via-[#fff1e7]/92 to-[#e8f4ff]/95 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
         }`}
       >
+        {/* Background effects */}
         <div className="quiz-aurora quiz-aurora-a -left-24 -top-20 z-0" />
         <div className="quiz-aurora quiz-aurora-b right-16 top-8 z-0" />
         <div className="quiz-aurora quiz-aurora-c bottom-0 left-1/2 z-0 -translate-x-1/2" />
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_80%_12%,rgba(255,255,255,0.26),transparent_40%)]" />
 
-        <header className="flex items-center justify-between">
+        {/* FIX: Added 'relative z-10' to header to prevent background effects from blocking clicks on the close button */}
+        <header className="relative z-10 flex items-center justify-between">
           <div>
             <p
               className={`text-xs font-bold uppercase ${isNight ? "text-slate-300" : "text-gray-500"}`}

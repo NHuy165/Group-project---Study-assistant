@@ -371,40 +371,46 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
             )}
           </div>
         )}
-        <div className="flex items-center justify-between">
-          <div>
-            <p
-              className={`text-xs font-bold uppercase ${isNight ? "text-slate-300" : "text-gray-500"}`}
+        
+        {/* Chỉ hiển thị thanh tiến độ khi chưa nộp bài */}
+        {!quiz.isSubmitted && (
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <p
+                  className={`text-xs font-bold uppercase ${isNight ? "text-slate-300" : "text-gray-500"}`}
+                >
+                  Tiến độ
+                </p>
+                <p
+                  className={`text-sm font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
+                >
+                  Câu {displayIndex} / {totalQuestions}
+                </p>
+              </div>
+              <div className="text-right">
+                <p
+                  className={`text-xs font-bold uppercase ${isNight ? "text-slate-300" : "text-gray-500"}`}
+                >
+                  Hoàn thành
+                </p>
+                <p
+                  className={`text-sm font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
+                >
+                  {progress}%
+                </p>
+              </div>
+            </div>
+            <div
+              className={`mt-3 h-2 w-full overflow-hidden rounded-full ${isNight ? "bg-slate-700" : "bg-gray-200"}`}
             >
-              Tiến độ
-            </p>
-            <p
-              className={`text-sm font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
-            >
-              Câu {displayIndex} / {totalQuestions}
-            </p>
-          </div>
-          <div className="text-right">
-            <p
-              className={`text-xs font-bold uppercase ${isNight ? "text-slate-300" : "text-gray-500"}`}
-            >
-              Hoàn thành
-            </p>
-            <p
-              className={`text-sm font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
-            >
-              {progress}%
-            </p>
-          </div>
-        </div>
-        <div
-          className={`mt-3 h-2 w-full overflow-hidden rounded-full ${isNight ? "bg-slate-700" : "bg-gray-200"}`}
-        >
-          <div
-            className="h-full bg-[#4ecdc4]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+              <div
+                className="h-full bg-[#4ecdc4]"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {totalQuestions === 0 ? (

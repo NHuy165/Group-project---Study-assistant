@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom"; // BƯỚC 1: Import useParams
+import { useParams } from "react-router-dom";
 
 import { useInteractions } from "../features/interactions/hooks/useInteractions";
 import { useDocuments } from "../features/documents/hooks/useDocuments";
@@ -13,7 +13,7 @@ import { AddSourceModal } from "../features/documents/components/AddSourceModal"
 import QuizPanel from "../features/quiz/components/QuizPanel";
 
 export const InteractionPage = () => {
-  // BƯỚC 2: Lấy ID trực tiếp từ URL thay vì dựa vào state nội bộ
+  // Get interaction ID from URL parameters
   const { interactionId } = useParams();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,7 +23,6 @@ export const InteractionPage = () => {
 
   const { handleNewChatClick } = useInteractions();
 
-  // BƯỚC 3: Truyền thẳng interactionId từ URL vào các hook
   const {
     documents,
     selectedDocIds,
@@ -46,6 +45,7 @@ export const InteractionPage = () => {
     isLoading: isChatLoading,
   } = useChat(interactionId);
 
+  // Toggle tool sidebar items
   const handleToolSelect = (toolId) => {
     setActiveToolId((prev) => (prev === toolId ? null : toolId));
   };
@@ -94,10 +94,12 @@ export const InteractionPage = () => {
         onSelectTool={handleToolSelect}
       />
 
+      {/* RENDER QUIZ PANEL - Controlled by activeToolId state */}
       {activeToolId === "quiz" && (
         <QuizPanel
           interactionId={interactionId}
-          onClose={() => setActiveToolId(null)}
+          onClose={() => {console.log("Đã bấm nút đóng!"); 
+            setActiveToolId(null)}} // This function closes the quiz UI
         />
       )}
     </InteractionLayout>
