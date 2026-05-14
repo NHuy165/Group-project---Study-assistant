@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { quizService } from "../services/quiz.service";
 
 const createMutation = (fn) => {
@@ -6,7 +6,9 @@ const createMutation = (fn) => {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
 
-  const mutate = async (...args) => {
+  // Wrap with useCallback to maintain a stable reference across re-renders.
+  // This prevents infinite loops when the returned mutate function is used inside useEffect dependencies.
+  const mutate = useCallback(async (...args) => {
     setIsPending(true);
     setError(null);
     try {
@@ -19,13 +21,15 @@ const createMutation = (fn) => {
     } finally {
       setIsPending(false);
     }
-  };
+  }, [fn]); 
 
   return { mutate, isPending, error, data };
 };
 
+export const useReadQuizzes = () => createMutation(quizService.readQuizzes);
 export const useCreateQuiz = () => createMutation(quizService.createQuiz);
 export const useGetQuiz = () => createMutation(quizService.readQuiz);
+export const useUpdateQuiz = () => createMutation(quizService.updateQuiz);
+export const useDeleteQuiz = () => createMutation(quizService.deleteQuiz);
 export const useSubmitAnswer = () => createMutation(quizService.submitAnswer);
 export const useSubmitQuiz = () => createMutation(quizService.submitQuiz);
-export const useDeleteQuiz = () => createMutation(quizService.deleteQuiz);

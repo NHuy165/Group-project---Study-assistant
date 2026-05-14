@@ -1,26 +1,41 @@
 import { useCallback, useEffect, useState } from "react";
-import { quizService } from "../services/quiz.service";
+import {
+  useReadQuizzes,
+  useCreateQuiz,
+  useGetQuiz,
+  useUpdateQuiz,
+  useDeleteQuiz,
+} from "./useQuiz";
 
-const getErrorMessage = () => "Khong tai duoc quiz. Thu lai sau.";
+const getErrorMessage = () => "Không tải được quiz. Thử lại sau.";
 
 const useQuizManagement = (interactionId) => {
+  // Local state to keep the UI snappy (Optimistic Updates)
   const [quizzes, setQuizzes] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [globalError, setGlobalError] = useState(null);
+
+  // Initialize API hooks (No more manual try/catch/finally needed)
+  const { mutate: fetchQuizzes, isPending: isFetching } = useReadQuizzes();
+  const { mutate: createQuiz, isPending: isCreating } = useCreateQuiz();
+  const { mutate: fetchQuizDetail, isPending: isFetchingDetail } = useGetQuiz();
+  const { mutate: updateQuiz, isPending: isUpdating } = useUpdateQuiz();
+  const { mutate: deleteQuiz, isPending: isDeleting } = useDeleteQuiz();
+
+  // Combined loading state to keep backward compatibility with QuizPanel
+  const isLoading =
+    isFetching || isCreating || isFetchingDetail || isUpdating || isDeleting;
 
   const loadQuizzes = useCallback(async () => {
     if (!interactionId) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await quizService.readQuizzes(interactionId);
+    setGlobalError(null);
+    
+    const data = await fetchQuizzes(interactionId);
+    if (data) {
       setQuizzes(data);
-    } catch {
-      setError(getErrorMessage());
-    } finally {
-      setIsLoading(false);
+    } else {
+      setGlobalError(getErrorMessage());
     }
-  }, [interactionId]);
+  }, [interactionId, fetchQuizzes]);
 
   useEffect(() => {
     setQuizzes([]);
@@ -31,60 +46,48 @@ const useQuizManagement = (interactionId) => {
 
   const createNewQuiz = async (data) => {
     if (!interactionId) return null;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const newQuiz = await quizService.createQuiz(interactionId, data);
-      setQuizzes((prev) => [newQuiz, ...prev]);
+    
+    const newQuiz = await createQuiz(interactionId, data);
+    if (newQuiz) {
+      setQuizzes((prev) => [newQuiz, ...prev]); // New quiz appears at the top
       return newQuiz;
-    } catch {
-      setError(getErrorMessage());
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    
+    setGlobalError(getErrorMessage());
+    return null;
   };
 
-  const loadQuizDetail = async (studyActivityId) => {
-    if (!interactionId) return null;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const detail = await quizService.readQuiz(studyActivityId);
+  const loadQuizDetail = async (quizId) => {
+    const detail = await fetchQuizDetail(quizId);
+    if (detail) {
       setQuizzes((prev) =>
         prev.map((item) => (item.id === detail.id ? detail : item)),
       );
       return detail;
-    } catch {
-      setError(getErrorMessage());
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    
+    setGlobalError(getErrorMessage());
+    return null;
   };
 
   const removeQuiz = async (quizId) => {
     if (!interactionId) return null;
-    setIsLoading(true);
-    setError(null);
-    try {
-      await quizService.deleteQuiz(quizId);
+    
+    const success = await deleteQuiz(quizId);
+    if (success) {
       setQuizzes((prev) => prev.filter((item) => item.id !== quizId));
       return true;
-    } catch {
-      setError(getErrorMessage());
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    
+    setGlobalError(getErrorMessage());
+    return null;
   };
 
   const updateQuizMeta = async (quizId, data) => {
     if (!interactionId) return null;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const updated = await quizService.updateQuiz(quizId, data);
+    
+    const updated = await updateQuiz(quizId, data);
+    if (updated) {
       setQuizzes((prev) =>
         prev.map((item) =>
           item.id === updated.id
@@ -98,12 +101,10 @@ const useQuizManagement = (interactionId) => {
         ),
       );
       return updated;
-    } catch {
-      setError(getErrorMessage());
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    
+    setGlobalError(getErrorMessage());
+    return null;
   };
 
   const updateQuizInList = (updatedQuiz) => {
@@ -114,11 +115,14 @@ const useQuizManagement = (interactionId) => {
 
   return {
     quizzes,
-    isLoading,
-    error,
+    isLoading,   // For general UI blocking
+    isFetching,  // Specific states for granular UI control (e.g. skeleton loading)
+    isCreating,  // e.g. Show spinner only on the 'Create' button
+    isDeleting,  // e.g. Show spinner on the specific trash bin icon
+    isUpdating,  
+    error: globalError,
     createNewQuiz,
     removeQuiz,
-    loadQuizzes,
     loadQuizDetail,
     updateQuizMeta,
     updateQuizInList,

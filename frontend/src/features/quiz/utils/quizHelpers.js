@@ -13,12 +13,17 @@ const parseAttempt = (attempt) => {
   return Number.isNaN(numberValue) ? attempt : numberValue;
 };
 
+const roundToTwoDecimals = (num) => {
+  if (typeof num !== "number" || !Number.isFinite(num)) return null;
+  return Math.round(num * 100) / 100;
+};
+
 // Map data from backend, including user_score and max_score
 export const transformExerciseItem = (item) => ({
   id: item.id,
   text: item.question,
-  maxScore: item.max_score,
-  userScore: item.user_score,
+  maxScore: roundToTwoDecimals(item.max_score),
+  userScore: roundToTwoDecimals(item.user_score),
   attemptId: parseAttempt(item.attempt),
   options: (item.contents || []).map((content) => ({
     id: content.id,
@@ -45,8 +50,10 @@ export const transformStudyActivitySummary = (activity) => ({
 });
 
 // Compute final score using accurate graded values from backend
-const parseScoreValue = (value) =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
+const parseScoreValue = (value) => {
+  const num = typeof value === "number" && Number.isFinite(value) ? value : null;
+  return roundToTwoDecimals(num); // <-- Sửa ở đây
+};
 
 const normalizeScorePayload = (payload) => {
   if (!payload) return {};
@@ -80,8 +87,8 @@ export const computeScoreFromQuestions = (questions) => {
   });
 
   return {
-    totalScore,
-    totalMaxScore,
+    totalScore: roundToTwoDecimals(totalScore),
+    totalMaxScore: roundToTwoDecimals(totalMaxScore),
     percent:
       totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0,
     correct,

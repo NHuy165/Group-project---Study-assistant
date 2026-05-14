@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { quizService } from "../services/quiz.service";
 import { mergeExerciseItem } from "../utils/quizHelpers";
 
-export const useQuizGame = (quiz, onQuizUpdate) => {
+export const useQuizGame = (quiz, onQuizUpdate) => { // quiz là đầu vào từ quizHelpers
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [flaggedQuestionIds, setFlaggedQuestionIds] = useState([]);
+  const [flaggedQuestionIds, setFlaggedQuestionIds] = useState([]); // mảng chứa các câu phân vân
 
   const questions = quiz?.questions || [];
   const totalQuestions = questions.length;
@@ -32,6 +32,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     [questions, flaggedQuestionIds],
   );
 
+  // đếm số câu chưa làm hoặc phân vân 
   const unansweredCount = questionStatus.filter(
     (question) => !question.isAnswered,
   ).length;
@@ -41,7 +42,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
   ).length;
 
   const handleSelectOption = async (optionId) => {
-    if (!quiz || quiz.isSubmitted || !currentQuestion) return;
+    if (!quiz || quiz.isSubmitted || !currentQuestion) return; // nếu bài đã nộp thì ko cho tương tác 
 
     // Optimistic UI Update: reflect changes instantly for the user
     const optimisticQuestion = { ...currentQuestion, attemptId: optionId };
@@ -75,7 +76,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     setCurrentIndex(Math.min(Math.max(index, 0), totalQuestions - 1));
   };
 
-  const toggleFlagCurrentQuestion = () => {
+  const toggleFlagCurrentQuestion = () => { // Phân vân, xem lại sau
     if (!currentQuestion) return;
     setFlaggedQuestionIds((prev) =>
       prev.includes(currentQuestion.id)
