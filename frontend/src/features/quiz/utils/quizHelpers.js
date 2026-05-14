@@ -1,7 +1,7 @@
 export const SUBJECTS = [
-  { id: "ENGLISH", label: "Tieng Anh" },
-  { id: "MATHS", label: "Toan" },
-  { id: "VIETNAMESE", label: "Tieng Viet" },
+  { id: "ENGLISH", label: "Tiếng Anh" },
+  { id: "MATHS", label: "Toán" },
+  { id: "VIETNAMESE", label: "Tiếng Việt" },
 ];
 
 const toSubjectLabel = (subjectType) =>
