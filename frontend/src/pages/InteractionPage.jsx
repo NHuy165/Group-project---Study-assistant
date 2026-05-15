@@ -39,6 +39,8 @@ export const InteractionPage = () => {
   const [_isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [_selectedDoc, setSelectedDoc] = useState(null);
   const [isFlashcardMode, setIsFlashcardMode] = useState(false);
+  const [flashcardPanelMode, setFlashcardPanelMode] = useState('create');
+  const [selectedFlashcardSet, setSelectedFlashcardSet] = useState(null);
 
   // State Tap To Review (TTR)
   const [isSetupOpen, setIsSetupOpen] = useState(false); 
@@ -122,6 +124,23 @@ export const InteractionPage = () => {
       });
   };
 
+  const openFlashcardCreate = () => {
+    setSelectedFlashcardSet(null);
+    setFlashcardPanelMode('create');
+    setIsFlashcardMode(true);
+  };
+
+  const openFlashcardSet = (set) => {
+    setSelectedFlashcardSet(set);
+    setFlashcardPanelMode('study');
+    setIsFlashcardMode(true);
+  };
+
+  const closeFlashcardPanel = () => {
+    setIsFlashcardMode(false);
+    setSelectedFlashcardSet(null);
+  };
+
   // ==========================================
   // RENDER GIAO DIỆN
   // ==========================================
@@ -136,6 +155,20 @@ export const InteractionPage = () => {
           {/* LỚP PHỦ GAME TTR */}
           {isTTROpen && currentActivityId && (
             <TTRFeature activityId={currentActivityId} isNew={currentIsNew} onClose={() => { setIsTTROpen(false); setCurrentActivityId(null); }} />
+          )}
+
+          {isFlashcardMode && (
+            <FlashcardPanel
+              flashcardSets={flashcardSets}
+              isLoading={isLoading}
+              error={error}
+              initialViewMode={flashcardPanelMode}
+              initialSelectedSet={selectedFlashcardSet}
+              onCreateFlashcardSet={createNewFlashcardSet}
+              onCreateEmptyFlashcardSet={createEmptyFlashcardSet}
+              onRemoveFlashcardSet={removeFlashcardSet}
+              onClose={closeFlashcardPanel}
+            />
           )}
         </>
       }
@@ -199,15 +232,19 @@ export const InteractionPage = () => {
             setTtrTasks(prev => prev.map(t => t.id === id ? { ...t, isNew: false } : t));
           }
         }} 
-        // Props flashcard
-        onToolClick={(toolId) => {
-          if (toolId === 'flashcard') {
-            setIsFlashcardMode(!isFlashcardMode);
-          }
-        }}
         // Props Open-Ended
         activities={activities}
-        onToolClick={handleToolClick}
+        flashcardSets={flashcardSets}
+        onOpenFlashcardSet={openFlashcardSet}
+        onDeleteFlashcardSet={removeFlashcardSet}
+        onToolClick={(toolId) => {
+          if (toolId === 'flashcard') {
+            openFlashcardCreate();
+            return;
+          }
+
+          handleToolClick(toolId);
+        }}
         onActivityClick={(id) => setSelectedActivityId(id)}
         onDeleteActivity={handleDeleteActivity}
         toolLoadingStates={toolLoadingStates}

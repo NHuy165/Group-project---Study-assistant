@@ -15,7 +15,8 @@ const TOOLS_LIST = [
 // NHẬN GỘP PROPS TỪ CẢ 2 NHÁNH
 export const ToolsSidebar = ({ 
   onOpenTTR, ttrTasks, onPlayTTR, 
-  onToolClick, toolLoadingStates = {}, activities = [], onActivityClick, onDeleteActivity, isCreatingNewActivity 
+  onToolClick, toolLoadingStates = {}, activities = [], onActivityClick, onDeleteActivity, isCreatingNewActivity,
+  flashcardSets = [], onOpenFlashcardSet, onDeleteFlashcardSet,
 }) => {
   const { isNight } = useTheme(); 
 
@@ -102,6 +103,40 @@ export const ToolsSidebar = ({
               <span className={`text-sm font-semibold truncate ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
                 {task.name}
               </span>
+            </div>
+          ))}
+
+          {/* HIỂN THỊ DANH SÁCH BỘ FLASHCARD */}
+          {flashcardSets && flashcardSets.map((set) => (
+            <div key={`flashcard-${set.id}`} className="group relative flex w-full items-center">
+              <button
+                onClick={() => onOpenFlashcardSet && onOpenFlashcardSet(set)}
+                className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
+                  isNight
+                    ? "bg-gray-800/80 border-indigo-500/40 hover:border-indigo-400 text-gray-300"
+                    : "bg-white/80 border-indigo-200 hover:border-indigo-400/70 text-gray-700"
+                }`}
+              >
+                <span className="mr-3 text-sm opacity-80">📕</span>
+                <span className={`text-sm font-semibold truncate text-left w-3/4 ${
+                  isNight ? "text-indigo-100" : "text-indigo-700"
+                }`}>
+                  {set.name || `Flashcard #${set.id}`}
+                </span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm("Bạn có chắc chắn muốn xóa bộ flashcard này không?")) {
+                    onDeleteFlashcardSet && onDeleteFlashcardSet(set.id);
+                  }
+                }}
+                className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                  isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
+                }`}
+              >
+                <Trash size={18} weight="bold" />
+              </button>
             </div>
           ))}
         

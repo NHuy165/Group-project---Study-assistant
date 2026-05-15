@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import FlashcardEditView from './FlashcardEditView';
 import FlashcardGenerator from './FlashcardGenerator';
 import FlashcardStudyView from './FlashcardStudyView';
@@ -11,10 +11,17 @@ const FlashcardPanel = ({
   onRemoveFlashcardSet,
   error,
   onClose,
+  initialViewMode = 'sets',
+  initialSelectedSet = null,
 }) => {
-  const [viewMode, setViewMode] = useState('sets');
-  const [selectedSet, setSelectedSet] = useState(null);
+  const [viewMode, setViewMode] = useState(initialViewMode);
+  const [selectedSet, setSelectedSet] = useState(initialSelectedSet);
   const [generatorPrompt, setGeneratorPrompt] = useState('');
+
+  useEffect(() => {
+    setViewMode(initialViewMode);
+    setSelectedSet(initialSelectedSet);
+  }, [initialViewMode, initialSelectedSet]);
 
   const handleStudySet = (set) => {
     setSelectedSet(set);
@@ -220,10 +227,13 @@ const FlashcardPanel = ({
   );
 
   return (
-    <aside className="flex h-full w-full min-w-[360px] flex-1 flex-col overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-xl">
-      {renderHeader()}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md animate-in fade-in duration-300 md:p-8">
+      {/* <aside className="flex h-[min(760px,90vh)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-white/30 bg-white shadow-2xl">
+        {renderHeader()}
+        {renderContent()}
+      </aside> */}
       {renderContent()}
-    </aside>
+    </div>
   );
 };
 
