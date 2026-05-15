@@ -33,9 +33,9 @@ const useFlashcardManagement = (study_activity_id) => {
     }, [study_activity_id]);
 
     /**
-     * Tạo flashcard mới từ prompt
+     * Thêm flashcard mới
      */
-    const createNewFlashcard = useCallback(async (front, back) => {
+    const createNewFlashcard = useCallback(async (flashcardId, front, back) => {
         const frontText = typeof front === 'string' ? front : front?.content || '';
         const backText = typeof back === 'string' ? back : back?.content || '';
 
@@ -47,25 +47,14 @@ const useFlashcardManagement = (study_activity_id) => {
         setIsLoading(true);
         setError('');
         try {
-
-            const firstCard = cardsList[0];
-
-            const nextId = cardsList.length > 0
-                ? Math.max (...cardsList.map(card => Number(card.id) || 0)) + 1
-                : 1;
-
-            // createFlashcard trả về array of { id, front, back, ... }
             const newFlashcards = {
-                id: nextId,
-                studyActivityId: study_activity_id,
-                name: firstCard?.name || '',
-                description: firstCard?.description || '',
                 front: frontText,
                 back: backText,
             };
             
-            setCardsList(prev => [...prev, newFlashcards]);
-            return newFlashcards;
+            const response = await addCard(flashcardId, newFlashcards);
+            await loadFlashcards();
+            return response;
             
         } catch (err) {
             console.error("Lỗi tạo flashcard:", err);
@@ -74,9 +63,40 @@ const useFlashcardManagement = (study_activity_id) => {
         } finally {
             setIsLoading(false);
         }
-        return null;
-    }, [study_activity_id, cardsList]);
+    }, [study_activity_id, loadFlashcards]);
 
+    /**
+     * Chỉnh sửa flashcard
+     */
+    const updateCard = useCallback(async (flashcardId, front, back) => {
+        const frontText = typeof front === 'string' ? front : front?.content || '';
+        const backText = typeof back === 'string' ? back : back?.content || '';
+
+        if (!frontText.trim() || !backText.trim() || !study_activity_id ) {
+            setError('Bé vui lòng nhập nội dung nhé');
+            return null;
+        }
+
+        setIsLoading(true);
+        setError('');
+        try {
+            const newFlashcards = {
+                front: frontText,
+                back: backText,
+            };
+            
+            const response = await updateFlashcard(flashcardId, newFlashcards);
+            await loadFlashcards();
+            return response;
+            
+        } catch (err) {
+            console.error("Lỗi cập nhật flashcard:", err);
+            setError("Lỗi cập nhật flashcard. Vui lòng thử lại");
+            return null
+        } finally {
+            setIsLoading(false);
+        }
+    }, [study_activity_id, loadFlashcards]);
     /**
      * Xóa flashcard
      */
@@ -96,7 +116,11 @@ const useFlashcardManagement = (study_activity_id) => {
      */
     useEffect(() => {
         if (study_activity_id) {
-            loadFlashcards();
+            const timeoutId = setTimeout(() => {
+                loadFlashcards();
+            }, 0);
+
+            return () => clearTimeout(timeoutId);
         }
     }, [study_activity_id, loadFlashcards]);
 
@@ -107,6 +131,7 @@ const useFlashcardManagement = (study_activity_id) => {
         error,
         loadFlashcards,
         createNewFlashcard,
+        updateCard,
         removeFlashcard,
     };
 };

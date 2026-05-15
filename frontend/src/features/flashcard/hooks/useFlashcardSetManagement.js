@@ -13,10 +13,6 @@ const useFlashcardSetManagement = (interactionId) => {
 
     const [prompt, setPrompt] = useState('');
 
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [subject, setSubject] = useState('')
-
     /**
      * Tải toàn bộ flashcards từ backend
      */
@@ -71,10 +67,16 @@ const useFlashcardSetManagement = (interactionId) => {
      * Tạo bộ flashcard trống
      */
     const createEmptyFlashcardSet = useCallback(async (formData) => {
-        if (!formData.subject_type.trim() || 
-        !formData.name.trim() ||
-        !formData.description.trim() ||
-        !interactionId) {
+        const subjectType = formData?.subject_type || '';
+        const setName = formData?.name || '';
+        const setDescription = formData?.description || '';
+
+        if (
+            !subjectType.trim() ||
+            !setName.trim() ||
+            !setDescription.trim() ||
+            !interactionId
+        ) {
             setError('Bé vui lòng nhập nội dung nhé');
             return null;
         }
@@ -82,12 +84,13 @@ const useFlashcardSetManagement = (interactionId) => {
         setIsLoading(true);
         setError('');
         try {
-            formData = {
-                subject_type: subject,
-                name: name,
-                description: description,
+
+            const newFlashcardSet = await createEmptyFlashcard(interactionId, {
+                subject_type: subjectType,
+                name: setName,
+                description: setDescription,
             }
-            const newFlashcardSet = await createEmptyFlashcard(interactionId, formData);
+            );
 
             await loadFlashcardSets();
 
@@ -124,7 +127,11 @@ const useFlashcardSetManagement = (interactionId) => {
      */
     useEffect(() => {
         if (interactionId) {
-            loadFlashcardSets();
+            const timeoutId = setTimeout(() => {
+                loadFlashcardSets();
+            }, 0);
+
+            return () => clearTimeout(timeoutId);
         }
     }, [interactionId, loadFlashcardSets]);
 
@@ -135,8 +142,6 @@ const useFlashcardSetManagement = (interactionId) => {
         error,
         prompt, 
         setPrompt,
-        name, description, subject,
-        setName, setDescription, setSubject,
         loadFlashcardSets,
         createNewFlashcardSet,
         createEmptyFlashcardSet,

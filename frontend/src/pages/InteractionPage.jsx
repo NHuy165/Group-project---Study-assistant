@@ -19,8 +19,8 @@ export const InteractionPage = () => {
 
   // ========== UI STATE ==========
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [_isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [_selectedDoc, setSelectedDoc] = useState(null);
   const [isFlashcardMode, setIsFlashcardMode] = useState(false);
 
   // ========== HOOKS ==========
@@ -41,6 +41,7 @@ export const InteractionPage = () => {
     isLoading,
     error,
     createNewFlashcardSet,
+    createEmptyFlashcardSet,
     removeFlashcardSet,
   } = useFlashcardSetManagement(interactionId);
 
@@ -73,6 +74,7 @@ export const InteractionPage = () => {
           isLoading={isLoading}
           error={error}
           onCreateFlashcardSet={createNewFlashcardSet}
+          onCreateEmptyFlashcardSet={createEmptyFlashcardSet}
           onRemoveFlashcardSet={removeFlashcardSet}
           onClose={() => setIsFlashcardMode(false)}
         />

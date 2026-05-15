@@ -93,9 +93,9 @@ export const createEmptyFlashcard = async (interactionId, formData) => {
     try {
 
         const payload = {
-            subject_type = formData.subject_type,
-            name = formData.name,
-            description = formData.description,
+            subject_type: formData.subject_type,
+            name: formData.name,
+            description: formData.description,
         };
 
         const response = await axiosClient.post(
@@ -112,17 +112,17 @@ export const createEmptyFlashcard = async (interactionId, formData) => {
 
 export const addCard = async (flashcardId, formData) => {
     try {
-        const payload = {
-            front = formData.front,
-            back = formData.back,
-        };
+        const payload = [{
+            front: formData.front,
+            back: formData.back,
+        }];
 
         const response = await axiosClient.post(
                 `${PATH}/${flashcardId}/add-cards`,
                 payload
             );
 
-        return response;
+        return response.data;
     } catch (error) {
         console.error("Error add card:", error);
         throw error;
@@ -132,16 +132,16 @@ export const addCard = async (flashcardId, formData) => {
 export const updateFlashcard = async (flashcardId, formData) => {
     try {
         const payload = {
-            front = formData.front,
-            back = formData.back,
+            front: formData.front,
+            back: formData.back,
         };
 
-        const response = await axiosClient.post(
+        const response = await axiosClient.patch(
                 `${PATH}/flashcards/${flashcardId}`,
                 payload
             );
 
-        return response;
+        return response.data;
     } catch (error) {
         console.error("Error update card:", error);
         throw error;
