@@ -87,17 +87,24 @@ const FlashcardPanel = ({
         }`}
         onClick={(event) => event.stopPropagation()}
       >
-        <button
+        {/* <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-700"
+          className="absolute right-6 top-6 z-50 text-2xl text-gray-400 hover:text-red-500 transition-colors"
           aria-label="Đóng flashcard"
           title="Đóng"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M18 6L6 18M6 6l12 12" />
+        >✕</button> */}
+        <button 
+          onClick={onClose}
+          class="absolute right-8 top-8 z-50 text-gray-400 hover:text-red-500 transition-all hover:rotate-90">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 256 256">
+            <path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"></path>
           </svg>
         </button>
+          {/* <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg> */}
+        
 
         {renderContent()}
       </div>
