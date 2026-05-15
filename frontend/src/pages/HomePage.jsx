@@ -1,49 +1,58 @@
 import React from "react";
-import { GearSix, UserCircle } from "@phosphor-icons/react";
-import { InteractionList } from "../features/interactions/components/InteractionList";
+import { motion } from "framer-motion";
 
-const accentColor = "#1d7bd8";
+
+import { Header } from "../features/home/components/Header";
+import { NotebookHeader } from "../features/home/components/NotebookHeader";
+
+
+import { AreaChartComponent } from "../features/home/components/AreaChart";
+import { BarChartComponent } from "../features/home/components/BarChart";
+import { LineChartComponent } from "../features/home/components/LineChart";
+import { RadarChartComponent } from "../features/home/components/RadarChart";
+import { PieChartComponent } from "../features/home/components/PieChart";
+import { AnimatedChart } from "../features/home/components/AnimatedChart";
+
+import { useChartData } from "../features/home/hooks/useChartData";
+
 
 export const HomePage = () => {
+  const { data: scoreData, isLoading: isScoreLoading } = useChartData("score", "subject");
+  const { data: countData, isLoading: isCountLoading } = useChartData("count", "subject");
+
   return (
-    <div className="min-h-screen bg-[#def7f2] text-[#555]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1180px] flex-col px-5 py-4 md:px-10 md:py-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-meteor text-[2rem] font-black tracking-tight md:text-[2.4rem]">
-            EduSpark.AI
-          </h1>
-
-          <div className="flex items-center gap-3 md:gap-4">
-            <button className="inline-flex items-center gap-2 rounded-full border border-[#5e5e5e] bg-white/80 px-4 py-2 text-[0.95rem] font-semibold text-[#3f3f3f] shadow-[0_1px_0_rgba(255,255,255,0.8)_inset] transition hover:bg-white">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e7f0ff] text-[1rem]">
-                <GearSix size={18} weight="fill" color={accentColor} />
-              </span>
-              <span>Cài đặt</span>
-            </button>
-            <button className="inline-flex items-center gap-2 rounded-full border border-[#5e5e5e] bg-white/80 px-4 py-2 text-[0.95rem] font-semibold text-[#3f3f3f] shadow-[0_1px_0_rgba(255,255,255,0.8)_inset] transition hover:bg-white">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fff0d9] text-[1rem]">
-                <UserCircle size={18} weight="fill" color={accentColor} />
-              </span>
-              <span>Tài khoản</span>
-            </button>
-          </div>
-        </header>
-
-        <main className="flex flex-1 flex-col pb-8 pt-8 md:pt-14">
-          <div className="mb-6">
-            <div>
-              <h2 className="text-[2rem] font-semibold tracking-[-0.03em] text-[#5b5b5b] md:text-[2.6rem]">
-                Sổ ghi chú của tôi
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm font-medium text-[#6f6f6f]">
-                Bé tự đặt tên và viết mô tả ngắn cho từng sổ học riêng.
-              </p>
-            </div>
-          </div>
-
-          <InteractionList />
-        </main>
+    <div className="flex flex-col h-screen bg-[#def7f2] text-[#555] px-5 py-6">
+      <div className="py-6">
+        <Header />
       </div>
+
+      <div className="flex flex-1 overflow-hidden pb-6 gap-6">
+        <div className="w-[80%] px-5 py-4 md:px-10 md:py-6">
+          <NotebookHeader />
+        </div>
+        <div className="w-[20%] bg-white rounded-2xl p-10 shadow-sm overflow-y-auto">
+          <AnimatedChart>
+            <RadarChartComponent data={scoreData} />
+          </AnimatedChart>
+
+          <AnimatedChart>
+            <PieChartComponent data={scoreData} />
+          </AnimatedChart>
+
+          <AnimatedChart>
+            <AreaChartComponent data={countData}/>
+          </AnimatedChart>
+
+          <AnimatedChart>
+            <BarChartComponent data={countData} />
+          </AnimatedChart>
+          
+          <AnimatedChart>
+            <LineChartComponent data={countData} />
+          </AnimatedChart>
+        </div>
+      </div>
+      
     </div>
   );
 };
