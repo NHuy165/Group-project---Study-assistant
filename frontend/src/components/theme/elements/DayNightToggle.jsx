@@ -7,6 +7,7 @@ export const DayNightToggle = ({ isNight, onToggle }) => {
       aria-label={isNight ? "Chuyển sang ban ngày" : "Chuyển sang ban đêm"}
       style={{
         position: "relative",
+        zIndex: 10000,
         display: "flex",
         alignItems: "center",
         cursor: "pointer",

@@ -52,8 +52,6 @@ function App() {
           }
         />
 
-        {/* TEST ROUTE - Quiz Feature Test */}
-        <Route path="/quiz-test" element={<QuizTestPage />} />
       </Routes>
     </HashRouter>
   );
