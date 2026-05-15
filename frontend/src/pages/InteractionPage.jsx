@@ -159,14 +159,12 @@ export const InteractionPage = () => {
 
           {isFlashcardMode && (
             <FlashcardPanel
-              flashcardSets={flashcardSets}
               isLoading={isLoading}
               error={error}
               initialViewMode={flashcardPanelMode}
               initialSelectedSet={selectedFlashcardSet}
               onCreateFlashcardSet={createNewFlashcardSet}
               onCreateEmptyFlashcardSet={createEmptyFlashcardSet}
-              onRemoveFlashcardSet={removeFlashcardSet}
               onClose={closeFlashcardPanel}
             />
           )}
@@ -188,17 +186,6 @@ export const InteractionPage = () => {
         onDocCheck={handleDocCheck}
         onPreview={(doc) => { setSelectedDoc(doc); setIsPreviewOpen(true); }}
       />
-
-        {/* <FlashcardPanel
-          flashcardSets={flashcardSets}
-          isLoading={isLoading}
-          error={error}
-          onCreateFlashcardSet={createNewFlashcardSet}
-          onCreateEmptyFlashcardSet={createEmptyFlashcardSet}
-          onRemoveFlashcardSet={removeFlashcardSet}
-          onClose={() => setIsFlashcardMode(false)}
-        /> */}
-
 
       {/* 2. CỘT GIỮA */}
       {activeToolSetup ? (
