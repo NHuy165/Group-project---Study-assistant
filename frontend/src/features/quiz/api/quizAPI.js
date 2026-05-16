@@ -9,7 +9,12 @@ const PATH = "/study-activity";
 
 export const readQuizzes = async (interactionId) => {
   const response = await axiosClient.get(`${PATH}/${interactionId}/`);
-  return response.data.map(transformStudyActivitySummary);
+  
+  const filteredQuizzes = response.data.filter(
+    (item) => item.activity_format === "MULTIPLE_CHOICE_QUESTIONS"
+  );
+
+  return filteredQuizzes.map(transformStudyActivitySummary);
 };
 
 export const createQuiz = async (interactionId, data) => {
