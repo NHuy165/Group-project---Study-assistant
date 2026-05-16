@@ -1,54 +1,100 @@
 import { useState } from "react";
 
 import { useCreateEssay } from "../../open_ended/hooks/useCreateEssay";
-// Tương lai nhóm code xong thì mở comment ra:
-// import { useCreateQuiz } from "../../quiz/hooks/useCreateQuiz";
-// import { useCreateTTR } from "../../mindmap/hooks/useCreateTTR";
-// import { useCreateFlashcard } from "../../flashcard/hooks/useCreateFlashcard";
+import { useCreateQuiz } from "../../quiz/hooks/useQuiz";
 
 export const useInteractionTools = (interactionId, onActivityCreated) => {
-    // State lưu ID của tool đang được setup (null, 'essay', 'quiz'...)
-    const [activeToolSetup, setActiveToolSetup] = useState(null);
+  // State to store the ID of the tool currently being setup (null, 'essay', 'quiz'...)
+  const [activeToolSetup, setActiveToolSetup] = useState(null);
 
-    // 1. Gọi các hooks của từng tính năng
-    const { isCreatingEssay, handleCreateEssay } = useCreateEssay(interactionId, () => {
-        setActiveToolSetup(null); 
-        if (onActivityCreated) onActivityCreated(); 
-    });
+  // ==========================================
+  // 1. ACTIVITY CREATION HOOKS
+  // ==========================================
+
+  // --- ESSAY ---
+  const { isCreatingEssay, handleCreateEssay } = useCreateEssay(
+    interactionId,
+    () => {
+      // Close the setup form
+      setActiveToolSetup(null);
+      // Notify parent component to refresh the list
+      if (onActivityCreated) onActivityCreated("essay");
+    }
+  );
+
+  // --- QUIZ ---
+  // Get the mutate function (renamed to createQuiz) and isPending state from useCreateQuiz
+  const { mutate: createQuiz, isPending: isCreatingQuiz } = useCreateQuiz();
+
+  const handleCreateQuiz = async (setupData) => {
+    // Map data from ToolSetupArea (which sends 'subject') 
+    // to what quizAPI.js expects ('subjectType' in camelCase)
+    const payload = {
+      subjectType: setupData.subject,
+      prompt: setupData.prompt,
+    };
+
+    console.debug("[useInteractionTools] Creating quiz, payload:", payload);
     
-    // Tương lai:
-    // const { isCreatingQuiz, handleCreateQuiz } = useCreateQuiz(interactionId, onActivityCreated);
-    // const { isCreatingTTR, handleCreateTTR } = useCreateTTR(interactionId, onActivityCreated);
-
-    // 2. Hàm điều phối trung tâm
-    const handleToolClick = (toolId) => {
-        setActiveToolSetup(toolId);
-    };
-
-    const handleConfirmCreate = (setupData) => {
-        if (activeToolSetup === 'essay') {
-            handleCreateEssay(setupData);
+    try {
+      // Call the mutation function with interactionId and mapped payload
+      const newQuiz = await createQuiz(interactionId, payload);
+      console.debug("[useInteractionTools] createQuiz result:", newQuiz);
+      
+      if (newQuiz) {
+        // Step 1: Close the setup form (ToolSetupArea) immediately upon success
+        setActiveToolSetup(null); 
+        
+        // Step 2: Notify parent (InteractionPage) to update the Sidebar list
+        // Note: We pass the ID, but we expect the parent NOT to auto-open the QuizPanel
+        if (onActivityCreated) {
+          onActivityCreated("quiz", newQuiz.id); 
         }
-        // Sau này bổ sung: if (activeToolSetup === 'quiz') { ... }
-    };
+      } else {
+        console.error("Quiz creation failed. Please try again!");
+      }
+    } catch (err) {
+      console.error("Error creating quiz:", err);
+    }
+  };
 
-    // 3. Gom trạng thái Loading của tất cả các nút lại thành 1 Object
-    const toolLoadingStates = {
-        essay: isCreatingEssay,
-        // quiz: isCreatingQuiz,
-        // ttr: isCreatingTTR,
-        // flashcard: false 
-    };
+  // ==========================================
+  // 2. CENTRAL DISPATCHER FUNCTIONS
+  // ==========================================
+  const handleToolClick = (toolId) => {
+    // Open the ToolSetupArea for the selected tool
+    setActiveToolSetup(toolId);
+  };
 
-    // 4. Kiểm tra xem có BẤT KỲ tool nào đang chạy hay không để hiện màn hình chờ
-    const isCreatingNewActivity = Object.values(toolLoadingStates).some(state => state === true);
+  const handleConfirmCreate = (setupData) => {
+    // Dispatch the payload to the correct handler based on active tool
+    if (activeToolSetup === "essay") {
+      handleCreateEssay(setupData);
+    } else if (activeToolSetup === "quiz") {
+      handleCreateQuiz(setupData);
+    }
+  };
 
-    return {
-        activeToolSetup,
-        setActiveToolSetup,
-        handleToolClick,
-        handleConfirmCreate,
-        toolLoadingStates,
-        isCreatingNewActivity
-    };
+  // ==========================================
+  // 3. LOADING STATES (FOR UI SPINNERS)
+  // ==========================================
+  const toolLoadingStates = {
+    essay: isCreatingEssay,
+    quiz: isCreatingQuiz,
+    // ttr: isCreatingTTR,
+  };
+
+  // Check if ANY tool is currently processing to show the loading overlay
+  const isCreatingNewActivity = Object.values(toolLoadingStates).some(
+    (state) => state === true
+  );
+
+  return {
+    activeToolSetup,
+    setActiveToolSetup,
+    handleToolClick,
+    handleConfirmCreate,
+    toolLoadingStates,
+    isCreatingNewActivity,
+  };
 };

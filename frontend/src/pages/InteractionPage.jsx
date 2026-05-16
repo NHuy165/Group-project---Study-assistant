@@ -1,25 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
+// ==========================================
 // 1. IMPORTS HOOKS
+// ==========================================
 import { useInteractions } from "../features/interactions/hooks/useInteractions";
 import { useDocuments } from "../features/documents/hooks/useDocuments";
 import { useChat } from "../features/chat/hooks/useChat";
 import { useStudyActivities } from "../features/open_ended/hooks/useStudyActivities";
 import { useInteractionTools } from "../features/interactions/hooks/useInteractionTools";
-import { useInteractionUI } from "../features/interactions/hooks/useInteractionUI"; // Hook UI quản lý Lựa chọn A
+import { useInteractionUI } from "../features/interactions/hooks/useInteractionUI";
+import useQuizManagement from "../features/quiz/hooks/useQuizManagement"; 
 
+// ==========================================
 // 2. IMPORTS COMPONENTS
+// ==========================================
 import { InteractionLayout } from "../features/interactions/components/InteractionLayout";
 import { SourceSidebar } from "../features/documents/components/SourceSidebar";
 import { ChatArea } from "../features/chat/components/ChatArea";
 import { ToolsSidebar } from "../features/interactions/components/ToolsSidebar";
 import { AddSourceModal } from "../features/documents/components/AddSourceModal";
 
-// Components từ Quiz (Nhánh HEAD)
+// Feature components
 import QuizPanel from "../features/quiz/components/QuizPanel";
-
-// Components từ TTR & Open-Ended (Nhánh epic/ttr)
 import { OpenEndedContainer } from "../features/open_ended/components/OpenEndedContainer";
 import { ToolSetupArea } from "../features/interactions/components/ToolSetupArea";
 import { TTRFeature } from "../features/ttr/index";
@@ -29,12 +32,14 @@ import { createTTRActivity, fetchActivitiesByInteraction } from "../features/ttr
 export const InteractionPage = () => {
   const { interactionId } = useParams();
 
-  // QUẢN LÝ GIAO DIỆN TÀI LIỆU
+  // ==========================================
+  // INTERFACE MANAGEMENT STATES
+  // ==========================================
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
 
-  // QUẢN LÝ UI ĐỘC LẬP (Lựa chọn A)
+  // UI management hook (Coordinates closing/opening overlays to prevent overlap)
   const {
     activeToolId, setActiveToolId,
     isTTROpen, setIsTTROpen,
@@ -42,20 +47,53 @@ export const InteractionPage = () => {
     openQuiz, openTTR, openOpenEnded
   } = useInteractionUI();
 
-  // STATE PHỤ CHO TTR (Dữ liệu tạm thời)
+  // State to store the ID of the quiz currently selected for playing
+  const [selectedQuizId, setSelectedQuizId] = useState(null);
+
+  // Temporary states for TTR
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [currentActivityId, setCurrentActivityId] = useState(null);
   const [currentIsNew, setCurrentIsNew] = useState(false);
   const [ttrTasks, setTtrTasks] = useState([]);
 
-  // GỌI CÁC CUSTOM HOOKS LOGIC
-  const { handleNewChatClick } = useInteractions();
-  const { documents, selectedDocIds, uploadMultipleFiles, updateDocument, documentName, setDocumentName, editingID, handleStartEdit, handleDocCheck, deleteDocument, isLoading: isDocsLoading } = useDocuments(interactionId);
+  // ==========================================
+  // MAIN LOGIC HOOKS CALLS
+  // ==========================================
+  const handleNewChatClick = useInteractions();
+  
+  const { 
+    documents, selectedDocIds, uploadMultipleFiles, updateDocument, 
+    documentName, setDocumentName, editingID, handleStartEdit, 
+    handleDocCheck, deleteDocument, isLoading: isDocsLoading 
+  } = useDocuments(interactionId);
+  
   const { chatlog, promptText, setPromptText, askLLM, isLoading: isChatLoading } = useChat(interactionId);
+  
+  // Hook to get the Essay activities list
   const { activities, fetchActivities, handleDeleteActivity } = useStudyActivities(interactionId);
-  const { handleToolClick, activeToolSetup, setActiveToolSetup, handleConfirmCreate, toolLoadingStates, isCreatingNewActivity } = useInteractionTools(interactionId, fetchActivities);
+  
+  // Hook to get the Quiz list 
+  const { quizzes, removeQuiz, isLoading: isQuizLoading } = useQuizManagement(interactionId);
 
-  // LOGIC TTR CHẠY NGẦM: Tải danh sách bài tập TTR khi vào phòng
+  // Hook managing the shared Tool Configuration Form (ToolSetupArea)
+  const { 
+    handleToolClick, activeToolSetup, setActiveToolSetup, 
+    handleConfirmCreate, toolLoadingStates, isCreatingNewActivity 
+  } = useInteractionTools(interactionId, (activityType, newActivityId) => {
+    if (activityType === "essay") {
+      fetchActivities(); 
+    } else if (activityType === "quiz") {
+      // Intentionally empty or used for manual list refetching if required.
+      // We DO NOT trigger openQuiz() or setSelectedQuizId(newActivityId) here.
+      // This ensures the ToolSetupArea closes, but the Fullscreen QuizPanel remains hidden
+      // until the user manually selects the quiz from the ToolsSidebar.
+      console.debug("[InteractionPage] Quiz created successfully with ID:", newActivityId);
+    }
+  });
+
+  // ==========================================
+  // TTR LOGIC (Background data fetching)
+  // ==========================================
   useEffect(() => {
     const loadTTR = async () => {
       try {
@@ -71,7 +109,7 @@ export const InteractionPage = () => {
           setTtrTasks(formatted);
         }
       } catch (err) {
-        console.error("Lỗi tải TTR Data:", err);
+        console.error("Error loading TTR Data:", err);
       }
     };
     loadTTR();
@@ -93,6 +131,16 @@ export const InteractionPage = () => {
       .catch(() => setTtrTasks(prev => prev.filter(task => task.id !== tempId)));
   };
 
+  // ==========================================
+  // UI HANDLERS
+  // ==========================================
+  
+  // Triggered when user explicitly clicks on an existing Quiz in the Sidebar
+  const handlePlayQuiz = (quizId) => {
+    setSelectedQuizId(quizId); // Save the selected ID
+    openQuiz();                // Trigger UI Hook to display the Quiz Panel overlay
+  };
+
   return (
     <InteractionLayout
       onNewChat={handleNewChatClick}
@@ -101,7 +149,7 @@ export const InteractionPage = () => {
           <AddSourceModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAdd={uploadMultipleFiles} />
           <TTRSetupModal isOpen={isSetupOpen} onClose={() => setIsSetupOpen(false)} onSubmit={handleCreateTTRBackground} />
 
-          {/* LỚP PHỦ GAME TTR: Sử dụng state từ Hook UI */}
+          {/* TTR GAME OVERLAY */}
           {isTTROpen && currentActivityId && (
             <TTRFeature
               activityId={currentActivityId}
@@ -112,7 +160,7 @@ export const InteractionPage = () => {
         </>
       }
     >
-      {/* 1. CỘT TRÁI: TÀI LIỆU */}
+      {/* 1. LEFT COLUMN: DOCUMENTS LIST */}
       <SourceSidebar
         documents={documents} isLoading={isDocsLoading} selectedDocIds={selectedDocIds}
         onAddClick={() => setIsModalOpen(true)} editingId={editingID} setEditingId={handleStartEdit}
@@ -121,7 +169,7 @@ export const InteractionPage = () => {
         onPreview={(doc) => { setSelectedDoc(doc); setIsPreviewOpen(true); }}
       />
 
-      {/* 2. CỘT GIỮA: CHAT HOẶC SETUP AREA */}
+      {/* 2. MIDDLE COLUMN: CHAT OR CONFIG FORM (TOOL SETUP AREA) */}
       {activeToolSetup ? (
         <ToolSetupArea
           toolId={activeToolSetup}
@@ -136,45 +184,53 @@ export const InteractionPage = () => {
         />
       )}
 
-      {/* 3. CỘT PHẢI: TOOLS SIDEBAR */}
+      {/* 3. RIGHT COLUMN: TOOLS & LEARNING MATERIAL LIST */}
       <ToolsSidebar
-        // Quản lý Quiz (Nhánh HEAD)
-        activeToolId={activeToolId}
-        onSelectTool={openQuiz} // Gọi hàm quản lý Lựa chọn A
+        // Open shared tool configuration form
+        onToolClick={handleToolClick}
+        toolLoadingStates={toolLoadingStates}
+        isCreatingNewActivity={isCreatingNewActivity}
 
-        // Quản lý TTR (Nhánh epic/ttr)
+        // TTR Management
         onOpenTTR={() => setIsSetupOpen(true)}
         ttrTasks={ttrTasks}
         onPlayTTR={(id) => {
           const task = ttrTasks.find(t => t.id === id);
           setCurrentActivityId(id);
           setCurrentIsNew(task ? task.isNew : false);
-          openTTR(); // Gọi hàm quản lý Lựa chọn A để đóng Quiz/Tự luận
+          openTTR();
           if (task && task.isNew) {
             setTtrTasks(prev => prev.map(t => t.id === id ? { ...t, isNew: false } : t));
           }
         }}
 
-        // Quản lý Tự Luận (Nhánh epic/ttr)
+        // Essay List Management
         activities={activities}
-        onToolClick={handleToolClick}
-        onActivityClick={openOpenEnded} // Gọi hàm quản lý Lựa chọn A
+        onActivityClick={openOpenEnded}
         onDeleteActivity={handleDeleteActivity}
-        toolLoadingStates={toolLoadingStates}
-        isCreatingNewActivity={isCreatingNewActivity}
+
+        // Quiz List Management
+        quizzes={quizzes}
+        isQuizLoading={isQuizLoading}
+        onQuizClick={handlePlayQuiz}
+        onDeleteQuiz={removeQuiz}
       />
 
-      {/* 4. CÁC LỚP PHỦ MÀN HÌNH (OVERLAYS) */}
+      {/* 4. SCREEN OVERLAYS */}
 
-      {/* Lớp phủ Quiz */}
+      {/* Quiz Overlay: Renders when activeToolId equals "quiz" */}
       {activeToolId === "quiz" && (
         <QuizPanel
           interactionId={interactionId}
-          onClose={() => setActiveToolId(null)}
+          quizId={selectedQuizId} 
+          onClose={() => {
+            setActiveToolId(null);
+            setSelectedQuizId(null); // Reset temporary ID on close
+          }}
         />
       )}
 
-      {/* Lớp phủ Tự Luận */}
+      {/* Essay Overlay */}
       {selectedActivityId && (
         <OpenEndedContainer
           activityId={selectedActivityId}

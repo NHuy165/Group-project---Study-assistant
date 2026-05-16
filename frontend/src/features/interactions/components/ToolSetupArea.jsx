@@ -26,6 +26,13 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
     }
   }, [toolId]);
 
+  // [MỚI] Câu mô tả động thay vì fix cứng chữ "Tự luận"
+  const toolDescription = useMemo(() => {
+    if (toolId === 'essay') return "Bé sẽ viết thông tin để trả lời câu hỏi Tự Luận";
+    if (toolId === 'quiz') return "Cú Mèo sẽ tạo các câu hỏi Trắc nghiệm nhiều lựa chọn";
+    return `Bé sẽ tương tác với bài tập ${toolId}`;
+  }, [toolId]);
+
   // Logic cộng dồn Prompt
   const handleToggleSample = (sample) => {
     setSelectedSamples(prev => 
@@ -43,7 +50,6 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
   };
 
   return (
-    
     <div className={`absolute inset-0 z-[50] flex flex-col items-center justify-center p-6 backdrop-blur-md animate-in fade-in zoom-in duration-300 rounded-[2.5rem] ${isNight ? 'bg-black/60' : 'bg-white/40'}`}>
       
       {/* THẺ CARD TRONG SUỐT (GLASSMORPHISM) */}
@@ -139,9 +145,10 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
             </div>
           </div>
           
+           {/* [SỬA] Sử dụng biến toolDescription thay cho text cứng */}
            <div className={`flex-1 p-5 rounded-3xl border-2 flex flex-col justify-center items-center text-center ${isNight ? 'border-gray-700 bg-gray-900/50' : 'border-gray-100 bg-gray-50'}`}>
              <p className="text-sm font-bold opacity-50 italic">
-               Bé sẽ viết thông tin để trả lời câu hỏi Tự Luận
+               {toolDescription}
              </p>
            </div>
         </div>
@@ -154,7 +161,6 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
                 <WarningCircle size={16} /> Bé chưa nhập nội dung bài học!
               </span>
             )}
-            
           </div>
 
           <button 

@@ -12,7 +12,7 @@ const TOOLS_LIST = [
 ];
 
 export const ToolsSidebar = ({ 
-  // Props Quiz
+  // Props Quiz (Công cụ chọn)
   activeToolId,
   // Props TTR & Open Ended
   onOpenTTR, 
@@ -23,7 +23,13 @@ export const ToolsSidebar = ({
   activities = [], 
   onActivityClick, 
   onDeleteActivity, 
-  isCreatingNewActivity 
+  isCreatingNewActivity,
+  
+  // [MỚI] Props Quản lý danh sách Quiz
+  quizzes = [],
+  isQuizLoading,
+  onQuizClick,
+  onDeleteQuiz
 }) => {
   const { isNight } = useTheme(); 
 
@@ -35,7 +41,9 @@ export const ToolsSidebar = ({
           : "bg-white/30 border-white/20"
       }`}
     >
-      {/* Section Công cụ */}
+      {/* ========================================== */}
+      {/* SECTION 1: CÔNG CỤ TẠO BÀI                 */}
+      {/* ========================================== */}
       <section>
         <header className="mb-4 space-y-4">
           <div
@@ -84,7 +92,9 @@ export const ToolsSidebar = ({
         </div>
       </section>
 
-      {/* Section Học Liệu */}
+      {/* ========================================== */}
+      {/* SECTION 2: DANH SÁCH HỌC LIỆU ĐÃ TẠO       */}
+      {/* ========================================== */}
       <section className="flex flex-1 flex-col overflow-hidden pt-2">
         <header className="mb-4 space-y-4">
           <div className={`flex items-center space-x-2 text-2xl font-bold transition-colors ${
@@ -96,6 +106,46 @@ export const ToolsSidebar = ({
         </header>
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+          
+          {/* HIỂN THỊ DANH SÁCH BÀI QUIZ [MỚI CHUYỂN VÀO] */}
+          {quizzes && quizzes.map((quiz) => (
+            <div key={`quiz-${quiz.id}`} className="group relative flex w-full items-center">
+              <button 
+                onClick={() => onQuizClick && onQuizClick(quiz.id)} 
+                className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
+                  isNight 
+                    ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
+                    : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
+                }`}
+              >
+                <span className="mr-3 text-sm opacity-80">🎯</span>
+                <span className="flex-1 truncate text-left text-sm font-semibold">
+                  {quiz.title || quiz.name || `Quiz #${quiz.id}`}
+                </span>
+                
+                {/* Nhãn báo hiệu Quiz đã nộp */}
+                {quiz.isSubmitted && (
+                  <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 opacity-90">
+                    Đã nộp
+                  </span>
+                )}
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); 
+                  if (window.confirm(`Bé có chắc chắn muốn xóa "${quiz.name || quiz.title}" không?`)) {
+                    onDeleteQuiz(quiz.id);
+                  }
+                }}
+                className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                  isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
+                }`}
+              >
+                <Trash size={18} weight="bold" />
+              </button>
+            </div>
+          ))}
+
           {/* HIỂN THỊ DANH SÁCH BÀI TTR */}
           {ttrTasks && ttrTasks.map((task) => (
             <div 
@@ -129,7 +179,7 @@ export const ToolsSidebar = ({
                 }`}
               >
                 <span className="mr-3 text-sm opacity-80">📝</span>
-                <span className="text-sm font-semibold truncate text-left w-3/4">
+                <span className="flex-1 truncate text-left text-sm font-semibold">
                   {act.name || `Bài tập #${act.id}`}
                 </span>
               </button>
@@ -157,6 +207,18 @@ export const ToolsSidebar = ({
               <span className="mr-3 text-sm opacity-50 animate-spin">⏳</span>
               <span className="text-sm font-semibold text-gray-400 italic">
                 Cú Mèo đang soạn bài...
+              </span>
+            </div>
+          )}
+
+          {/* INDICATOR QUIZ LOADING */}
+          {isQuizLoading && (
+             <div className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
+                isNight ? "bg-gray-800/50 border-gray-600" : "bg-gray-100/80 border-gray-300" 
+            }`}>
+              <span className="mr-3 text-sm opacity-50 animate-spin">⏳</span>
+              <span className="text-sm font-semibold text-gray-400 italic">
+                Đang tải danh sách...
               </span>
             </div>
           )}
