@@ -7,8 +7,6 @@ import { useTheme } from "../../../components/theme/ThemeWrapper";
 const QuizPanel = ({ interactionId, quizId, onClose }) => {
   const { isNight } = useTheme();
   
-  // Dùng lại Hook quản lý để lấy hàm update và load detail
-  // (Dữ liệu danh sách đã được chuyển ra InteractionPage lo)
   const {
     quizzes,
     isLoading,
@@ -17,16 +15,13 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
     updateQuizInList,
   } = useQuizManagement(interactionId);
 
-  // Tìm đúng bài quiz mà user đã click ngoài Sidebar
   const selectedQuiz = useMemo(
     () => quizzes.find((item) => item.id === quizId) || null,
     [quizzes, quizId],
   );
 
-  // Khởi tạo bộ não tính điểm & logic làm bài
   const game = useQuizGame(selectedQuiz, updateQuizInList);
 
-  // Tự động tải chi tiết câu hỏi (nếu chưa có) ngay khi mở popup
   useEffect(() => {
     if (!quizId) return;
     if (!selectedQuiz || selectedQuiz.hasDetails) return;
@@ -36,7 +31,8 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 lg:p-8 backdrop-blur-sm transition-all">
       <div
-        className={`relative flex h-full max-h-[92vh] w-full max-w-6xl flex-col gap-5 overflow-hidden rounded-[2.5rem] border p-6 md:p-8 shadow-2xl ${
+        /* [SỬA Ở ĐÂY]: Đổi gap-4 thành gap-2 để kéo khung lên cao hơn */
+        className={`relative flex h-full max-h-[92vh] w-full max-w-6xl flex-col gap-2 overflow-hidden rounded-[2.5rem] border p-6 md:p-8 shadow-2xl ${
           isNight
             ? "border-[#7aa7ff]/30 bg-gradient-to-br from-[#0e1631]/95 via-[#1a1b3f]/95 to-[#18142b]/95 shadow-[0_28px_70px_rgba(2,10,35,0.7)]"
             : "border-white/50 bg-gradient-to-br from-[#dcfff7]/95 via-[#fff1e7]/95 to-[#e8f4ff]/95 shadow-[0_24px_60px_rgba(15,23,42,0.25)]"
@@ -48,29 +44,21 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
         <div className="quiz-aurora quiz-aurora-c bottom-0 left-1/2 z-0 -translate-x-1/2 opacity-70" />
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_80%_12%,rgba(255,255,255,0.26),transparent_40%)]" />
 
-        {/* HEADER */}
-        <header className="relative z-10 flex items-center justify-between pl-2">
-          <div>
-            <p className={`text-xs font-black uppercase tracking-widest ${isNight ? "text-slate-400" : "text-gray-500"}`}>
-              Quiz
-            </p>
-            <h2 className={`text-3xl font-black ${isNight ? "text-slate-100" : "text-gray-800"}`}>
-              Không gian làm bài
-            </h2>
-          </div>
+        {/* HEADER MỚI: CHỈ GIỮ LẠI NÚT ĐÓNG ĐƯỢC ĐẨY SANG PHẢI */}
+        <div className="relative z-10 flex justify-end">
           <button
             onClick={onClose}
-            className={`rounded-2xl border-2 px-6 py-3 text-sm font-bold transition-all hover:-translate-y-1 hover:shadow-lg ${
+            className={`rounded-xl border-2 px-4 py-2 text-xs font-bold transition-all hover:-translate-y-1 hover:shadow-lg ${
               isNight
                 ? "border-[#88a1ff]/40 bg-[#1a254f]/80 text-slate-100 hover:bg-[#253468]"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-white"
+                : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-rose-500/30"
             }`}
           >
             Đóng 
           </button>
-        </header>
+        </div>
 
-        {/* KHU VỰC LÀM BÀI CHÍNH (FULL WIDTH) */}
+        {/* KHU VỰC LÀM BÀI CHÍNH (Chiếm toàn bộ không gian còn lại) */}
         <section
           className={`relative z-10 h-full w-full overflow-y-auto rounded-[2rem] border p-6 md:p-8 shadow-inner custom-scrollbar ${
             isNight
