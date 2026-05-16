@@ -1,9 +1,8 @@
 import base64
-
-import httpx
 from abc import ABC, abstractmethod
 from typing import Any
 
+import httpx
 import ollama
 from fastapi import UploadFile
 from google import genai
@@ -11,8 +10,16 @@ from google import genai
 from backend.src.core.config import settings
 from backend.src.exceptions.core import ExceptionRequest_400
 
-ai_client = genai.Client(api_key=settings.API_KEY_GEMINI)
-ollama_client = ollama.AsyncClient(host=settings.OLLAMA_HOST)
+GOOGLE_CLIENT = genai.Client(api_key=settings.API_KEY_GEMINI)
+OLLAMA_CLIENT = ollama.AsyncClient(host=settings.OLLAMA_HOST)
+
+CLOUDFLARE_URL_EMBED = f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run/{settings.EMBED_MODEL_CLOUDFLARE}"
+CLOUDFLARE_URL_IMAGE_CAPTION = f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run/{settings.VISION_MODEL_CLOUDFLARE}"
+CLOUDFLARE_HEADERS = {
+    "Authorization": f"Bearer {settings.CLOUDFLARE_API_TOKEN}",
+    "Content-Type": "application/json",
+}
+
 
 class API(ABC):
     @classmethod
@@ -43,12 +50,12 @@ class API(ABC):
 class GoogleAPI(API):
     @classmethod
     async def embed(cls, content: str) -> list[float]:
-        response = await ai_client.aio.models.embed_content(
+        response = await GOOGLE_CLIENT.aio.models.embed_content(
             model=settings.EMBED_MODEL_GOOGLE,
             contents=content,
             # Content is truncated from 3072-D to 768-D
             config=genai.types.EmbedContentConfig(
-                output_dimensionality=settings.DEFAULT_EMBED_DIMENSIONALITY,
+                output_dimensionality=settings.DEFAULT_EMBED_DIMENSIONALITY_GOOGLE_OLLAMA,
             ),
         )
 
@@ -71,7 +78,7 @@ class GoogleAPI(API):
         )
 
         # Reads the image using the model
-        response = await ai_client.aio.models.generate_content(
+        response = await GOOGLE_CLIENT.aio.models.generate_content(
             model=settings.VISION_MODEL_GOOGLE,
             contents=[prompt_text, image_part],
         )
@@ -88,7 +95,7 @@ class GoogleAPI(API):
         if json_required:
             config.response_mime_type = "application/json"
 
-        response = await ai_client.aio.models.generate_content(
+        response = await GOOGLE_CLIENT.aio.models.generate_content(
             model=settings.ANSWER_MODEL_GOOGLE,
             contents=prompt,
             config=config,
@@ -106,7 +113,7 @@ class GoogleAPI(API):
 class OllamaAPI(API):
     @classmethod
     async def embed(cls, content: str) -> list[float]:
-        response = await ollama_client.embeddings(
+        response = await OLLAMA_CLIENT.embeddings(
             model=settings.EMBED_MODEL_OLLAMA,
             prompt=content,
         )
@@ -117,8 +124,10 @@ class OllamaAPI(API):
         assert embeddings is not None
         assert isinstance(embeddings, list)
 
-        if len(embeddings) > settings.DEFAULT_EMBED_DIMENSIONALITY:
-            embeddings = embeddings[: settings.DEFAULT_EMBED_DIMENSIONALITY]
+        if len(embeddings) > settings.DEFAULT_EMBED_DIMENSIONALITY_GOOGLE_OLLAMA:
+            embeddings = embeddings[
+                : settings.DEFAULT_EMBED_DIMENSIONALITY_GOOGLE_OLLAMA
+            ]
 
         return embeddings
 
@@ -130,7 +139,7 @@ class OllamaAPI(API):
         prompt_text = "Extract all readable text from this image exactly as written.\nThen, describe the layout, charts, figures, subjects, and any data points in exhaustive detail."
 
         # Reads the image using the model
-        response = await ollama_client.generate(
+        response = await OLLAMA_CLIENT.generate(
             model=settings.VISION_MODEL_OLLAMA,
             prompt=prompt_text,
             images=[image_bytes],
@@ -148,14 +157,14 @@ class OllamaAPI(API):
     @classmethod
     async def generate_content(cls, prompt: str, json_required: bool = False) -> str:
         if json_required:
-            response = await ollama_client.generate(
+            response = await OLLAMA_CLIENT.generate(
                 model=settings.ANSWER_MODEL_OLLAMA,
                 prompt=prompt,
                 options={"num_ctx": 8192},
                 format="json",
             )
         else:
-            response = await ollama_client.generate(
+            response = await OLLAMA_CLIENT.generate(
                 model=settings.ANSWER_MODEL_OLLAMA,
                 prompt=prompt,
                 options={"num_ctx": 8192},
@@ -170,39 +179,24 @@ class OllamaAPI(API):
             )
 
         return result_text
-    
+
 
 class CloudFlareAPI(API):
     @classmethod
     async def embed(cls, content: str) -> list[float]:
-        url = f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run/{settings.EMBED_MODEL_CLOUDFLARE}"
-        headers = {
-            "Authorization": f"Bearer {settings.CLOUDFLARE_API_TOKEN}",
-            "Content-Type": "application/json"
-        }
-        json_data = {
-            "text": [content]
-        }
+        json_data = {"text": [content]}
 
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=headers, json=json_data)
-            
-            # Bắt lỗi HTTP nếu request thất bại (VD: sai token, lỗi mạng)
-            if response.status_code != 200:
-                raise ExceptionRequest_400(f"Cloudflare API Error: {response.text}")
-                
-            response_data = response.json()
-            # response_data có dạng: 
-            # {
-            #     "result": {'meta', 'data', 'response', 'shape', 'pooling'},
-            #     "success": ,
-            #     "errors": ,
-            #     "messages": ,
-            # }
+            response = await client.post(
+                CLOUDFLARE_URL_EMBED, headers=CLOUDFLARE_HEADERS, json=json_data
+            )
 
-        if not response_data.get("success"):
-            raise ExceptionRequest_400("Không thể tạo embedding từ Cloudflare.")
-        
+            assert response.status_code == 200
+
+            response_data = response.json()
+
+        assert response_data.get("result") is not None
+
         result_data = response_data.get("result", {}).get("data")
 
         assert result_data is not None
@@ -213,12 +207,6 @@ class CloudFlareAPI(API):
 
     @classmethod
     async def caption_image(cls, file: UploadFile) -> str:
-        url = f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run/{settings.VISION_MODEL_CLOUDFLARE}"
-        headers = {
-            "Authorization": f"Bearer {settings.CLOUDFLARE_API_TOKEN}",
-            "Content-Type": "application/json"
-        }
-
         # Cloudflare không còn trường image riêng biệt, giờ gửi ảnh thông qua json nên cần encode về chuỗi base64
         image_bytes = await file.read()
         mime_type = file.content_type or "image/jpeg"
@@ -230,44 +218,35 @@ class CloudFlareAPI(API):
             "data points, charts, and visual elements with exhaustive precision."
         )
         prompt_text = "Extract all readable text from this image exactly as written.\nThen, describe the layout, charts, figures, subjects, and any data points in exhaustive detail."
-        
+
         json_data = {
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": [
-                    {
-                        "type": "text",
-                        "text": prompt_text
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime_type};base64,{base64_image}"
-                        }
-                    }
-                ]}
-            ]
+                {"role": "user", "content": prompt_text},
+            ],
+            "image": base64_image,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=headers, json=json_data)
-                
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                CLOUDFLARE_URL_IMAGE_CAPTION, headers=CLOUDFLARE_HEADERS, json=json_data
+            )
+
             response_data = response.json()
-        
+
         if not response_data.get("success"):
-            raise ExceptionRequest_400("Không thể tạo captioning từ Cloudflare.")
-        
-        result_data = response_data.get("result", {}).get("data")
+            raise ExceptionRequest_400("Image could not be saved properly.")
+
+        result_data = response_data.get("result", {}).get("response")
 
         assert result_data is not None
-        assert isinstance(result_data, list)
-        assert isinstance(result_data[0], list)
+        assert isinstance(result_data, str)
 
-        return result_data[0]
+        return result_data
 
     @classmethod
     async def generate_content(cls, prompt: str, json_required: bool = False) -> str:
-        pass
+        raise Exception("You weren't supposed to call this")
 
 
 class GlobalAPI:
@@ -287,7 +266,9 @@ class GlobalAPI:
 
     @classmethod
     async def generate_chat(cls, prompt: str) -> str:
-        return await cls.models[settings.MODEL_IN_USE_GENERATE_CHAT].generate_content(prompt)
+        return await cls.models[settings.MODEL_IN_USE_GENERATE_CHAT].generate_content(
+            prompt
+        )
 
     @classmethod
     async def rewrite_prompt(cls, prompt: str) -> str:
