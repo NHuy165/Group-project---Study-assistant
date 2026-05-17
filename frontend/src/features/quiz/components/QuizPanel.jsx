@@ -47,19 +47,23 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
         {/* HEADER MỚI: CHIA 3 KHU VỰC */}
         <div className="relative z-10 flex items-center justify-between px-2">
           
-          {/* 1. BÊN TRÁI: Dòng chữ rực rỡ nhất có thể */}
-          <div className="flex-1">
-            <h2 className={`text-2xl md:text-3xl font-black tracking-tighter uppercase italic transition-all duration-700 bg-clip-text text-transparent bg-gradient-to-r ${
+          {/* 1. BÊN TRÁI: Dòng chữ rực rỡ và Icon tách riêng */}
+          <div className="flex-1 flex items-center gap-3">
+            <h2 className={`text-2xl md:text-3xl font-black tracking-tighter uppercase italic transition-all duration-700 bg-clip-text text-transparent bg-gradient-to-r whitespace-nowrap ${
               selectedQuiz?.isSubmitted
                 ? isNight 
                   ? "from-yellow-400 via-emerald-400 to-orange-500 drop-shadow-[0_2px_10px_rgba(52,211,153,0.3)]" 
-                  : "from-blue-600 via-cyan-500 to-emerald-500 drop-shadow-[0_2px_10px_rgba(14,165,233,0.2)]"  // Chế độ sáng: Xanh dương -> Xanh ngọc -> Xanh lá
+                  : "from-blue-600 via-cyan-500 to-emerald-500 drop-shadow-[0_2px_10px_rgba(14,165,233,0.2)]"
                 : isNight
                   ? "from-cyan-400 via-purple-400 to-pink-500 drop-shadow-[0_2px_10px_rgba(192,38,211,0.3)]"      
-                  : "from-blue-600 via-violet-600 to-fuchsia-600 drop-shadow-[0_2px_10px_rgba(79,70,229,0.2)]"   // Chế độ sáng: Xanh dương -> Tím -> Hồng mận
+                  : "from-blue-600 via-violet-600 to-fuchsia-600 drop-shadow-[0_2px_10px_rgba(79,70,229,0.2)]"   
             }`}>
-              {selectedQuiz?.isSubmitted ? "Kết quả làm bài ✨" : "Không gian làm bài 🚀"}
+              {selectedQuiz?.isSubmitted ? "Kết quả làm bài" : "Không gian làm bài"}
             </h2>
+            {/* Tách riêng Emoji ra ngoài thẻ h2 để không bị lỗi gradient */}
+            <span className="text-2xl md:text-3xl drop-shadow-md">
+              {selectedQuiz?.isSubmitted ? "✨" : "🚀"}
+            </span>
           </div>
 
           {/* 2. Ở GIỮA: Khoảng trống để Switch đổi màu nền không bị đè lên */}
@@ -77,7 +81,7 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
                   : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-rose-500/30"
               }`}
             >
-              Đóng X
+              Đóng 
             </button>
           </div>
         </div>

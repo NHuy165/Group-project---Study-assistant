@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, XCircle, Award, BarChart2 } from "lucide-react";
+import { CheckCircle2, XCircle, Award, BarChart2,MinusCircle} from "lucide-react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 
 const QuizScoreBoard = ({ scoreSummary, scorePercent, resultFilter, setResultFilter }) => {
@@ -48,6 +48,11 @@ const QuizScoreBoard = ({ scoreSummary, scorePercent, resultFilter, setResultFil
             id: "wrong", label: "Sai", icon: <XCircle size={13} />, 
             activeClass: "bg-red-500 text-white shadow-sm",
             hoverClass: isNight ? "hover:bg-red-500/20 hover:text-red-400" : "hover:bg-red-100 hover:text-red-700"
+          },
+          { 
+            id: "unanswered", label: "Chưa làm", icon: <MinusCircle size={13} />, 
+            activeClass: "bg-gray-500 text-white shadow-sm",
+            hoverClass: isNight ? "hover:bg-gray-500/40 hover:text-gray-300" : "hover:bg-gray-200 hover:text-gray-700"
           }
         ].map((btn) => {
           const isActive = resultFilter === btn.id;

@@ -69,12 +69,17 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
   const scorePercent = scoreSummary?.percent ?? 0;
 
   // Filtering Logic
-  const isFilterActive = isSubmitted && resultFilter !== "all";
+const isFilterActive = isSubmitted && resultFilter !== "all";
   const matchesFilter = (question) => {
     if (!isFilterActive) return true;
-    const isCorrect = question.options.find((opt) => opt.id === question.attemptId)?.isCorrect || false;
-    if (resultFilter === "correct") return isCorrect;
-    if (resultFilter === "wrong") return !isCorrect;
+    
+    const hasAttempt = !!question.attemptId; // Kiểm tra xem có tick đáp án không
+    const isCorrect = hasAttempt && question.options.find((opt) => opt.id === question.attemptId)?.isCorrect;
+
+    if (resultFilter === "correct") return hasAttempt && isCorrect; // Có làm & Đúng
+    if (resultFilter === "wrong") return hasAttempt && !isCorrect;  // CÓ LÀM & Sai (Chặn câu bỏ trống)
+    if (resultFilter === "unanswered") return !hasAttempt;          // Hoàn toàn không làm
+
     return true;
   };
 
