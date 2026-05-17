@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import useFlashcardManagement from '../hooks/useFlashcardManagement';
+import { useTheme } from '../../../components/theme/ThemeWrapper';
 
 const emptyDraft = {
     front: '',
@@ -15,6 +16,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
         updateCard,
     } = useFlashcardManagement(selectedSet?.id);
 
+    const { isNight } = useTheme();
     const [newCard, setNewCard] = useState(emptyDraft);
     const [editingCardId, setEditingCardId] = useState(null);
     const [editingCard, setEditingCard] = useState(emptyDraft);
@@ -95,13 +97,13 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                     >
                         Học bộ này
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         onClick={onBack}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
                     >
                         Trở về
-                    </button>
+                    </button> */}
                 </div>
             </div>
 

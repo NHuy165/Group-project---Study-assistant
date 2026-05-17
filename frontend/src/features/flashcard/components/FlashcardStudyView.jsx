@@ -2,6 +2,7 @@ import React from 'react';
 import useFlashcardNavigation from '../hooks/useFlashcard';
 import Flashcard from './Flashcard';
 import useFlashcardManagement from '../hooks/useFlashcardManagement';
+import { useTheme } from '../../../components/theme/ThemeWrapper';
 
 const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
     const {
@@ -21,6 +22,7 @@ const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
         currentIndex,
         progress,
     } = useFlashcardNavigation(cardsList);
+    const { isNight } = useTheme();
 
     if (isLoading) {
         return (
