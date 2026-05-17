@@ -4,7 +4,7 @@ import { useTheme } from '../../../components/theme/ThemeWrapper';
 import { SmartContent } from "../../../components/SmartContent";
 
 // ====================================================================
-// HOOK VẼ SÉT PHÂN NHÁNH TRÊN CANVAS
+// HOOK VẼ SÉT PHÂN NHÁNH TRÊN CANVAS (Giữ nguyên toàn bộ logic vẽ sét)
 // ====================================================================
 const useLightningCanvas = (canvasRef, active) => {
   useEffect(() => {
@@ -113,7 +113,7 @@ const useLightningCanvas = (canvasRef, active) => {
 };
 
 // ====================================================================
-// HOOK VẼ VẾT NỨT ĐẤT (BAN NGÀY)
+// HOOK VẼ VẾT NỨT ĐẤT (Giữ nguyên toàn bộ logic vẽ vết nứt đất)
 // ====================================================================
 const useCrackCanvas = (canvasRef, active) => {
   useEffect(() => {
@@ -162,7 +162,7 @@ const useCrackCanvas = (canvasRef, active) => {
 };
 
 // ====================================================================
-// COMPONENT CHÍNH TTRCARD
+// COMPONENT CHÍNH TTRCARD (Đã đồng bộ hóa ID Option hoàn toàn)
 // ====================================================================
 export const TTRCard = ({ 
   isCompleted, mode, timeLeft, maxTime, isTimeFrozen, freezeTimeLeft, shields, isFogActive, isGameOver, gameOverReason,
@@ -186,10 +186,10 @@ export const TTRCard = ({
   const nightLightningActive = isHighStreakSuccess && isNight && isIntenseMode;
   const dayQuakeActive = isHighStreakSuccess && !isNight && isIntenseMode;
 
-  const usedWords = currentQuestion ? Object.values(filledBlanks) : [];
+  // QUẢN LÝ THEO ID: Danh sách các ID của option đã được điền vào chỗ trống
+  const usedOptionIds = currentQuestion ? Object.values(filledBlanks) : [];
   const isAllFilled = currentQuestion ? Object.keys(filledBlanks).length === currentQuestion.blanks.length : false;
 
-  // Xử lý nút Enter qua câu tiếp theo
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Enter') {
@@ -302,8 +302,6 @@ export const TTRCard = ({
     );
   }
 
-
-
   if (isGameOver) {
     const isTimeUp = gameOverReason === 'time_up';
     return (
@@ -317,8 +315,6 @@ export const TTRCard = ({
       </main>
     );
   }
-
-  
 
   const progressPercent = ((currentIndex + 1) / totalQuestions) * 100;
 
@@ -411,36 +407,49 @@ export const TTRCard = ({
 
       {/* TEXT & SƯƠNG MÙ */}
       <div className={`relative z-10 w-full mt-2 mb-10 px-8 text-center text-[1.4rem] font-medium leading-[4rem] tracking-wide ${isNight ? 'text-gray-100' : 'text-gray-900'}`}>
-        {currentQuestion.textChunks.map((chunk, idx) => (
-          <React.Fragment key={`chunk-${idx}`}>
-            <span className={`transition-all duration-300 inline-block ${isFogActive ? 'blur-[6px] opacity-60 hover:blur-none hover:opacity-100 cursor-help grayscale hover:grayscale-0' : ''}`}>
-              <SmartContent inline className="text-[1.4rem]">
-                {chunk}
-              </SmartContent>
-            </span>
-            {idx < currentQuestion.blanks.length && (
-              <BlankSlot
-                isActive={activeBlankId === currentQuestion.blanks[idx].id} filledWord={filledBlanks[currentQuestion.blanks[idx].id]}
-                isWrong={wrongBlanks.includes(currentQuestion.blanks[idx].id)} isSuccess={checkStatus === 'success' || confirmedBlanks.includes(currentQuestion.blanks[idx].id)}
-                onClick={() => onBlankClick(currentQuestion.blanks[idx].id)} onDropWord={(word) => onDropWord(word, currentQuestion.blanks[idx].id)}
-              />
-            )}
-          </React.Fragment>
-        ))}
+        {currentQuestion.textChunks.map((chunk, idx) => {
+          const blankId = currentQuestion.blanks[idx]?.id;
+          const assignedOptionId = filledBlanks[blankId];
+          
+          // CẢI TIẾN: Tìm ngược text từ Object Option bằng ID
+          const assignedOption = currentQuestion.options.find(o => o.id === assignedOptionId);
+          const filledWord = assignedOption ? assignedOption.text : (typeof assignedOptionId === 'string' && !assignedOptionId.startsWith('opt-') ? assignedOptionId : null);
+
+          return (
+            <React.Fragment key={`chunk-${idx}`}>
+              <span className={`transition-all duration-300 inline-block ${isFogActive ? 'blur-[6px] opacity-60 hover:blur-none hover:opacity-100 cursor-help grayscale hover:grayscale-0' : ''}`}>
+                <SmartContent inline className="text-[1.4rem]">
+                  {chunk}
+                </SmartContent>
+              </span>
+              {idx < currentQuestion.blanks.length && (
+                <BlankSlot
+                  isActive={activeBlankId === blankId} 
+                  filledWord={filledWord}
+                  isWrong={wrongBlanks.includes(blankId)} 
+                  isSuccess={checkStatus === 'success' || confirmedBlanks.includes(blankId)}
+                  onClick={() => onBlankClick(blankId)} 
+                  onDropWord={(optionId) => onDropWord(optionId, blankId)}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       <hr className={`relative z-10 w-full border-t mb-6 ${isNight ? 'border-gray-600/50' : 'border-gray-200'}`} />
 
       {/* OPTIONS */}
       <div className="relative z-10 flex w-full flex-wrap justify-center gap-4 mb-4 px-4 min-h-[60px]">
-        {currentQuestion.options.map((word, idx) => {
-          const isUsed       = usedWords.includes(word);
-          const isEliminated = eliminatedOptions && eliminatedOptions.includes(word);
+        {currentQuestion.options.map((option, idx) => {
+          // CẢI TIẾN: Kiểm tra xem ID cụ thể của nút này đã nằm trong ô trống nào chưa
+          const isUsed       = usedOptionIds.includes(option.id);
+          const isEliminated = eliminatedOptions && eliminatedOptions.includes(option.id);
           const isDisabled   = isUsed || checkStatus === 'success' || isEliminated;
           const isPanic      = mode === 'speed' && timeLeft <= 10 && !isTimeFrozen;
           return (
-            <button key={idx} onClick={() => onSelectWord(word)} draggable={!isDisabled && !isEliminated}
-              onDragStart={(e) => { e.dataTransfer.setData('text/plain', word); e.target.style.opacity = '0.5'; }}
+            <button key={idx} onClick={() => onSelectWord(option.id)} draggable={!isDisabled && !isEliminated}
+              onDragStart={(e) => { e.dataTransfer.setData('text/plain', option.id); e.target.style.opacity = '0.5'; }}
               onDragEnd={(e) => { e.target.style.opacity = '1'; }} disabled={isDisabled || isEliminated}
               className={`px-6 py-3 text-lg font-bold rounded-xl transition-all border-2
                 ${isEliminated ? 'animate-vanish' : ''} ${isPanic && !isDisabled ? 'animate-panic' : ''}
@@ -451,7 +460,7 @@ export const TTRCard = ({
               `}
             >
               <SmartContent inline className="text-inherit font-bold pointer-events-none">
-                {word}
+                {option.text}
               </SmartContent>
             </button>
           );

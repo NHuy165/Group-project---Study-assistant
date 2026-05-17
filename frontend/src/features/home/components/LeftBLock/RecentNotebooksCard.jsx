@@ -1,53 +1,100 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PencilSimple, Trash, ArrowRight } from "@phosphor-icons/react";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
+import { useTheme } from "../../../../components/theme/ThemeWrapper";
+import { EditNotebookModal } from "./EditNotebookModal";
+import { DeleteNotebookModal } from "./DeleteNotebookModal";
 
-export const RecentNotebooksCard = ({ interactions = [], isLoading }) => {
+const NOTEBOOK_COLORS = [
+  { bg: "#fffbeb", border: "#fde68a", emoji: "📒" },
+  { bg: "#f0fdf4", border: "#86efac", emoji: "📗" },
+  { bg: "#fdf4ff", border: "#e879f9", emoji: "📓" },
+];
+
+export const RecentNotebooksCard = ({ interactions = [], isLoading, onEdit, onDelete }) => {
   const navigate = useNavigate();
+  const { isNight } = useTheme();
 
-  // Dữ liệu giả lập để bạn thấy giống hình 1 nhất (Nếu interactions đang rỗng)
-  const displayItems = interactions.length > 0 ? interactions.slice(0, 3) : [
-    { id: 'fake1', name: "Toán 1", description: "Ôn thi học kì • Cập nhật 2 giờ trước" }
-  ];
+  // State quản lý Modal
+  const [editingItem, setEditingItem] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const displayItems = interactions && interactions.length > 0 ? [...interactions].reverse() : [];
+
+  const cardCls = isNight ? "bg-slate-900/90 border-white/[0.1] shadow-2xl" : "bg-white/95 border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)]";
+  const itemBaseCls = isNight ? "bg-slate-800/40 border-white/[0.06] hover:bg-slate-800/80" : "bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-sm hover:border-slate-200";
+
+  // Xử lý API qua props
+  const handleSaveEdit = async (id, updatedData) => {
+    setIsProcessing(true);
+    if (onEdit) await onEdit(id, updatedData);
+    setIsProcessing(false);
+    setEditingItem(null);
+  };
+
+  const handleConfirmDelete = async (id) => {
+    setIsProcessing(true);
+    if (onDelete) await onDelete(id);
+    setIsProcessing(false);
+    setDeletingItem(null);
+  };
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl rounded-[32px] p-7 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60">
-      <div className="flex justify-between items-center mb-5">
-        <h3 className="text-lg font-black text-[#444]">Sổ ghi chú gần đây</h3>
-        <button className="text-sm font-extrabold text-[#1d7bd8] hover:underline">Xem tất cả</button>
-      </div>
+    <>
+      <EditNotebookModal isOpen={!!editingItem} notebook={editingItem} onClose={() => setEditingItem(null)} onSave={handleSaveEdit} isLoading={isProcessing} />
+      <DeleteNotebookModal isOpen={!!deletingItem} notebook={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={handleConfirmDelete} isLoading={isProcessing} />
 
-      <div className="flex flex-col gap-3">
-        {displayItems.map((item) => (
-          <div 
-            key={item.id} 
-            onClick={() => navigate(`/interaction/${item.id}`)}
-            className="border-[1.5px] border-[#f1f5f9] rounded-[24px] bg-white p-4 flex items-center justify-between hover:border-[#1d7bd8]/40 hover:shadow-sm transition-all group cursor-pointer"
-          >
-            <div className="flex items-center gap-5 min-w-0">
-              <div className="w-14 h-14 rounded-[18px] bg-[#fffbeb] flex items-center justify-center border border-[#fde68a] shrink-0 shadow-inner">
-                <span className="text-2xl drop-shadow-sm">📒</span>
-              </div>
-              <div className="min-w-0">
-                <h4 className="font-extrabold text-[#444] text-[16px]">{item.name}</h4>
-                <p className="text-xs text-[#777] font-semibold mt-1 truncate">{item.description}</p>
-              </div>
+      <div className={`backdrop-blur-xl rounded-[2rem] p-5 border-2 transition-all duration-500 flex flex-col h-full ${cardCls}`}>
+        <div className="flex items-center justify-between mb-3 shrink-0 px-1">
+          <h3 className={`text-[15px] font-black ${isNight ? "text-slate-200" : "text-[#1e293b]"}`}>Sổ ghi chú gần đây</h3>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-1">
+          {(isLoading || displayItems.length > 0) ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {isLoading && (
+                <div className={`border-2 border-dashed rounded-2xl p-3 flex items-center justify-between h-[76px] animate-pulse transition-all ${isNight ? "border-blue-500/50 bg-blue-950/40" : "border-blue-400 bg-blue-50/60"}`}>
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-10 h-10 shrink-0 rounded-xl bg-blue-500/20 flex items-center justify-center text-xl animate-spin text-blue-500">⏳</div>
+                    <div className="flex-1 space-y-2"><div className="h-3.5 bg-blue-500/30 rounded-full w-2/3"></div><div className="h-2.5 bg-blue-500/15 rounded-full w-1/2"></div></div>
+                  </div>
+                </div>
+              )}
+
+              {displayItems.map((item, idx) => {
+                const color = NOTEBOOK_COLORS[idx % NOTEBOOK_COLORS.length];
+                return (
+                  <div key={item.id} onClick={() => navigate(`/interaction/${item.id}`)} className={`border-2 rounded-2xl p-3 flex items-center justify-between cursor-pointer group transition-all h-[76px] ${itemBaseCls}`}>
+                    <div className="flex items-center gap-3 w-full overflow-hidden">
+                      <div className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-xl border" style={{ backgroundColor: color.bg, borderColor: color.border }}>{color.emoji}</div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-[13.5px] font-extrabold truncate ${isNight ? "text-slate-200" : "text-slate-700"}`}>{item.name}</p>
+                        <p className={`text-[11px] font-semibold mt-0.5 truncate ${isNight ? "text-slate-500" : "text-slate-400"}`}>{item.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity pl-2 shrink-0">
+                      <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-[#eff6ff] text-[#3b82f6] hover:bg-[#dbeafe] hover:scale-110 transition-transform">
+                        <PencilSimple size={15} weight="bold" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeletingItem(item); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-[#fef2f2] text-[#ef4444] hover:bg-[#fee2e2] hover:scale-110 transition-transform">
+                        <Trash size={15} weight="bold" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            
-            <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <button className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f0f9ff] text-[#0ea5e9] hover:bg-[#e0f2fe] transition-colors">
-                <PencilSimple size={18} weight="bold" />
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full bg-[#fef2f2] text-[#ef4444] hover:bg-[#fee2e2] transition-colors">
-                <Trash size={18} weight="bold" />
-              </button>
-              <div className="w-12 h-10 flex items-center justify-center rounded-[14px] bg-[#ecfdf5] border border-[#a7f3d0] text-[#10b981] ml-2">
-                <ArrowRight size={18} weight="bold" />
-              </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full opacity-90 animate-in fade-in zoom-in duration-500 pb-4">
+              <span className="text-[3rem] mb-3 drop-shadow-sm filter grayscale-[30%] opacity-80">📭</span>
+              <h4 className={`text-[15px] font-black mb-1.5 ${isNight ? 'text-gray-300' : 'text-gray-600'}`}>Bé chưa có sổ ghi chú nào!</h4>
+              <p className={`text-[12px] font-bold text-center max-w-[70%] leading-relaxed ${isNight ? 'text-gray-500' : 'text-gray-500'}`}>Hãy bắt đầu hành trình học tập bằng cách tạo một cuốn sổ mới ở phía trên nhé.</p>
             </div>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };

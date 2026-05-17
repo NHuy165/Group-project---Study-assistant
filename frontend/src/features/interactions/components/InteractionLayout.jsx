@@ -18,7 +18,7 @@ const InteractionContent = ({ children, onNewChat, headerTitle = "EduSpark", mod
       {/* Logo */}
       <Link
         to="/dashboard"
-        className="absolute left-10 top-10 z-50 text-4xl font-black tracking-tight drop-shadow-md transition-transform hover:scale-105 active:scale-95"
+        className="fixed left-8 top-5 z-50 text-4xl font-black tracking-tight drop-shadow-md transition-transform hover:scale-105 active:scale-95"
       >
         <span className="text-meteor">
           {headerTitle}.AI

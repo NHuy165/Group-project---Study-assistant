@@ -63,15 +63,23 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className={`relative w-full max-w-4xl rounded-[2rem] p-8 shadow-2xl border transition-all ${
-        isNight ? 'bg-[#151b23] border-gray-700 text-gray-200' : 'bg-[#f0f4f8] border-gray-300 text-gray-950'
+    <div className={`fixed inset-0 z-[110] flex flex-col items-center justify-center p-6 backdrop-blur-md animate-in fade-in zoom-in duration-300 rounded-[2.5rem] ${isNight ? 'bg-black/60' : 'bg-white/40'}`}>
+      
+      {/* THAY ĐỔI THẺ CARD CHÍNH (Đồng bộ max-w-[800px], bo góc, padding và màu Glassmorphism) */}
+      <div className={`relative w-full max-w-[800px] rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl border transition-all ${
+        isNight 
+          ? "bg-[#1e293b]/90 border-white/10 text-gray-100" 
+          : "bg-white/90 border-white/40 text-gray-800"
       }`}>
-        <button onClick={onClose} className="absolute right-6 top-6 text-2xl text-gray-400 hover:text-red-500 transition-colors">✕</button>
+        
+        {/* Nút X đóng nhanh (Giữ nguyên logic onClose, đồng bộ style vị trí của ToolSetupArea) */}
+        <button onClick={onClose} className="absolute right-8 top-8 text-gray-400 hover:text-red-500 transition-all hover:rotate-90 z-10">
+          <span className="text-2xl font-bold">✕</span>
+        </button>
 
         <header className="mb-6 flex items-center gap-3">
           <span className="text-4xl">🧠</span>
-          <h2 className={`text-2xl font-black ${isNight ? 'text-gray-100' : 'text-blue-700'}`}>Cấu hình Tap To Review</h2>
+          <h2 className={`text-3xl font-black tracking-tight ${isNight ? 'text-gray-100' : 'text-blue-600'}`}>Cấu hình Tap To Review</h2>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-6">
