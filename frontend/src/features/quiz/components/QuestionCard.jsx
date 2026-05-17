@@ -1,5 +1,6 @@
 import React from "react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
+import { SmartContent } from "../../../components/SmartContent";
 
 const QuestionCard = ({
   question,
@@ -35,11 +36,13 @@ const QuestionCard = ({
         }`}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
-          <p
+          
+          {/* ĐÃ SỬA: Đổi thẻ <p> thành <div> và bọc SmartContent cho CÂU HỎI */}
+          <div
             className={`text-xl font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
           >
-            {question.text}
-          </p>
+            <SmartContent>{question.text}</SmartContent>
+          </div>
 
           {/* Hiển thị điểm của câu hỏi nếu đã nộp bài */}
           {isSubmitted && question.userScore !== undefined && (
@@ -94,7 +97,8 @@ const QuestionCard = ({
                     : "cursor-pointer hover:shadow-md"
                 }`}
               >
-                <span>{option.content}</span>
+                {/* ĐÃ SỬA: Dùng SmartContent với inline={true} cho ĐÁP ÁN */}
+                <SmartContent inline={true}>{option.content}</SmartContent>
               </button>
             );
           })}
