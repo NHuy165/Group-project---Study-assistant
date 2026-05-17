@@ -80,10 +80,10 @@ const FlashcardPanel = ({
       onClick={onClose}
     >
       <div
-        className={`relative max-h-[calc(100vh-2rem)] w-full overflow-auto animate-in fade-in zoom-in-95 duration-300 ${
+        className={`relative max-h-[calc(100vh-2rem)] w-full animate-in fade-in zoom-in-95 duration-300 ${
           isCreateMode
-            ? 'max-w-[800px]'
-            : 'max-w-[1100px] rounded-[3rem] bg-white p-6 shadow-2xl'
+            ? 'max-w-[800px] overflow-auto'
+            : 'max-w-[1100px]'
         }`}
         onClick={(event) => event.stopPropagation()}
       >
@@ -94,13 +94,19 @@ const FlashcardPanel = ({
           aria-label="Đóng flashcard"
           title="Đóng"
         >✕</button> */}
-        <button 
-          onClick={onClose}
-          class="absolute right-8 top-8 z-50 text-gray-400 hover:text-red-500 transition-all hover:rotate-90">
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 256 256">
-            <path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"></path>
-          </svg>
-        </button>
+        {isCreateMode && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-8 top-8 z-50 text-gray-400 transition-all hover:rotate-90 hover:text-red-500"
+            aria-label="Đóng flashcard"
+            title="Đóng"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 256 256">
+              <path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"></path>
+            </svg>
+          </button>
+        )}
           {/* <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg> */}
