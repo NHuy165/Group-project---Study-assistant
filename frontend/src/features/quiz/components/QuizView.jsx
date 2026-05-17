@@ -120,10 +120,10 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
       <QuizMilestone milestoneMessage={milestoneMessage} clearMilestoneMessage={clearMilestoneMessage} />
 
       {/* 2-COLUMN LAYOUT */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px] items-start">
+      <div className="grid gap-6 lg:grid-cols-[1fr_260px] items-start">
         
         {/* LEFT COLUMN: Questions & Controls */}
-        <div className="space-y-5">
+        <div className="space-y-3">
           {isSubmitted && (
             <QuizScoreBoard scoreSummary={scoreSummary} scorePercent={scorePercent} resultFilter={resultFilter} setResultFilter={setResultFilter} />
           )}

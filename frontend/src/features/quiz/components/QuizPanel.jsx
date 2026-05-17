@@ -44,23 +44,47 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
         <div className="quiz-aurora quiz-aurora-c bottom-0 left-1/2 z-0 -translate-x-1/2 opacity-70" />
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_80%_12%,rgba(255,255,255,0.26),transparent_40%)]" />
 
-        {/* HEADER MỚI: CHỈ GIỮ LẠI NÚT ĐÓNG ĐƯỢC ĐẨY SANG PHẢI */}
-        <div className="relative z-10 flex justify-end">
-          <button
-            onClick={onClose}
-            className={`rounded-xl border-2 px-4 py-2 text-xs font-bold transition-all hover:-translate-y-1 hover:shadow-lg ${
-              isNight
-                ? "border-[#88a1ff]/40 bg-[#1a254f]/80 text-slate-100 hover:bg-[#253468]"
-                : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-rose-500/30"
-            }`}
-          >
-            Đóng 
-          </button>
+        {/* HEADER MỚI: CHIA 3 KHU VỰC */}
+        <div className="relative z-10 flex items-center justify-between px-2">
+          
+          {/* 1. BÊN TRÁI: Dòng chữ rực rỡ nhất có thể */}
+          <div className="flex-1">
+            <h2 className={`text-2xl md:text-3xl font-black tracking-tighter uppercase italic transition-all duration-700 bg-clip-text text-transparent bg-gradient-to-r ${
+              selectedQuiz?.isSubmitted
+                ? isNight 
+                  ? "from-yellow-400 via-emerald-400 to-orange-500 drop-shadow-[0_2px_10px_rgba(52,211,153,0.3)]" 
+                  : "from-blue-600 via-cyan-500 to-emerald-500 drop-shadow-[0_2px_10px_rgba(14,165,233,0.2)]"  // Chế độ sáng: Xanh dương -> Xanh ngọc -> Xanh lá
+                : isNight
+                  ? "from-cyan-400 via-purple-400 to-pink-500 drop-shadow-[0_2px_10px_rgba(192,38,211,0.3)]"      
+                  : "from-blue-600 via-violet-600 to-fuchsia-600 drop-shadow-[0_2px_10px_rgba(79,70,229,0.2)]"   // Chế độ sáng: Xanh dương -> Tím -> Hồng mận
+            }`}>
+              {selectedQuiz?.isSubmitted ? "Kết quả làm bài ✨" : "Không gian làm bài 🚀"}
+            </h2>
+          </div>
+
+          {/* 2. Ở GIỮA: Khoảng trống để Switch đổi màu nền không bị đè lên */}
+          <div className="flex-1 invisible">
+             {/* Mục đích chỉ để giữ chỗ cân bằng layout */}
+          </div>
+
+          {/* 3. BÊN PHẢI: Nút Đóng màu đỏ đẹp */}
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={onClose}
+              className={`rounded-xl border-2 px-4 py-2 text-xs font-bold transition-all hover:-translate-y-1 hover:shadow-lg ${
+                isNight
+                  ? "border-[#88a1ff]/40 bg-[#1a254f]/80 text-slate-100 hover:bg-[#253468]"
+                  : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-rose-500/30"
+              }`}
+            >
+              Đóng X
+            </button>
+          </div>
         </div>
 
         {/* KHU VỰC LÀM BÀI CHÍNH (Chiếm toàn bộ không gian còn lại) */}
         <section
-          className={`relative z-10 h-full w-full overflow-y-auto rounded-[2rem] border p-6 md:p-8 shadow-inner custom-scrollbar ${
+          className={`relative z-10 h-full w-full overflow-y-auto rounded-[2rem] border px-6 py-3 md:px-8 md:py-4 shadow-inner custom-scrollbar ${
             isNight
               ? "border-[#6e85d7]/35 bg-[#121d3c]/80"
               : "border-[#89e2d7]/40 bg-gradient-to-br from-white/95 via-[#f6fffd]/95 to-[#eefbff]/95"

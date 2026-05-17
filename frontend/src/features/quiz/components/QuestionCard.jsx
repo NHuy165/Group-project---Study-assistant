@@ -28,7 +28,7 @@ const QuestionCard = ({
       {/* ĐIỂM QUYẾT ĐỊNH: Thuộc tính key={question.id} giúp React render lại animation mỗi khi đổi câu hỏi */}
       <div
         key={question.id}
-        className={`animate-slide-fade rounded-3xl border p-6 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${
+        className={`animate-slide-fade rounded-3xl border p-5.5 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${
           isNight
             ? "border-[#7d95e2]/40 bg-[#111a38]/90"
             : "border-[#7adfd9]/45 bg-gradient-to-br from-white via-[#fff3e6] to-[#e0f2fe] ring-1 ring-[#9be7e2]/40"
@@ -55,7 +55,7 @@ const QuestionCard = ({
           )}
         </div>
 
-        <div className="mt-5 grid gap-3">
+        <div className="mt-4 grid gap-2">
           {question.options.map((option) => {
             const isSelected = selectedOption === option.id;
             const showCorrect = isSubmitted && option.isCorrect;

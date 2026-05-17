@@ -36,9 +36,9 @@ const QuizNavigator = ({
           return (
             <button 
               key={status.id} onClick={() => isMatch && jumpToQuestion(index)} disabled={!isMatch}
-              className={`aspect-square flex items-center justify-center rounded-xl border-2 text-xs font-black transition-all ${btnClass} ${
-                isCurrent ? "ring-4 ring-blue-400/30 scale-110" : ""
-              } ${!isMatch ? "opacity-10 scale-90 grayscale" : "hover:-translate-y-1"}`}
+              className={`flex items-center justify-center rounded-xl border-2 text-xs px-0 py-2.5 font-black transition-all ${btnClass} ${
+                isCurrent ? "ring-2 ring-offset-1 ring-blue-400/70" : ""
+              } ${!isMatch ? "opacity-30 cursor-not-allowed grayscale" : "hover:-translate-y-0.5 hover:shadow-sm"}`}
             >
               {index + 1}
             </button>
