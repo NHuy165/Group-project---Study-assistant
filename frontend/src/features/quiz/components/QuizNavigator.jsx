@@ -27,30 +27,36 @@ const QuizNavigator = ({
                 : "bg-rose-500 border-rose-600 text-white shadow-lg shadow-rose-500/20";
             } else {
               btnClass = isNight 
-                ? "bg-slate-600 border-slate-500 text-slate-200 shadow-md" 
-                : "bg-slate-500 border-slate-600 text-white shadow-md";
+                ? "bg-gray-500 border-gray-400 text-white shadow-md" 
+                : "bg-gray-400 border-gray-500 text-white shadow-md";
             }
           } else {
             // --- LOGIC KHI ĐANG LÀM BÀI (ƯU TIÊN PHÂN VÂN) ---
             if (status.isFlagged) {
-              // ƯU TIÊN SỐ 1: Nếu cắm cờ phân vân -> Hiện màu vàng ngay
               btnClass = isNight 
                 ? "bg-yellow-400 border-yellow-500 text-yellow-950 shadow-[0_0_15px_rgba(250,204,21,0.3)]" 
                 : "bg-yellow-400 border-yellow-500 text-yellow-950 shadow-md";
             } else if (status.isAnswered) {
-              // ƯU TIÊN SỐ 2: Nếu đã làm nhưng không phân vân -> Hiện màu xanh
               btnClass = isNight
                 ? "bg-[#4ecdc4]/80 border-[#4ecdc4] text-white"
                 : "bg-[#4ecdc4] border-[#3eb7ae] text-white shadow-md";
             }
           }
 
+          // [SỬA LỖI ĐÂY]: Ghi đè MÀU ĐỒNG NHẤT cho tất cả các câu bị lọc bỏ (không thỏa mãn bộ lọc)
+          if (!isMatch) {
+             btnClass = isNight 
+               ? "bg-[#1e293b]/60 border-slate-700/50 text-slate-500" // Màu xám chuẩn cho Dark Mode (đồng nhất)
+               : "bg-gray-100 border-gray-200 text-gray-400";          // Màu xám chuẩn cho Light Mode (đồng nhất)
+          }
+
           return (
             <button 
               key={status.id} onClick={() => isMatch && jumpToQuestion(index)} disabled={!isMatch}
+              // [SỬA LỖI]: Bỏ opacity và grayscale đi, chỉ giữ lại hiệu ứng scale và con trỏ chuột
               className={`relative flex items-center justify-center rounded-lg border-2 px-0 py-2.5 text-xs font-bold transition-all ${btnClass} ${
                 isCurrent ? "ring-2 ring-offset-1 ring-blue-400/70 scale-105" : ""
-              } ${!isMatch ? "opacity-10 scale-90 grayscale" : "hover:-translate-y-0.5 hover:shadow-sm"}`}
+              } ${!isMatch ? "scale-95 cursor-not-allowed" : "hover:-translate-y-0.5 hover:shadow-sm"}`}
             >
               {index + 1}
             </button>

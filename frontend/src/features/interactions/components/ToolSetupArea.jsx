@@ -7,7 +7,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
   
   // States
   const [userInput, setUserInput] = useState("");
-  const [subject, setSubject] = useState("LITERATURE");
+  const [subject, setSubject] = useState("VIETNAMESE");
   const [selectedSamples, setSelectedSamples] = useState([]);
 
   // Dữ liệu mẫu tùy theo tool
@@ -53,7 +53,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
     <div className={`absolute inset-0 z-[50] flex flex-col items-center justify-center p-6 backdrop-blur-md animate-in fade-in zoom-in duration-300 rounded-[2.5rem] ${isNight ? 'bg-black/60' : 'bg-white/40'}`}>
       
       {/* THẺ CARD TRONG SUỐT (GLASSMORPHISM) */}
-      <div className={`relative w-full max-w-[800px] rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl border transition-all ${
+      <div className={`relative w-full max-w-[800px] mt-20 rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl border transition-all ${
         isNight 
           ? "bg-[#1e293b]/90 border-white/10 text-gray-100" 
           : "bg-white/90 border-white/40 text-gray-800"
@@ -129,7 +129,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
             </h4>
             <div className="flex gap-2">
               {[
-                { id: 'LITERATURE', label: 'Tiếng Việt' },
+                { id: 'VIETNAMESE', label: 'Tiếng Việt' },
                 { id: 'MATHS', label: 'Toán' },
                 { id: 'ENGLISH', label: 'Tiếng Anh' }
               ].map(sub => (
@@ -157,8 +157,9 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             {!isFormValid && (
-              <span className="text-red-500 text-xs font-bold flex items-center gap-1 animate-pulse">
-                <WarningCircle size={16} /> Bé chưa nhập nội dung bài học!
+              // Đổi text-xs thành text-base, tăng gap-2, và tăng size icon lên 22
+              <span className="text-red-500 text-base md:text-lg font-bold flex items-center gap-2 animate-pulse drop-shadow-sm">
+                <WarningCircle size={22} weight="bold" /> Bé chưa nhập nội dung bài học!
               </span>
             )}
           </div>
