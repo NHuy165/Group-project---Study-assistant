@@ -141,11 +141,22 @@ async def read_study_activity_complete(
     """
     Đọc thông tin chi tiết của một tài liệu.
     """
-    return await study_activity.read_study_activity_complete(
+    unvalidated = await study_activity.read_study_activity_complete(
         user,
         session,
         study_activity_id,
     )
+
+    if unvalidated.is_submitted:
+        study_activity_output_complete = StudyActivityOutputComplete.model_validate(
+            unvalidated, context={"show_answers": True}
+        )
+    else:
+        study_activity_output_complete = StudyActivityOutputComplete.model_validate(
+            unvalidated
+        )
+
+    return study_activity_output_complete
 
 
 # ----- UPDATE ----- #
@@ -252,6 +263,25 @@ async def submit_exercise_activity(
 
 
 # ----- DELETE ----- #
+
+
+@router.delete(
+    "/flashcards/{flashcard_id}",
+    status_code=204,
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
+async def delete_flashcard(user: UserDep, session: SessionDep, flashcard_id: int):
+    """
+    Xóa một flashcard.
+    """
+    return await study_activity.delete_flashcard(
+        user,
+        session,
+        flashcard_id,
+    )
 
 
 @router.delete(

@@ -13,7 +13,7 @@ from backend.src.services.study_activity import StudyActivityFormat, StudyActivi
 
 class Criterion(BaseModel):
     attribute: CriterionAttribute
-    value: int | str | datetime | None
+    value: bool | int | str | datetime | None
     operator: OperatorType
 
     @model_validator(mode="after")
@@ -51,10 +51,14 @@ class Criterion(BaseModel):
 
     @model_validator(mode="after")
     def validate_datetime(self):
-        if self.attribute in ("created_at", "submitted_at") and self.value is not None:
+        if (
+            self.attribute
+            in (CriterionAttribute.CREATED_AT, CriterionAttribute.SUBMITTED_AT)
+            and self.value is not None
+        ):
             try:
-                parsed_date = datetime.strptime(self.value, "%d%m%Y")  # type: ignore
-                self.value = parsed_date
+                parsed_date = datetime.strptime(self.value, "%d%m%Y").date()  # type: ignore
+                self.value = parsed_date  # type: ignore
             except (TypeError, ValueError):
                 raise ExceptionRequest_400(
                     custom_message=f"value không hợp lệ cho đặc trưng {self.attribute}."
@@ -63,10 +67,19 @@ class Criterion(BaseModel):
 
     @model_validator(mode="after")
     def validate_bool_type(self):
-        if self.attribute == "is_submitted" and self.operator not in ("NE", "EQ"):
-            raise ExceptionRequest_400(
-                custom_message="Đặc trưng is_submitted chỉ có thể nhận so sánh bằng (EQ) hoặc khác (NE)."
-            )
+        if self.attribute == "is_submitted":
+            if self.operator not in (
+                "NE",
+                "EQ",
+                "GROUP_BY",
+            ):
+                raise ExceptionRequest_400(
+                    custom_message="Đặc trưng is_submitted chỉ có thể nhận so sánh bằng (EQ), khác (NE) hoặc nhóm (GROUP_BY)."
+                )
+            if self.value not in (True, False, None):
+                raise ExceptionRequest_400(
+                    custom_message="Đặc trưng is_submitted chỉ có thể nhận các giá trị true, false hoặc null."
+                )
         return self
 
     @model_validator(mode="after")
