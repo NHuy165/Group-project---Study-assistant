@@ -33,7 +33,7 @@ export const RadarChartComponent = ({ data, isAnimationActive }) => {
                 <PolarGrid stroke={gridColor}/>
                 <PolarAngleAxis 
                 dataKey="label" 
-                tick={{ fontSize: 14, fill: textColor }}
+                tick={{ fontSize: 13, fill: textColor }}
                 />
                 <PolarRadiusAxis 
                 angle={90} 

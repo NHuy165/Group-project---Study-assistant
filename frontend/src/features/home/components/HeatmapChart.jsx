@@ -1,81 +1,72 @@
-import React, { useState, useMemo } from 'react';
-import HeatMap from '@uiw/react-heat-map';
+import React, { useState } from 'react';
+import { ActivityCalendar } from 'react-activity-calendar';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
 
-import { useHeatmapSize } from '../hooks/useHeatmapSize';
+// 1. IMPORT HOOK VÀ TOOLTIP VỪA TẠO
+import { useHeatmapLayout } from '../hooks/useHeatmapLayout'; 
+import { HeatmapTooltip } from './HeatmapTooltip';
 
+// 2. ĐƯA CÁC HẰNG SỐ RA NGOÀI COMPONENT ĐỂ TỐI ƯU HIỆU NĂNG
+const BLOCK_MARGIN = 4;
+const EXPLICIT_THEME = {
+    light: ['#ebf0f4', '#ddd6fe', '#a78bfa', '#7c3aed', '#5b21b6'],
+    dark: ['#1e293b', '#6d28d9', '#8b5cf6', '#a78bfa', '#ddd6fe'],
+};
+const CUSTOM_LABELS = {
+    legend: { less: 'Ít', more: 'Nhiều' },
+    months: ['Thg 1', 'Thg 2', 'Thg 3', 'Thg 4', 'Thg 5', 'Thg 6', 'Thg 7', 'Thg 8', 'Thg 9', 'Thg 10', 'Thg 11', 'Thg 12'],
+    weekdays: ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7']
+};
 
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="custom-tooltip" style={{ backgroundColor: '#fff', padding: '10px', border: '1px solid #ccc' }}>
-                <p className="label">{`${label} : ${payload[0].value}`}</p>
-                <p className="desc">Anything you want can be displayed here.</p>
-            </div>
-        )
-    }
-}
-
-export const HeatmapChartComponent = ({data, isAnimationActive, daysToView}) => {
+export const HeatmapChartComponent = ({data}) => {
     const { isNight } = useTheme();
+    const [tooltipData, setTooltipData] = useState(null);
+    
+    // 3. SỬ DỤNG CUSTOM HOOK GỌN GÀNG
+    const { containerRef, dynamicBlockSize } = useHeatmapLayout(data, BLOCK_MARGIN);
 
-    const today = new Date();
-    const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysToView);
-    const { containerWidth, containerRef } = useHeatmapSize();
-
-    const spaceBetween = 4;
-    const { rectSize, exactWidth } = useMemo(
-        () => {
-            if (!containerWidth) return { rectSize: 12, exactWidth: '100%' };
-
-            const weeks = Math.ceil(daysToView / 7);
-            const labelWidthOffset = 30; // Chừa chỗ cho nhãn Sun, Mon...
-            
-            // 1. Tính kích thước tối đa mà CHIỀU RỘNG cho phép
-            const paddingLeft = 24; 
-            const availableWidth = containerWidth - paddingLeft;
-            const maxSizeByWidth = Math.floor((availableWidth - labelWidthOffset - (weeks * spaceBetween)) / weeks);
-
-            // 2. Tính kích thước tối đa mà CHIỀU CAO cho phép
-            // Vì thẻ div tổng có class aspect-[3/2], chiều cao thực tế = chiều rộng * (2 / 3)
-            const containerHeight = containerWidth * (2 / 3);
-            // Trừ đi khoảng 60px không gian dành cho nhãn Tháng (phía trên) và Legend (phía dưới)
-            const verticalPadding = 60; 
-            const maxSizeByHeight = Math.floor((containerHeight - verticalPadding - (7 * spaceBetween)) / 7);
-
-            // 3. Chốt kích thước (Khắc phục lỗi tràn):
-            // Lấy giá trị NHỎ HƠN giữa rộng và cao. Không cho phép ô vuông nhỏ hơn 8px.
-            const finalRectSize = Math.max(8, Math.min(maxSizeByWidth, maxSizeByHeight));
-
-            // 4. Tính lại chiều rộng chính xác để Heatmap vẽ
-            const finalWidth = labelWidthOffset + (weeks * finalRectSize) + (weeks * spaceBetween);
-
-            return { rectSize: finalRectSize, exactWidth: finalWidth };
-        }, [containerWidth, daysToView]
-    )
- 
+    if (!data || data.length === 0) return null;
 
     return (
-        <div ref={containerRef} className="w-full aspect-[3/2]">
-            <div className="pl-6">
-                <HeatMap 
-                    value={data} 
-                    width={exactWidth}
-                    rectSize={rectSize}
-                    legendCellSize={rectSize}
-                    startDate={startDate}
-                    endDate={today}
-                    panelColors={{
-                        0: isNight ? '#8cc59c' : '#abddc7',
-                        7: isNight ? '#58986e' : '#66c99c',
-                        14: isNight ? '#3b7d51' : '#4fc892',
-                        21: isNight ? '#258545' : '#39cd8b',
-                        28: isNight ? '#149140' : '#1ec87b',
-                        35: isNight ? '#008f32' : '#0bc873'
-                    }}
-                    style={{ color: isNight ? '#e2e8f0' : '#374151' }}
-                />
-            </div>
+        <div ref={containerRef} className="w-full flex-1 flex items-center justify-center px-4 pb-4 overflow-hidden relative">
+            <style>{`
+                .react-activity-calendar__footer { width: 100%; }
+                .react-activity-calendar__legend-colors { margin-left: 0 !important; }
+            `}</style>
+            
+            <ActivityCalendar
+                data={data}
+                theme={EXPLICIT_THEME}
+                colorScheme={isNight ? 'dark' : 'light'}
+                
+                blockSize={dynamicBlockSize}     
+                blockRadius={Math.max(2, Math.floor(dynamicBlockSize / 4))} 
+                blockMargin={BLOCK_MARGIN}    
+                
+                fontSize={14}
+                showWeekdayLabels={true} 
+                showTotalCount={false} 
+                labels={CUSTOM_LABELS}
+
+                renderBlock={(block, activity) =>
+                    React.cloneElement(block, {
+                        onMouseEnter: (e) => {
+                            const rect = e.target.getBoundingClientRect();
+                            setTooltipData({
+                                x: rect.left + rect.width / 2, 
+                                y: rect.top,                   
+                                date: activity.date,
+                                count: activity.count,
+                                fill: e.target.getAttribute('fill') 
+                            });
+                        },
+                        onMouseLeave: () => setTooltipData(null)
+                    })
+                }
+            />
+
+            {/* 4. SỬ DỤNG TOOLTIP COMPONENT */}
+            <HeatmapTooltip tooltipData={tooltipData} isNight={isNight} />
         </div>
     );
 }

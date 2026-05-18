@@ -8,14 +8,14 @@ import { FavoriteActivityWidget } from "../components/FavoriteActivityWidget";
 
 export const listOfCharts = [
     {
-      id: 1, 
-      Widget: <RadarScoreWidget />,
+      id: 1,
+      Widget: <PieScoreWidget />,
       aspectClass: "aspect-square"
     },
     {
-      id: 2,
-      Widget: <PieScoreWidget />,
-      aspectClass: "aspect-square"
+      id: 4,
+      Widget: <CompletionDonutWidget />,
+      aspectClass: "aspect-[4/3]"
     },
     {
       id: 3,
@@ -23,8 +23,8 @@ export const listOfCharts = [
       aspectClass: "aspect-video"
     },
     {
-      id: 4,
-      Widget: <CompletionDonutWidget />,
+      id: 7,
+      Widget: <FavoriteActivityWidget />,
       aspectClass: "aspect-[4/3]"
     },
     {
@@ -38,8 +38,8 @@ export const listOfCharts = [
       aspectClass: "aspect-[4/3]"
     },
     {
-      id: 7,
-      Widget: <FavoriteActivityWidget />,
-      aspectClass: "aspect-[4/3]"
-    }
+      id: 2, 
+      Widget: <RadarScoreWidget />,
+      aspectClass: "aspect-square"
+    },
   ]

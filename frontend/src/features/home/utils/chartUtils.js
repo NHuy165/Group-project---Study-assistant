@@ -20,6 +20,8 @@ export const ACTIVITY_TYPE_LABELS = {
 };
 
 
+const PIE_COLORS = ['#0088FE', '#FFBB28', '#FF8042', '#00C49F', '#FF4560'];
+
 
 
 /**
@@ -92,37 +94,114 @@ export const transformScoreData = (rawData) => {
 export const transformCountData = (rawData) => {
     if (!rawData || !Array.isArray(rawData)) return [];
     
-    return rawData.map(item => {
+    // 1. Tính tổng số lượng
+    let total = 0;
+    const mappedData = rawData.map(item => {
         const count = parseInt(item[0], 10) || 0;
-        const rawLabel = item[1]; // Cột tên môn học (VD: "MATHS")
-        
+        const rawLabel = item[1]; 
+        total += count;
         return {
             count: count,
-            // Dò tìm tên tiếng Việt trong từ điển, nếu không có thì giữ nguyên nhãn gốc
             label: SUBJECT_LABELS[rawLabel] || rawLabel 
         };
     });
+
+    if (total === 0) return mappedData;
+
+    // 2. NHÂN LÊN 1000 LẦN (Để tính toán 1 chữ số thập phân)
+    const percentagesWithRemainders = mappedData.map(item => {
+        const exactScaled = (item.count / total) * 1000; 
+        const integerPart = Math.floor(exactScaled); // Lấy phần nguyên (VD: 333)
+        const remainder = exactScaled - integerPart; // Lấy phần dư
+        return { ...item, integerPart, remainder, originalIndex: mappedData.indexOf(item) };
+    });
+
+    // 3. Tính tổng các phần nguyên hiện tại (Ví dụ: ra 999)
+    let currentSum = percentagesWithRemainders.reduce((sum, item) => sum + item.integerPart, 0);
+
+    // 4. Tìm số đơn vị còn thiếu để đủ 1000
+    let difference = 1000 - currentSum;
+
+    // 5. Sắp xếp mảng theo phần dư giảm dần để ưu tiên "phát kẹo"
+    percentagesWithRemainders.sort((a, b) => b.remainder - a.remainder);
+
+    // 6. Phân bổ các đơn vị còn thiếu cho những lát cắt có phần dư lớn nhất
+    for (let i = 0; i < difference; i++) {
+        percentagesWithRemainders[i].integerPart += 1;
+    }
+
+    // Phục hồi lại đúng thứ tự ban đầu của mảng (tránh việc lát cắt bị đổi chỗ)
+    percentagesWithRemainders.sort((a, b) => a.originalIndex - b.originalIndex);
+
+    // 7. CHIA NGƯỢC LẠI CHO 10 ĐỂ RA 1 CHỮ SỐ THẬP PHÂN (VD: 334 / 10 = 33.4)
+    return percentagesWithRemainders.map((item, index) => ({
+        count: item.count,
+        label: item.label,
+        fill: PIE_COLORS[index % PIE_COLORS.length],
+        displayPercent: (item.integerPart / 10).toFixed(1) 
+    }));
 };
 
 
 
 /**
- * Biến đổi dữ liệu mảng 2 chiều cho Heatmap (Biểu đồ 3)
- * VD API trả về: [[107, "2026-05-17"]]
- * Output cho UI: [{ date: "2026/05/17", count: 107 }]
+ * Biến đổi dữ liệu cho react-activity-calendar
+ * Khắc phục lỗi thiếu ô: Tự động "đổ nền" (pad) các ngày không có dữ liệu thành 0
  */
-export const transformHeatmapData = (rawData) => {
-    if (!rawData || !Array.isArray(rawData)) return [];
+export const transformHeatmapData = (rawData, daysToView = 90) => {
+    // 1. TẠO MẢNG "NỀN" CHỨA ĐẦY ĐỦ CÁC NGÀY (Từ quá khứ tới hôm nay)
+    const today = new Date();
+    const fullDateRange = [];
     
-    return rawData.map(item => {
+    for (let i = daysToView - 1; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        
+        // Ép chuẩn múi giờ địa phương (YYYY-MM-DD)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
+        // Mặc định tất cả các ngày đều là 0 hoạt động
+        fullDateRange.push({
+            date: dateString,
+            count: 0,
+            level: 0
+        });
+    }
+
+    // Nếu API lỗi hoặc rỗng, trả thẳng mảng nền xám
+    if (!rawData || !Array.isArray(rawData)) return fullDateRange;
+
+    // 2. CHUYỂN DATA TỪ API THÀNH DẠNG TỪ ĐIỂN ĐỂ DỄ GHÉP NỐI
+    const actualDataMap = {};
+    rawData.forEach(item => {
         const count = parseInt(item[0], 10) || 0;
         const dateString = item[1] || "";
         
-        return {
-            // Chuyển format ngày từ YYYY-MM-DD sang YYYY/MM/DD theo yêu cầu của UI cũ
-            date: dateString.replace(/-/g, '/'), 
-            count: count
-        };
+        let level = 0;
+        if (count > 0 && count <= 2) level = 1;
+        else if (count > 2 && count <= 5) level = 2;
+        else if (count > 5 && count <= 10) level = 3;
+        else if (count > 10) level = 4;
+
+        actualDataMap[dateString] = { count, level };
+    });
+
+    // 3. ĐÈ DATA THỰC TẾ LÊN MẢNG NỀN
+    return fullDateRange.map(dayTemplate => {
+        const actualData = actualDataMap[dayTemplate.date];
+        if (actualData) {
+            // Ngày nào có học -> Ghi đè số lượng và level màu
+            return {
+                ...dayTemplate,
+                count: actualData.count,
+                level: actualData.level
+            };
+        }
+        // Ngày nào cúp học -> Giữ nguyên nền 0
+        return dayTemplate;
     });
 };
 
@@ -130,23 +209,60 @@ export const transformHeatmapData = (rawData) => {
 
 /**
  * Biến đổi dữ liệu mảng 2 chiều cho Biểu đồ Vành khuyên (Target: COUNT_ACTIVITY)
- * VD API trả về: [[9, false], [2, true]]
- * Output cho UI: [{ count: 9, label: "Chưa nộp" }, { count: 2, label: "Đã nộp" }]
+ * Áp dụng Thuật toán Largest Remainder để chia % chính xác tuyệt đối (1 chữ số thập phân)
  */
 export const transformCompletionData = (rawData) => {
     if (!rawData || !Array.isArray(rawData)) return [];
     
-    return rawData.map(item => {
+    // 1. Map dữ liệu cơ bản và tính tổng
+    let total = 0;
+    const mappedData = rawData.map(item => {
         const count = parseInt(item[0], 10) || 0;
         const isSubmitted = item[1]; // true hoặc false
+        total += count;
         
         return {
             count: count,
             label: isSubmitted === true ? "Đã nộp" : "Chưa nộp",
-            // Gợi ý thêm mã màu để Recharts tự động nhận dạng:
-            fill: isSubmitted === true ? "#4ade80" : "#f87171" // Xanh lá cho Đã nộp, Đỏ/Hồng cho Chưa nộp
+            // Khớp với màu sắc trên giao diện UI hiện tại của bạn
+            fill: isSubmitted === true ? "#FFBB28" : "#0088FE" 
         };
     });
+
+    if (total === 0) return mappedData;
+
+    // 2. Nhân lên 1000 lần (Để tính toán 1 chữ số thập phân)
+    const percentagesWithRemainders = mappedData.map((item, index) => {
+        const exactScaled = (item.count / total) * 1000; 
+        const integerPart = Math.floor(exactScaled); 
+        const remainder = exactScaled - integerPart; 
+        return { ...item, integerPart, remainder, originalIndex: index };
+    });
+
+    // 3. Tính tổng các phần nguyên hiện tại
+    let currentSum = percentagesWithRemainders.reduce((sum, item) => sum + item.integerPart, 0);
+
+    // 4. Tìm số đơn vị còn thiếu để đủ 1000
+    let difference = 1000 - currentSum;
+
+    // 5. Sắp xếp mảng theo phần dư giảm dần để ưu tiên "phát kẹo" bù sai số
+    percentagesWithRemainders.sort((a, b) => b.remainder - a.remainder);
+
+    // 6. Phân bổ các đơn vị còn thiếu
+    for (let i = 0; i < difference; i++) {
+        percentagesWithRemainders[i].integerPart += 1;
+    }
+
+    // Phục hồi lại đúng thứ tự ban đầu của mảng
+    percentagesWithRemainders.sort((a, b) => a.originalIndex - b.originalIndex);
+
+    // 7. Chia ngược lại cho 10 để ra % và trả về kết quả
+    return percentagesWithRemainders.map(item => ({
+        count: item.count,
+        label: item.label,
+        fill: item.fill, // Recharts sẽ tự động bắt màu này để tô cho lát cắt
+        displayPercent: (item.integerPart / 10).toFixed(1) 
+    }));
 };
 
 

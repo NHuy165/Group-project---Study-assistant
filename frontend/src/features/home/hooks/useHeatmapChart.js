@@ -25,6 +25,10 @@ export const useHeatmapChart = (filterValue) => {
     // Bọc hàm gọi API với Target là 'COUNT_ITEM'
     const fetchApi = (pl) => getStudyProgress('COUNT_ITEM', pl);
 
-    // Trả về kết quả từ Generic Hook
-    return useFetchChart(fetchApi, payload, transformHeatmapData);
+    // MỚI: Bóc tách con số từ chữ "30 ngày", "90 ngày"
+    const daysToView = parseInt(filterValue, 10) || 90;
+
+    // MỚI: Truyền daysToView vào hàm transform thông qua một function trung gian (closure)
+    return useFetchChart(fetchApi, payload, (rawData) => transformHeatmapData(rawData, daysToView));
+
 };

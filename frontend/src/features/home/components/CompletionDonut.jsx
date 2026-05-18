@@ -8,8 +8,6 @@ import {
 } from "@/components/ui/chart";
 
 
-const COLORS = ['#0088FE', '#FFBB28'];
-
 const renderShape = (props) => {
   const { cx, cy, innerRadius, outerRadius, cornerRadius, startAngle, endAngle, fill, isActive, percent } = props;
   const dynamicCornerRadius = percent < 0.1 ? 10 : cornerRadius; 
@@ -43,18 +41,12 @@ export const CompletionDonut = ({ data, isAnimationActive }) => {
     },
   };
 
-  const pieDataWithColors = useMemo(() => {
-      return data.map((entry, index) => ({
-        ...entry,
-        fill: COLORS[index % COLORS.length] // Gắn trực tiếp mã màu vào từng dòng dữ liệu
-      }));
-    }, [data]);
 
   return (
     <ChartContainer config={chartConfig} className="w-full aspect-square">
       <PieChart>
         <Pie 
-            data={pieDataWithColors} 
+            data={data} 
             dataKey="count" 
             nameKey="label" 
             cx="50%" 
@@ -64,7 +56,7 @@ export const CompletionDonut = ({ data, isAnimationActive }) => {
             cornerRadius="10%" 
             paddingAngle={3} 
             shape={renderShape}
-            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+            label={({ payload }) => `${payload.displayPercent}%`}
             isAnimationActive={isAnimationActive}
           >
           </Pie>

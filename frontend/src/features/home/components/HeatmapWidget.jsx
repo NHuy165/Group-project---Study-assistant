@@ -19,7 +19,7 @@ import { getDropdownClasses } from "../utils/dropdownColor";
 
 
 export const HeatmapScoreWidget = () => {
-    const [filterValue, setFilterValue] = useState("90 ngày");
+    const [filterValue, setFilterValue] = useState("60 ngày");
     const { data: heatmapData, isLoading, error } = useHeatmapChart(filterValue);
     const numericDaysToView = parseInt(filterValue, 10) || 90;
 

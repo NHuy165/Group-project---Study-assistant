@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { PieChart, Pie, Legend, Sector } from 'recharts';
 import { useTheme } from "@/components/theme/ThemeWrapper";
 import { 
@@ -6,9 +6,6 @@ import {
   ChartTooltip, 
   ChartTooltipContent 
 } from "@/components/ui/chart";
-
-
-const COLORS = ['#0088FE', '#FFBB28', '#FF8042'];
 
 
 const renderShape = (props) => {
@@ -22,7 +19,7 @@ const renderShape = (props) => {
         cy={cy}
         innerRadius={isActive ? innerRadius - 8 : innerRadius}
         outerRadius={isActive ? outerRadius + 8 : outerRadius}
-        cornerRadius={cornerRadius}
+        cornerRadius={dynamicCornerRadius}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
@@ -45,18 +42,11 @@ export const PieChartComponent = ({ data, isAnimationActive }) => {
     },
   };
 
-  const pieDataWithColors = useMemo(() => {
-    return data.map((entry, index) => ({
-      ...entry,
-      fill: COLORS[index % COLORS.length] // Gắn trực tiếp mã màu vào từng dòng dữ liệu
-    }));
-  }, [data]);
-
   return (
     <ChartContainer config={chartConfig} className="w-full aspect-square">
       <PieChart>
         <Pie 
-            data={pieDataWithColors} 
+            data={data} 
             dataKey="count" 
             nameKey="label" 
             cx="50%" 
@@ -66,7 +56,7 @@ export const PieChartComponent = ({ data, isAnimationActive }) => {
             cornerRadius="10%" 
             paddingAngle={3} 
             shape={renderShape}
-            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+            label={({ payload }) => `${payload.displayPercent}%`}
             isAnimationActive={isAnimationActive}>
             </Pie>
             <ChartTooltip 

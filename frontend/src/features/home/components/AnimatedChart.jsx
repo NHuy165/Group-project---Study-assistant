@@ -19,7 +19,7 @@ export const AnimatedChart = ({ children, scrollRoot, aspectClass="aspect-auto" 
             viewport={{
                 root: scrollRoot,
                 once: true,
-                amount: 0.8,
+                amount: "all",
             }}
 
             onViewportEnter={
