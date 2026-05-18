@@ -169,6 +169,8 @@ const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
                 back={currentCard.back}
                 isFlipped={isFlipped}
                 onClick={flipCard}
+                subject={selectedSet?.subject_type}
+                isDarkMode={isNight}
             />
 
             <div className="grid grid-cols-3 gap-3">

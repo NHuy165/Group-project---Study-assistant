@@ -37,8 +37,10 @@ const useFlashcardSetManagement = (interactionId) => {
     /**
      * Tạo flashcard mới từ prompt
      */
-    const createNewFlashcardSet = useCallback(async (prompt) => {
-        if (!prompt.trim() || !interactionId) {
+    const createNewFlashcardSet = useCallback(async (promptData) => {
+        const promptText = typeof promptData === 'object' ? promptData.prompt : promptData;
+
+        if (!promptText?.trim() || !interactionId) {
             setError('Bé vui lòng nhập nội dung nhé');
             return null;
         }
@@ -47,7 +49,7 @@ const useFlashcardSetManagement = (interactionId) => {
         setError('');
         try {
             // createFlashcard trả về array of { id, front, back, ... }
-            const newFlashcardSet = await createFlashcard(interactionId, { prompt });
+            const newFlashcardSet = await createFlashcard(interactionId, promptData);
 
             await loadFlashcardSets();
 

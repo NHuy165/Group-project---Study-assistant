@@ -1,25 +1,33 @@
 import React from 'react';
-import './Flashcard.css'; // Cần thêm CSS bên dưới để chạy hiệu ứng lật
+import './Flashcard.css';
 
-const Flashcard = ({ front, back, isFlipped, onClick }) => {
+const Flashcard = ({ front, back, isFlipped, onClick, subject, isDarkMode }) => {
+    const normalizedSubject = String(subject || 'VIETNAMESE').toUpperCase();
+    const containerClasses = [
+        'flashcard-container',
+        isFlipped ? 'flipped' : '',
+        normalizedSubject,
+        isDarkMode ? 'night' : '',
+    ].filter(Boolean).join(' ');
+
     return (
-        <div className={`flashcard-container ${isFlipped ? 'flipped' : ''}`} onClick={onClick}>
-        <div className="flashcard-inner">
-            {/* Mặt trước */}
-            <div className="flashcard-front">
-            <div className="p-6 flex items-center justify-center text-center h-full">
-                <h3 className="text-xl font-semibold text-gray-800">{front}</h3>
+        <div className={containerClasses} onClick={onClick}>
+            <div className="flashcard-inner">
+                <div className="flashcard-front">
+                    <div className="p-6 flex items-center justify-center text-center h-full">
+                        <h3 className="flashcard-front-text text-xl font-semibold">{front}</h3>
+                    </div>
+                </div>
+                
+                <div className="flashcard-back">
+                    <div className="p-6 flex items-center justify-center text-center h-full">
+                        <p className="text-lg font-medium">{back}</p>
+                    </div>
+                </div>
             </div>
-            </div>
-            {/* Mặt sau */}
-            <div className="flashcard-back">
-            <div className="p-6 flex items-center justify-center text-center h-full">
-                <p className="text-lg text-white">{back}</p>
-            </div>
-            </div>
-        </div>
         </div>
     );
 };
+
 
 export default Flashcard;

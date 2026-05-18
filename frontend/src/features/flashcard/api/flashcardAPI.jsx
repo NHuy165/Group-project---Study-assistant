@@ -28,12 +28,13 @@ export const transformBackendFlashcards = (studyActivityComplete) => {
 
 export const createFlashcard = async (interactionId, promptData) => {
     const promptText = typeof promptData === 'object' ? promptData.prompt : promptData;
+    const subjectType = typeof promptData === 'object' ? promptData.subject_type : undefined;
 
     const payload = {
         prompt: promptText,
         activity_type: "REVIEW",
         activity_format: "FLASHCARDS",
-        subject_type: 'ENGLISH',
+        subject_type: subjectType || 'ENGLISH',
     };
 
     // const response = await axiosClient.post(`${PATH}/${interactionId}/create`, payload);

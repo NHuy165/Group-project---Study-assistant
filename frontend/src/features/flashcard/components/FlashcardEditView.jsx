@@ -76,20 +76,20 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
     const canSaveEdit = editingCard.front.trim() && editingCard.back.trim();
 
     return (
-        <div className={`custom-scrollbar mx-auto flex max-h-[calc(100vh-2rem)] max-w-5xl flex-col gap-5 overflow-y-auto rounded-[2.5rem] border p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all ${
+        <div className={`custom-scrollbar mx-auto flex max-h-[calc(100vh-6rem)] max-w-4xl flex-col gap-5 overflow-y-auto rounded-[2.5rem] border p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all ${
             isNight
                 ? 'border-white/10 bg-[#1e293b]/90 text-gray-100'
                 : 'border-white/40 bg-white/90 text-gray-800'
         }`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h3 className={`text-lg font-bold ${
+                    <h3 className={`text-xl text-lg font-bold ${
                         isNight ? 'text-blue-300' : 'text-slate-800'
                     }`}>
                         {selectedSet?.name || 'Flashcard set'}
                     </h3>
                     {selectedSet?.description && (
-                        <p className={`mt-1 text-sm leading-6 ${
+                        <p className={`text-lg mt-1 text-sm leading-6 ${
                             isNight ? 'text-gray-400' : 'text-slate-500'
                         }`}>
                             {selectedSet.description}
@@ -138,7 +138,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                     ? 'border-gray-700 bg-gray-800/50'
                     : 'border-slate-200 bg-white'
             }`}>
-                <h4 className={`mb-3 text-base font-bold ${
+                <h4 className={`text-lg mb-3 text-base font-bold ${
                     isNight ? 'text-blue-300' : 'text-slate-800'
                 }`}>
                     Thêm thẻ mới
@@ -146,7 +146,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
 
                 <div className="grid gap-3 md:grid-cols-2">
                     <textarea
-                        className={`min-h-28 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
+                        className={`text-xl min-h-24 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
                             isNight
                                 ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400 focus:ring-blue-900/30'
                                 : 'border-slate-200 bg-white text-gray-800 placeholder-gray-400 focus:border-indigo-400 focus:ring-indigo-100'
@@ -157,7 +157,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                         disabled={isLoading}
                     />
                     <textarea
-                        className={`min-h-28 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
+                        className={`text-xl min-h-24 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
                             isNight
                                 ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400 focus:ring-blue-900/30'
                                 : 'border-slate-200 bg-white text-gray-800 placeholder-gray-400 focus:border-indigo-400 focus:ring-indigo-100'
@@ -169,23 +169,25 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                     />
                 </div>
 
-                <button
-                    type="button"
-                    onClick={handleAddCard}
-                    disabled={isLoading || !canAddCard}
-                    className={`mt-3 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
-                        isNight
-                            ? 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-600'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300'
-                    }`}
-                >
-                    {isLoading ? 'Đang lưu...' : 'Thêm thẻ'}
-                </button>
+                <div className="flex justify-end w-full">
+                    <button
+                        type="button"
+                        onClick={handleAddCard}
+                        disabled={isLoading || !canAddCard}
+                        className={`mt-3 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
+                            isNight
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-600'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300'
+                        }`}
+                    >
+                        {isLoading ? 'Đang lưu...' : 'Thêm thẻ'}
+                    </button>
+                </div>
             </section>
 
             <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                    <h4 className={`text-base font-bold ${
+                    <h4 className={`text-lg text-base font-bold ${
                         isNight ? 'text-blue-300' : 'text-slate-800'
                     }`}>
                         Toàn bộ thẻ
@@ -278,7 +280,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                                 {isEditing ? (
                                     <>
                                         <textarea
-                                            className={`min-h-28 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
+                                            className={`text-lg min-h-24 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
                                                 isNight
                                                     ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400 focus:ring-blue-900/30'
                                                     : 'border-slate-200 bg-white text-gray-800 placeholder-gray-400 focus:border-indigo-400 focus:ring-indigo-100'
@@ -288,7 +290,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                                             disabled={isLoading}
                                         />
                                         <textarea
-                                            className={`min-h-28 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
+                                            className={`text-lg min-h-24 resize-none rounded-lg border p-3 outline-none transition focus:ring-2 ${
                                                 isNight
                                                     ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400 focus:ring-blue-900/30'
                                                     : 'border-slate-200 bg-white text-gray-800 placeholder-gray-400 focus:border-indigo-400 focus:ring-indigo-100'
@@ -300,14 +302,14 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                                     </>
                                 ) : (
                                     <>
-                                        <div className={`min-h-24 rounded-lg p-3 text-sm leading-6 transition-all ${
+                                        <div className={`min-h-24 rounded-lg p-3 text-lg leading-6 transition-all ${
                                             isNight
                                                 ? 'bg-gray-900/50 text-gray-200'
                                                 : 'bg-slate-50 text-slate-700'
                                         }`}>
                                             {card.front}
                                         </div>
-                                        <div className={`min-h-24 rounded-lg p-3 text-sm leading-6 transition-all ${
+                                        <div className={`min-h-24 rounded-lg p-3 text-lg leading-6 transition-all ${
                                             isNight
                                                 ? 'bg-indigo-900/30 text-indigo-200'
                                                 : 'bg-indigo-50 text-indigo-900'

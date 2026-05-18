@@ -68,7 +68,10 @@ const FlashcardGenerator = ({
         if (!isFormValid) return;
 
         if (createMode === 'ai') {
-            const createdSet = await onCreateFlashcardSet(finalPrompt);
+            const createdSet = await onCreateFlashcardSet({
+                prompt: finalPrompt,
+                subject_type: subject,
+            });
             if (createdSet) {
                 setPrompt('');
                 setSelectedSamples([]);
