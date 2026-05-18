@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Trash } from "@phosphor-icons/react";
 import quizIcon from "../../../assets/icon/Quiz.svg";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
+import { ConfirmModal } from "../../../components/ConfirmModal"; 
 
 // Giữ 100% danh sách công cụ của epic/ttr
 const TOOLS_LIST = [
@@ -12,7 +13,7 @@ const TOOLS_LIST = [
 ];
 
 export const ToolsSidebar = ({ 
-  // Props Quiz (Công cụ chọn)
+  // Props Quiz
   activeToolId,
   // Props TTR & Open Ended
   onOpenTTR, 
@@ -24,14 +25,16 @@ export const ToolsSidebar = ({
   onActivityClick, 
   onDeleteActivity, 
   isCreatingNewActivity,
-  
-  // [MỚI] Props Quản lý danh sách Quiz
+  // Props Quản lý danh sách Quiz
   quizzes = [],
   isQuizLoading,
   onQuizClick,
   onDeleteQuiz
 }) => {
   const { isNight } = useTheme(); 
+  
+  // STATE THÔNG MINH: Lưu trữ đối tượng cần xóa (biết rõ là quiz hay essay)
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   return (
     <aside
@@ -107,7 +110,7 @@ export const ToolsSidebar = ({
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
           
-          {/* HIỂN THỊ DANH SÁCH BÀI QUIZ [MỚI CHUYỂN VÀO] */}
+          {/* HIỂN THỊ DANH SÁCH BÀI QUIZ */}
           {quizzes && quizzes.map((quiz) => (
             <div key={`quiz-${quiz.id}`} className="group relative flex w-full items-center">
               <button 
@@ -123,7 +126,6 @@ export const ToolsSidebar = ({
                   {quiz.title || quiz.name || `Quiz #${quiz.id}`}
                 </span>
                 
-                {/* Nhãn báo hiệu Quiz đã nộp */}
                 {quiz.isSubmitted && (
                   <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 opacity-90">
                     Đã nộp
@@ -133,9 +135,8 @@ export const ToolsSidebar = ({
               <button 
                 onClick={(e) => {
                   e.stopPropagation(); 
-                  if (window.confirm(`Bé có chắc chắn muốn xóa "${quiz.name || quiz.title}" không?`)) {
-                    onDeleteQuiz(quiz.id);
-                  }
+                  // Gắn target xóa là Quiz
+                  setDeleteTarget({ type: 'quiz', id: quiz.id, name: quiz.title || quiz.name });
                 }}
                 className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
                   isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
@@ -167,7 +168,7 @@ export const ToolsSidebar = ({
             </div>
           ))}
         
-          {/* HIỂN THỊ DANH SÁCH BÀI OPEN-ENDED */}
+          {/* HIỂN THỊ DANH SÁCH BÀI OPEN-ENDED (TỰ LUẬN) */}
           {activities && activities.map((act) => (
             <div key={`oe-${act.id}`} className="group relative flex w-full items-center">
               <button 
@@ -186,9 +187,8 @@ export const ToolsSidebar = ({
               <button 
                 onClick={(e) => {
                   e.stopPropagation(); 
-                  if (window.confirm("Bé có chắc chắn muốn xóa bài tập này không?")) {
-                    onDeleteActivity(act.id);
-                  }
+                  // ĐÃ SỬA: Bỏ window.confirm, gắn target xóa là Tự luận
+                  setDeleteTarget({ type: 'activity', id: act.id, name: act.name });
                 }}
                 className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
                   isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
@@ -224,6 +224,29 @@ export const ToolsSidebar = ({
           )}
         </nav>
       </section>
+
+      {/* NHÚNG MODAL XÁC NHẬN XÓA THÔNG MINH */}
+      <ConfirmModal
+        isOpen={!!deleteTarget} 
+        onClose={() => setDeleteTarget(null)} 
+        onConfirm={() => {
+          if (deleteTarget) {
+            // Tự động phân luồng gọi API dựa vào type
+            if (deleteTarget.type === 'quiz') { // sau này có thể mở rộng, dùng case when 
+              onDeleteQuiz(deleteTarget.id); 
+            } else if (deleteTarget.type === 'activity') {
+              onDeleteActivity(deleteTarget.id);
+            }
+            setDeleteTarget(null); // Xóa xong thì tự đóng Modal
+          }
+        }}
+        title="Xóa Học Liệu?"
+        message={`Bé có chắc chắn muốn xóa bài "${deleteTarget?.name || 'này'}" không? Dữ liệu không thể khôi phục.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        isDanger={true}
+      />
+
     </aside>
   );
 };
