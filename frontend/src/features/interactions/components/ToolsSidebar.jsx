@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Trash } from "@phosphor-icons/react";
 import quizIcon from "../../../assets/icon/Quiz.svg";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { ConfirmModal } from "../../../components/ConfirmModal"; 
 
-// Giữ 100% danh sách công cụ của epic/ttr
+// 100% original tools list
 const TOOLS_LIST = [
   { id: 'mindmap', name: 'Tap To Review', icon: '🧠', isSvg: false },
   { id: 'flashcard', name: 'Flashcard', icon: '📕', isSvg: false },
@@ -13,9 +13,7 @@ const TOOLS_LIST = [
 ];
 
 export const ToolsSidebar = ({ 
-  // Props Quiz
   activeToolId,
-  // Props TTR & Open Ended
   onOpenTTR, 
   ttrTasks, 
   onPlayTTR, 
@@ -25,7 +23,6 @@ export const ToolsSidebar = ({
   onActivityClick, 
   onDeleteActivity, 
   isCreatingNewActivity,
-  // Props Quản lý danh sách Quiz
   quizzes = [],
   isQuizLoading,
   onQuizClick,
@@ -33,8 +30,29 @@ export const ToolsSidebar = ({
 }) => {
   const { isNight } = useTheme(); 
   
-  // STATE THÔNG MINH: Lưu trữ đối tượng cần xóa (biết rõ là quiz hay essay)
+  // Smart state to store the target item to delete
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // ==========================================
+  // SMART SORTING LOGIC: UNIFIED TIMELINE
+  // ==========================================
+  // Merge all learning materials into one array and sort descending by ID or Date
+  const allLearningMaterials = useMemo(() => {
+    // 1. Tag each item with its specific type and a fallback sort key (ID or createdAt)
+    const formattedQuizzes = (quizzes || []).map(q => ({ ...q, _itemType: 'quiz', _sortKey: q.created_at || q.createdAt || q.id || 0 }));
+    const formattedTtr = (ttrTasks || []).map(t => ({ ...t, _itemType: 'ttr', _sortKey: t.created_at || t.createdAt || t.id || 0 }));
+    const formattedActivities = (activities || []).map(a => ({ ...a, _itemType: 'activity', _sortKey: a.created_at || a.createdAt || a.id || 0 }));
+
+    // 2. Merge all arrays
+    const mergedList = [...formattedQuizzes, ...formattedTtr, ...formattedActivities];
+
+    // 3. Sort descending (Newest first)
+    return mergedList.sort((a, b) => {
+      if (a._sortKey > b._sortKey) return -1;
+      if (a._sortKey < b._sortKey) return 1;
+      return 0;
+    });
+  }, [quizzes, ttrTasks, activities]);
 
   return (
     <aside
@@ -96,7 +114,7 @@ export const ToolsSidebar = ({
       </section>
 
       {/* ========================================== */}
-      {/* SECTION 2: DANH SÁCH HỌC LIỆU ĐÃ TẠO       */}
+      {/* SECTION 2: DANH SÁCH HỌC LIỆU ĐÃ SORT      */}
       {/* ========================================== */}
       <section className="flex flex-1 flex-col overflow-hidden pt-2">
         <header className="mb-4 space-y-4">
@@ -110,96 +128,7 @@ export const ToolsSidebar = ({
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
           
-          {/* HIỂN THỊ DANH SÁCH BÀI QUIZ */}
-          {quizzes && quizzes.map((quiz) => (
-            <div key={`quiz-${quiz.id}`} className="group relative flex w-full items-center">
-              <button 
-                onClick={() => onQuizClick && onQuizClick(quiz.id)} 
-                className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
-                  isNight 
-                    ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
-                    : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
-                }`}
-              >
-                <span className="mr-3 text-sm opacity-80">🎯</span>
-                <span className="flex-1 truncate text-left text-sm font-semibold">
-                  {quiz.title || quiz.name || `Quiz #${quiz.id}`}
-                </span>
-                
-                {quiz.isSubmitted && (
-                  <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 opacity-90">
-                    Đã nộp
-                  </span>
-                )}
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation(); 
-                  // Gắn target xóa là Quiz
-                  setDeleteTarget({ type: 'quiz', id: quiz.id, name: quiz.title || quiz.name });
-                }}
-                className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
-                  isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
-                }`}
-              >
-                <Trash size={18} weight="bold" />
-              </button>
-            </div>
-          ))}
-
-          {/* HIỂN THỊ DANH SÁCH BÀI TTR */}
-          {ttrTasks && ttrTasks.map((task) => (
-            <div 
-              key={`ttr-${task.id}`} 
-              onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
-              className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
-              task.status === 'loading' 
-                ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
-                : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
-            }`}>
-              <span className="mr-3 text-sm flex-shrink-0">
-                {task.status === 'loading' ? (
-                  <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                ) : '🎮'}
-              </span>
-              <span className={`text-sm font-semibold truncate ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
-                {task.name}
-              </span>
-            </div>
-          ))}
-        
-          {/* HIỂN THỊ DANH SÁCH BÀI OPEN-ENDED (TỰ LUẬN) */}
-          {activities && activities.map((act) => (
-            <div key={`oe-${act.id}`} className="group relative flex w-full items-center">
-              <button 
-                onClick={() => onActivityClick && onActivityClick(act.id)} 
-                className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
-                  isNight 
-                    ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
-                    : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
-                }`}
-              >
-                <span className="mr-3 text-sm opacity-80">📝</span>
-                <span className="flex-1 truncate text-left text-sm font-semibold">
-                  {act.name || `Bài tập #${act.id}`}
-                </span>
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation(); 
-                  // ĐÃ SỬA: Bỏ window.confirm, gắn target xóa là Tự luận
-                  setDeleteTarget({ type: 'activity', id: act.id, name: act.name });
-                }}
-                className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
-                  isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
-                }`}
-              >
-                <Trash size={18} weight="bold" />
-              </button>
-            </div>
-          ))}
-
-          {/* INDICATOR OPEN ENDED LOADING */}
+          {/* INDICATOR OPEN ENDED LOADING (Show at top) */}
           {isCreatingNewActivity && (
             <div className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
                 isNight ? "bg-gray-800/50 border-gray-600" : "bg-gray-100/80 border-gray-300" 
@@ -211,7 +140,7 @@ export const ToolsSidebar = ({
             </div>
           )}
 
-          {/* INDICATOR QUIZ LOADING */}
+          {/* INDICATOR QUIZ LOADING (Show at top) */}
           {isQuizLoading && (
              <div className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
                 isNight ? "bg-gray-800/50 border-gray-600" : "bg-gray-100/80 border-gray-300" 
@@ -222,6 +151,104 @@ export const ToolsSidebar = ({
               </span>
             </div>
           )}
+
+          {/* RENDER SORTED UNIFIED LIST */}
+          {allLearningMaterials.map((item) => {
+            
+            // --- QUIZ RENDER ---
+            if (item._itemType === 'quiz') {
+              return (
+                <div key={`quiz-${item.id}`} className="group relative flex w-full items-center">
+                  <button 
+                    onClick={() => onQuizClick && onQuizClick(item.id)} 
+                    className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
+                      isNight 
+                        ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
+                        : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
+                    }`}
+                  >
+                    <span className="mr-3 text-sm opacity-80">🎯</span>
+                    <span className="flex-1 truncate text-left text-sm font-semibold">
+                      {item.title || item.name || `Quiz #${item.id}`}
+                    </span>
+                    {item.isSubmitted && (
+                      <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 opacity-90">
+                        Đã nộp
+                      </span>
+                    )}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      setDeleteTarget({ type: 'quiz', id: item.id, name: item.title || item.name });
+                    }}
+                    className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
+                    }`}
+                  >
+                    <Trash size={18} weight="bold" />
+                  </button>
+                </div>
+              );
+            }
+
+            // --- TTR RENDER ---
+            if (item._itemType === 'ttr') {
+              return (
+                <div 
+                  key={`ttr-${item.id}`} 
+                  onClick={() => item.status === 'ready' && onPlayTTR(item.id)}
+                  className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
+                  item.status === 'loading' 
+                    ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
+                    : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
+                }`}>
+                  <span className="mr-3 text-sm flex-shrink-0">
+                    {item.status === 'loading' ? (
+                      <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    ) : '🎮'}
+                  </span>
+                  <span className={`text-sm font-semibold truncate ${item.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
+                    {item.name}
+                  </span>
+                </div>
+              );
+            }
+
+            // --- ACTIVITY (OPEN ENDED) RENDER ---
+            if (item._itemType === 'activity') {
+              return (
+                <div key={`oe-${item.id}`} className="group relative flex w-full items-center">
+                  <button 
+                    onClick={() => onActivityClick && onActivityClick(item.id)} 
+                    className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
+                      isNight 
+                        ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
+                        : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
+                    }`}
+                  >
+                    <span className="mr-3 text-sm opacity-80">📝</span>
+                    <span className="flex-1 truncate text-left text-sm font-semibold">
+                      {item.name || `Bài tập #${item.id}`}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      setDeleteTarget({ type: 'activity', id: item.id, name: item.name });
+                    }}
+                    className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
+                    }`}
+                  >
+                    <Trash size={18} weight="bold" />
+                  </button>
+                </div>
+              );
+            }
+
+            return null;
+          })}
         </nav>
       </section>
 
@@ -231,22 +258,20 @@ export const ToolsSidebar = ({
         onClose={() => setDeleteTarget(null)} 
         onConfirm={() => {
           if (deleteTarget) {
-            // Tự động phân luồng gọi API dựa vào type
-            if (deleteTarget.type === 'quiz') { // sau này có thể mở rộng, dùng case when 
-              onDeleteQuiz(deleteTarget.id); 
+            // Routing delete API based on targeted item type
+            if (deleteTarget.type === 'quiz') {
+              onDeleteQuiz(deleteTarget.id);
             } else if (deleteTarget.type === 'activity') {
               onDeleteActivity(deleteTarget.id);
             }
-            setDeleteTarget(null); // Xóa xong thì tự đóng Modal
+            // For future: else if (deleteTarget.type === 'ttr') onDeleteTTR(deleteTarget.id);
+            setDeleteTarget(null);
           }
         }}
         title="Xóa Học Liệu?"
         message={`Bé có chắc chắn muốn xóa bài "${deleteTarget?.name || 'này'}" không? Dữ liệu không thể khôi phục.`}
-        confirmText="Xóa"
-        cancelText="Hủy"
         isDanger={true}
       />
-
     </aside>
   );
 };
