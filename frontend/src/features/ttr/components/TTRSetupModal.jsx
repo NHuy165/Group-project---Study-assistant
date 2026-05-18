@@ -12,6 +12,7 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
   const [content, setContent] = useState('');
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
+  const [subject, setSubject] = useState('MATH'); // [MỚI] State môn học mặc định Toán
   const [mode, setMode] = useState('normal'); 
   const [difficulty, setDifficulty] = useState('easy'); 
   const [questionCount, setQuestionCount] = useState(10);
@@ -22,6 +23,7 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
       setContent(''); 
       setSelectedPrompts([]); 
       setErrorMsg(''); 
+      setSubject('MATH'); // [MỚI] Reset về Toán
     } 
   }, [isOpen]);
 
@@ -34,16 +36,12 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
       return;
     }
 
-    // 1. Lấy Nội dung (A)
     const finalContent = [content.trim(), ...selectedPrompts].filter(Boolean).join('\n\n');
     
-    // 2. Dịch độ khó thành quy định số ô trống
     let blankRule = "1 đến 2";
     if (difficulty === 'medium') blankRule = "3 đến 4";
-    // Nên để 5-6 thay vì >5 để con AI kiểm soát độ dài câu tốt hơn, không bị lố
     if (difficulty === 'hard') blankRule = "5 đến 6"; 
 
-    // 3. Gom thành Prompt (Bỏ hoàn toàn biến 'mode' ra khỏi đây)
     const finalPrompt = `
       Hãy tạo một bài tập điền từ vào chỗ trống (Gap Fill). 
       Nội dung/Chủ đề: ${finalContent}. 
@@ -53,9 +51,8 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
       - QUY ĐỊNH QUAN TRỌNG: Chỉ sử dụng cụm từ [BLANK] để đại diện cho các chỗ trống. Tuyệt đối không sử dụng $!BLANK!$ hay bất kỳ ký hiệu nào khác.
     `;
 
-    // Truyền finalPrompt đi (sau này nếu bạn cần code UI cho chế độ sinh tồn, 
-    // bạn có thể truyền thêm object { prompt: finalPrompt, gameMode: mode } thay vì chỉ truyền chuỗi)
-    onSubmit({ prompt: finalPrompt, gameMode: mode });
+    // [MỚI] Truyền thêm subjectType ra ngoài
+    onSubmit({ prompt: finalPrompt, gameMode: mode, subjectType: subject });
   };
 
   const togglePrompt = (p) => {
@@ -65,14 +62,12 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
   return (
     <div className={`fixed inset-0 z-[110] flex flex-col items-center justify-center p-6 backdrop-blur-md animate-in fade-in zoom-in duration-300 rounded-[2.5rem] ${isNight ? 'bg-black/60' : 'bg-white/40'}`}>
       
-      {/* THAY ĐỔI THẺ CARD CHÍNH (Đồng bộ max-w-[800px], bo góc, padding và màu Glassmorphism) */}
       <div className={`relative w-full max-w-[800px] rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl border transition-all ${
         isNight 
           ? "bg-[#1e293b]/90 border-white/10 text-gray-100" 
           : "bg-white/90 border-white/40 text-gray-800"
       }`}>
         
-        {/* Nút X đóng nhanh (Giữ nguyên logic onClose, đồng bộ style vị trí của ToolSetupArea) */}
         <button onClick={onClose} className="absolute right-8 top-8 text-gray-400 hover:text-red-500 transition-all hover:rotate-90 z-10">
           <span className="text-2xl font-bold">✕</span>
         </button>
@@ -83,7 +78,6 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nhập nội dung */}
           <div className={`rounded-2xl p-5 border ${isNight ? 'bg-[#1e252e] border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
             <textarea 
               value={content}
@@ -104,32 +98,51 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
             {errorMsg && <p className="mt-3 text-red-500 text-xs font-bold animate-bounce">{errorMsg}</p>}
           </div>
 
-          {/* Chế độ & Độ khó */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* [MỚI] Sửa grid thành 3 cột và thêm khối chọn môn học */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Cột 1: Môn học */}
             <div className={`rounded-2xl p-4 border ${isNight ? 'bg-[#1e252e] border-gray-700' : 'bg-white border-gray-200'}`}>
-              <p className="text-sm font-bold mb-3 flex items-center gap-2">🕹️ Chế độ:</p>
+              <p className="text-sm font-bold mb-3 flex items-center gap-2">📚 Môn học:</p>
               <div className="flex gap-2">
-                {['normal', 'speed', 'survival'].map(m => (
-                  <button key={m} type="button" onClick={() => setMode(m)} className={`flex-1 p-2 rounded-xl border-2 text-[10px] font-bold transition-all uppercase ${mode === m ? 'border-purple-500 bg-purple-500/10 text-purple-400' : 'border-gray-600 text-gray-400 hover:border-gray-500'}`}>
-                    {m === 'normal' ? 'ÔN TẬP' : m === 'speed' ? 'TỐC ĐỘ' : 'SINH TỒN'}
+                {[
+                  { id: 'MATH', label: 'TOÁN' },
+                  { id: 'VIETNAMESE', label: 'T.VIỆT' },
+                  { id: 'ENGLISH', label: 'T.ANH' }
+                ].map(s => (
+                  <button key={s.id} type="button" onClick={() => setSubject(s.id)} className={`flex-1 p-2 rounded-xl border-2 text-[10px] font-bold transition-all uppercase whitespace-nowrap ${subject === s.id ? 'border-purple-500 bg-purple-500/10 text-purple-400' : 'border-gray-600 text-gray-400 hover:border-gray-500'}`}>
+                    {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Cột 2: Chế độ */}
+            <div className={`rounded-2xl p-4 border ${isNight ? 'bg-[#1e252e] border-gray-700' : 'bg-white border-gray-200'}`}>
+              <p className="text-sm font-bold mb-3 flex items-center gap-2">🕹️ Chế độ:</p>
+              <div className="flex gap-1.5">
+                {['normal', 'speed', 'survival'].map(m => (
+                  <button key={m} type="button" onClick={() => setMode(m)} className={`flex-1 p-2 rounded-xl border-2 text-[9px] font-bold transition-all uppercase whitespace-nowrap ${mode === m ? 'border-purple-500 bg-purple-500/10 text-purple-400' : 'border-gray-600 text-gray-400 hover:border-gray-500'}`}>
+                    {m === 'normal' ? 'ÔN TẬP' : m === 'speed' ? 'TỐC ĐỘ' : 'S.TỒN'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cột 3: Độ khó */}
             <div className={`rounded-2xl p-4 border ${isNight ? 'bg-[#1e252e] border-gray-700' : 'bg-white border-gray-200'}`}>
               <p className="text-sm font-bold mb-3 flex items-center gap-2">📶 Độ khó:</p>
               <div className="flex gap-2">
                 {['easy', 'medium', 'hard'].map(d => (
-                  <button key={d} type="button" onClick={() => setDifficulty(d)} className={`flex-1 p-2 rounded-xl border-2 text-[10px] font-bold transition-all uppercase ${difficulty === d ? 'border-purple-500 bg-purple-500/10 text-purple-400' : 'border-gray-600 text-gray-400 hover:border-gray-500'}`}>
+                  <button key={d} type="button" onClick={() => setDifficulty(d)} className={`flex-1 p-2 rounded-xl border-2 text-[10px] font-bold transition-all uppercase whitespace-nowrap ${difficulty === d ? 'border-purple-500 bg-purple-500/10 text-purple-400' : 'border-gray-600 text-gray-400 hover:border-gray-500'}`}>
                     {d === 'easy' ? 'DỄ' : d === 'medium' ? 'VỪA' : 'KHÓ'}
                   </button>
                 ))}
               </div>
             </div>
+
           </div>
 
-          {/* Thanh chọn số câu & Nút Submit */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
             <div className="w-full md:w-1/2 flex items-center gap-4">
               <span className="text-sm font-bold whitespace-nowrap">Số câu: {questionCount}</span>

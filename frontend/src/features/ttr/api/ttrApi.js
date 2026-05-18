@@ -1,7 +1,6 @@
 const API_BASE_URL = 'http://localhost:8000/study-activity'; 
 const getToken = () => localStorage.getItem('token'); 
 
-// Lấy danh sách tất cả bài tập của Interaction này
 export const fetchActivitiesByInteraction = async (interactionId) => {
   const response = await fetch(`${API_BASE_URL}/${interactionId}/`, {
     headers: { 'Authorization': `Bearer ${getToken()}` }
@@ -28,7 +27,7 @@ export const createTTRActivity = async (interactionId, payload) => {
       prompt: payload.prompt,
       activity_type: "REVIEW", 
       activity_format: "GAP_FILL",
-      subject_type: "VIETNAMESE"
+      subject_type: payload.subject_type || "MATH"
     })
   });
   if (!response.ok) throw new Error("Không thể tạo bài tập");
