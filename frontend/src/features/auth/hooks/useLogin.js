@@ -1,3 +1,4 @@
+// src/features/auth/hooks/useLogin.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../api/authApi";
@@ -9,56 +10,69 @@ export const useLogin = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-    const handleEmailChange = (e) => {
-        console.log(e.target.value);
-        setEmail(e.target.value);
+  const handleEmailChange = (e) => {
+    console.log(e.target.value);
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e) => {
+    console.log(e.target.value);
+    setPassword(e.target.value);
+  };
+
+  /**
+   * handleSubmit nhận thêm tham số thứ 2 là object callbacks (tuỳ chọn):
+   * { onSuccess, onError }
+   * Nếu onSuccess được cung cấp → KHÔNG tự navigate (để AuthPage xử lý animation trước)
+   * Nếu không có callbacks → hoạt động như cũ (navigate thẳng)
+   */
+  const handleSubmit = async (e, callbacks = {}) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const { onSuccess, onError } = callbacks;
+
+    try {
+    // Bắt buộc đợi tối thiểu 2 giây để cún diễn nét thám tử
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const data = await loginUser(email, password);
+      localStorage.setItem('token', data.access_token);
+
+      if (onSuccess) {
+        // Nhường quyền điều hướng cho AuthPage để chạy animation cổng
+        onSuccess();
+      } else {
+        // Fallback: navigate thẳng nếu dùng hook độc lập
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      let errorMsg = "";
+
+      if (err.response && err.response.status === 401) {
+        errorMsg = "Tài khoản hoặc mật khẩu chưa đúng. Bé kiểm tra lại nhé!";
+      } else if (err.response && err.response.status === 422) {
+        errorMsg = "Thông tin nhập vào chưa hợp lệ!";
+      } else {
+        errorMsg = err?.response?.data?.detail || "Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.";
+      }
+
+      setError(errorMsg);
+
+      if (onError) {
+        onError(errorMsg);
+      }
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const handlePasswordChange = (e) => {
-        console.log(e.target.value);
-        setPassword(e.target.value);
-    }
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const data = await loginUser(email, password);
-            // Xử lý kết quả đăng nhập, ví dụ: lưu token, chuyển hướng
-            localStorage.setItem('token', data.access_token); // Lưu token vào LocalStorage
-            navigate('/dashboard'); // Chuyển hướng sau khi đăng nhập thành công
-        } catch (err) {
-            // 1. Nếu lỗi là 401 (Sai thông tin đăng nhập)
-            if (err.response && err.response.status === 401) {
-                setError("Tài khoản hoặc mật khẩu chưa đúng. Bé kiểm tra lại nhé!");
-            } 
-            // 2. Nếu lỗi là 422 (Dữ liệu gửi lên bị thiếu hoặc sai định dạng)
-            else if (err.response && err.response.status === 422) {
-                setError("Thông tin nhập vào chưa hợp lệ!");
-            } 
-            // 3. Các lỗi khác (Server sập, mất mạng...)
-            else {
-                // Ưu tiên lấy chi tiết lỗi từ backend gửi về, nếu không có thì báo câu chung chung
-                // ĐÃ XÓA `err.message` để không bị hiện dòng chữ tiếng Anh "Request failed..."
-                setError(
-                    err?.response?.data?.detail ||
-                    "Lỗi kết nối đến máy chủ. Vui lòng thử lại sau."
-                );
-            }
-        } finally {
-                    setIsLoading(false);
-                }
-            };
-
-    return {
-        email, setEmail,
-        password, setPassword,
-        isLoading, error,
-        handleSubmit,
-        handleEmailChange,
-        handlePasswordChange
-    };
+  return {
+    email, setEmail,
+    password, setPassword,
+    isLoading, error,
+    handleSubmit,
+    handleEmailChange,
+    handlePasswordChange,
+  };
 };
-

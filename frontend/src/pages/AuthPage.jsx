@@ -1,62 +1,170 @@
-import { useState } from "react";
-import { LoginForm } from "../features/auth/components/LoginForm";
-import { RegisterForm } from "../features/auth/components/RegisterForm";
-import { ThemeWrapper } from "../components/theme/ThemeWrapper";
+// src/pages/AuthPage.jsx
+import { useState, useEffect, useRef } from 'react';
+import { LoginForm } from '../features/auth/components/LoginForm';
+import { RegisterForm } from '../features/auth/components/RegisterForm';
+import { EduSparkMascot } from '../features/auth/components/EduSparkMascot';
+import { useMascotAnimation } from '../features/auth/hooks/useMascotAnimation';
+import { SchoolGate } from '../features/auth/components/SchoolGate';
+import { ThemeWrapper, useTheme } from '../components/theme/ThemeWrapper';
+import './AuthPage.css';
 
-export const AuthPage = () => {
-  const [mode, setMode] = useState("login");
+const AuthPageContent = () => {
+  const { isNight } = useTheme();
+
+  const [mode, setMode] = useState('login');
+  const [focusField, setFocusField] = useState('default');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [phase, setPhase] = useState('gate-enter');
+  const [mascotFace, setMascotFace] = useState('idle'); // Nét mặt: checking, happy, sad
+  const [mascotMotion, setMascotMotion] = useState(''); // Chuyển động: nod, shake-slow
+  const [gateOpen, setGateOpen] = useState(false);
+  const [isZooming, setIsZooming] = useState(false);
+
+  // Khóa mắt Cún nhìn thẳng khi xử lý API dữ liệu
+  useMascotAnimation(focusField, showPassword, mascotFace); 
+
+  const timeoutsRef = useRef([]);
+  const registerTimeout = (callback, delay) => {
+    const id = setTimeout(callback, delay);
+    timeoutsRef.current.push(id);
+  };
+
+  useEffect(() => {
+    return () => timeoutsRef.current.forEach(clearTimeout);
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'gate-enter') {
+      const t1 = setTimeout(() => setPhase('form-drop'), 800);
+      const t2 = setTimeout(() => setPhase('idle'), 1600);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, [phase]);
+
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    setFocusField('default');
+    setShowPassword(false);
+    setMascotFace('idle');
+    setMascotMotion('');
+  };
+
+  const handleLoadingState = (isLoading) => {
+    if (isLoading) {
+      setMascotFace('checking'); // Làm nét mặt thám tử
+      setMascotMotion('');
+    }
+  };
+
+  // ── ĐĂNG NHẬP ──
+  const handleLoginSuccess = () => {
+    setMascotFace('happy'); 
+    setMascotMotion('nod'); 
+    
+    registerTimeout(() => { setMascotFace('idle'); setMascotMotion(''); }, 1500);
+    registerTimeout(() => setPhase('success-roll'), 600); // Thả cuộn giấy thu ngược lên
+    registerTimeout(() => { setGateOpen(true); setPhase('gate-open'); }, 1400); // Mở cửa giấu sau cột
+    registerTimeout(() => { setIsZooming(true); setPhase('zoom-in'); }, 2200); // Đi bộ xuyên qua 3s
+    registerTimeout(() => { window.location.href = '/#/dashboard'; }, 5200);
+  };
+
+  const handleLoginError = () => {
+    setMascotFace('sad'); // Cụp tai mếu máo
+    setMascotMotion('shake-slow'); // Lắc đầu buồn bã từ từ
+    registerTimeout(() => { setMascotFace('idle'); setMascotMotion(''); }, 2000);
+  };
+
+  // ── ĐĂNG KÝ ──
+  const handleRegisterSuccess = () => {
+    setMascotFace('happy'); 
+    setMascotMotion('nod'); 
+    registerTimeout(() => { 
+      setMascotFace('idle'); 
+      setMascotMotion(''); 
+      handleModeChange('login'); 
+    }, 2500);
+  };
+
+  const handleRegisterError = () => {
+    setMascotFace('sad');
+    setMascotMotion('shake-slow'); 
+    registerTimeout(() => { setMascotFace('idle'); setMascotMotion(''); }, 2000);
+  };
+
+  const isFormVisible = phase === 'form-drop' || phase === 'idle';
+  const isFormRolled  = phase === 'success-roll' || phase === 'gate-open' || phase === 'zoom-in';
 
   return (
-    // Bọc toàn bộ trang bằng ThemeWrapper (có thể tắt/bật nút chuyển Ngày/Đêm bằng showToggle)
-    <ThemeWrapper showToggle={true}>
-      
-      {/* Container căn giữa màn hình (Bỏ phần style background cũ vì ThemeWrapper đã lo) */}
-      <div className="flex min-h-screen items-center justify-center px-4">
+    <div className={`auth-root ${isNight ? 'dark' : ''} ${isZooming ? 'zooming' : ''}`}>
+      <div className={`gate-scene ${phase === 'gate-enter' ? 'entering' : ''} ${isZooming ? 'zoom-through' : ''}`}>
         
-        {/* Khung (Card) chứa nội dung */}
-        <div className="auth-card w-full max-w-[500px] min-h-[620px] rounded-[30px] px-8 py-[72px] text-center shadow-[0_12px_32px_rgba(0,0,0,0.16)] relative z-10">
-          
-          <h1 className="m-0 text-[2.2rem] font-bold leading-tight tracking-[0.3px] text-[#ff6b6b]">
-            {mode === "login" ? "Cổng Trường" : "Tạo tài khoản"}
-          </h1>
-          <p className="mt-2 text-[1.1rem] font-semibold tracking-[0.2px] text-[#626262]">
-            {mode === "login"
-              ? "Bé hãy nhập tài khoản để vào lớp nhé!"
-              : "Đăng ký nhanh để bắt đầu học cùng Cú Mèo."}
-          </p>
+        <div className="gate-stage">
+          <SchoolGate isOpen={gateOpen} isDark={isNight} />
 
-          {/* Nút chuyển đổi Đăng nhập / Đăng ký */}
-          <div className="mx-auto mb-12 mt-10 flex max-w-[380px] justify-center gap-5 rounded-full p-0">
-            <button
-              type="button"
-              onClick={() => setMode("login")}
-              className={`w-[170px] rounded-[25px] border-[2.5px] px-4 py-2.5 text-[1rem] font-bold leading-tight transition ${
-                mode === "login"
-                  ? "border-[#2d8680] bg-[#4ecdc4] text-white"
-                  : "border-[#555] bg-white text-[#333] hover:bg-[#f5f5f5]"
-              }`}
-            >
-              Đăng nhập
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("register")}
-              className={`w-[170px] rounded-[25px] border-[2.5px] px-4 py-2.5 text-[1rem] font-bold leading-tight transition ${
-                mode === "register"
-                  ? "border-[#006d7d] bg-[#00acc1] text-white"
-                  : "border-[#555] bg-white text-[#333] hover:bg-[#f5f5f5]"
-              }`}
-            >
-              Đăng ký
-            </button>
+          <div className={`mascot-on-gate ${mascotMotion}`}>
+            <EduSparkMascot
+              focusField={focusField}
+              isPasswordVisible={showPassword}
+              customAnim={mascotFace}
+            />
           </div>
 
-          {/* Nơi hiển thị các component Form độc lập */}
-          {mode === "login" ? <LoginForm /> : <RegisterForm />}
+          <div className={`form-panel ${isFormVisible ? 'dropped' : ''} ${isFormRolled ? 'rolled-up' : ''}`}>
+            <div className="form-panel-cap" />
+            
+            <div className="form-panel-inner">
+              <div className="form-panel-content">
+                
+                <div className="form-header">
+                  <div className="eduspark-logo">
+                    <span className="logo-spark">✦</span>
+                    <span className="logo-text">EduSpark</span>
+                    <span className="logo-spark">✦</span>
+                  </div>
+                  <p className="form-tagline">
+                    {mode === 'login'
+                      ? 'Chào mừng bé trở lại! Vào lớp thôi nào 🐾'
+                      : 'Gia nhập hành trình học tập cùng EduSpark!'}
+                  </p>
+                </div>
+
+                <div className="mode-tabs">
+                  <button type="button" onClick={() => handleModeChange('login')}
+                    className={`mode-tab ${mode === 'login' ? 'active' : ''}`}>Đăng nhập</button>
+                  <button type="button" onClick={() => handleModeChange('register')}
+                    className={`mode-tab ${mode === 'register' ? 'active' : ''}`}>Đăng ký</button>
+                  <div className={`tab-slider ${mode === 'register' ? 'right' : ''}`} />
+                </div>
+
+                <div className="form-body">
+                  {mode === 'login' ? (
+                    <LoginForm 
+                      setFocusField={setFocusField} showPassword={showPassword} setShowPassword={setShowPassword} 
+                      onSuccess={handleLoginSuccess} onError={handleLoginError} onLoading={handleLoadingState}
+                    />
+                  ) : (
+                    <RegisterForm 
+                      setFocusField={setFocusField} showPassword={showPassword} setShowPassword={setShowPassword} 
+                      onSuccess={handleRegisterSuccess} onError={handleRegisterError} onLoading={handleLoadingState}
+                    />
+                  )}
+                </div>
+
+              </div>
+            </div>
+            
+            <div className="form-scroll-deco" />
+          </div>
           
         </div>
       </div>
-      
-    </ThemeWrapper>
+    </div>
   );
 };
+
+export const AuthPage = () => (
+  <ThemeWrapper showToggle={true}>
+    <AuthPageContent />
+  </ThemeWrapper>
+);

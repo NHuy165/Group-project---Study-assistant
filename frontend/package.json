@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "animejs": "^4.4.1",
     "axios": "^1.15.0",
+    "framer-motion": "^12.38.0",
     "katex": "^0.16.46",
     "lucide-react": "^1.8.0",
     "react": "^19.2.4",
