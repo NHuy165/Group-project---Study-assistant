@@ -76,7 +76,9 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
     const canSaveEdit = editingCard.front.trim() && editingCard.back.trim();
 
     return (
-        <div className={`custom-scrollbar mx-auto flex max-h-[calc(100vh-6rem)] max-w-4xl flex-col gap-5 overflow-y-auto rounded-[2.5rem] border p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all ${
+        <div className="mx-auto max-w-5xl rounded-[2.5rem] isolate shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all overflow-hidden">
+    
+        <div className= {`custom-scrollbar flex max-h-[calc(100vh-8rem)] flex-col gap-5 overflow-y-auto pt-10 pb-10 pl-10 pr-6 ${
             isNight
                 ? 'border-white/10 bg-[#1e293b]/90 text-gray-100'
                 : 'border-white/40 bg-white/90 text-gray-800'
@@ -324,6 +326,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                     })
                 )}
             </section>
+        </div>
         </div>
     );
 };

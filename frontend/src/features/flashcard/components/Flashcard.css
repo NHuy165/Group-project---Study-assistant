@@ -114,3 +114,33 @@
     font-size: var(--font-size-back) !important;
     font-weight: var(--weight-back) !important;
 }
+/* 1. Định nghĩa độ rộng tổng thể của thanh cuộn */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 38px;              /* Tăng độ rộng tổng lên để chừa không gian làm lề */
+    height: 6px;
+}
+
+/* 2. Đường ray ẩn */
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;  
+}
+
+/* 3. Cục cuộn thông minh (Tự giới hạn độ cao) */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    /* Đổ màu nền cho cục cuộn */
+    background-color: rgba(156, 163, 175, 0.5); 
+    
+    /* MẸO CỐT LÕI: Tạo viền trong suốt xung quanh để ép cục cuộn co nhỏ lại */
+    border: 16px solid transparent; 
+    
+    /* Giữ màu nền chỉ nằm trong phạm vi text, không tràn ra phần viền transparent */
+    background-clip: padding-box;  
+    
+    border-radius: 9999px;    /* Bo tròn cục cuộn */
+    transition: background-color 0.2s ease;
+}
+
+/* 4. Hiệu ứng khi hover */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.7); 
+}
