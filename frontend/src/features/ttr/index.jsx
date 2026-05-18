@@ -7,7 +7,7 @@ import { TTRActionModal } from './components/TTRActionModal'; // <-- Nhúng Moda
 
 export const TTRFeature = ({ activityId, isNew, onClose }) => {
   // Nếu là bài mới thì vô làm luôn ('play'). Nếu bài cũ thì đợi chọn chế độ (null)
-  const [mode, setMode] = useState(isNew ? 'play' : null);
+  const [mode, setMode] = useState(initialMode || null);
 
   // NẾU CHƯA CHỌN CHẾ ĐỘ -> HIỆN BẢNG MENU HỎI
   if (!mode) {

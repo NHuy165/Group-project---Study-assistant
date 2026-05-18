@@ -8,7 +8,6 @@ export const useTTRManager = (interactionId) => {
   const [actionModal, setActionModal] = useState({ isOpen: false, activityId: null });
   const [gameConfig, setGameConfig] = useState({ activityId: null, initialMode: 'play', gameMode: 'normal' });
 
-  // 1. Tự động load dữ liệu
   useEffect(() => {
     const loadTTR = async () => {
       try {
@@ -31,15 +30,22 @@ export const useTTRManager = (interactionId) => {
     if (interactionId) loadTTR();
   }, [interactionId]);
 
-  // 2. Tạo bài chạy ngầm
-  const handleCreateTTRBackground = ({ prompt: finalPrompt, gameMode }) => {
+  // [MỚI] Nhận thêm subjectType
+  const handleCreateTTRBackground = ({ prompt: finalPrompt, gameMode, subjectType }) => {
     const tempId = Date.now();
     const newTask = { id: tempId, name: "AI đang tạo bài...", status: 'loading' };
     setTtrTasks(prev => [newTask, ...prev]);
     setIsSetupOpen(false);
 
     const promptName = finalPrompt.split("Nội dung/Chủ đề:")[1]?.substring(0, 25) || "Bài tập AI";
-    const payload = { name: promptName + "...", description: "Tự động tạo", prompt: finalPrompt };
+    
+    // [MỚI] Đưa subject_type vào payload
+    const payload = { 
+      name: promptName + "...", 
+      description: "Tự động tạo", 
+      prompt: finalPrompt,
+      subject_type: subjectType
+    };
 
     createTTRActivity(interactionId, payload)
       .then(newActivity => {
@@ -53,13 +59,12 @@ export const useTTRManager = (interactionId) => {
       });
   };
 
-  // 3. Xử lý click mở bài
   const handlePlayTask = (id) => {
     const task = ttrTasks.find(t => t.id === id);
     if (!task) return;
 
     if (task.isNew) {
-      setGameConfig({ activityId: id, initialMode: 'play', gameMode: task.gameMode || 'normal' });
+      setGameConfig({ activityId: id, initialMode: task.gameMode || 'normal' });
       setIsTTROpen(true);
       setTtrTasks(prev => prev.map(t => t.id === id ? { ...t, isNew: false } : t));
     } else {
@@ -67,7 +72,6 @@ export const useTTRManager = (interactionId) => {
     }
   };
 
-  // 4. Bắt đầu từ Menu Hỏi
   const handleStartFromMenu = (mode) => {
     setGameConfig({ activityId: actionModal.activityId, initialMode: mode, gameMode: 'normal' });
     setActionModal({ isOpen: false, activityId: null });
