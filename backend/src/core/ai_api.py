@@ -118,7 +118,7 @@ class GoogleAPI(API):
                     await asyncio.sleep(wait_time)
                     attempt_traffic += 1
 
-                    if attempt_traffic >= settings.N_RETRIES:
+                    if attempt_traffic >= settings.N_API_CALL_RETRIES:
                         break
 
                     continue
@@ -218,7 +218,7 @@ class OllamaAPI(API):
                     await asyncio.sleep(wait_time)
                     attempt_traffic += 1
 
-                    if attempt_traffic >= settings.N_RETRIES:
+                    if attempt_traffic >= settings.N_API_CALL_RETRIES:
                         break
                     continue
                 else:
@@ -230,7 +230,7 @@ class OllamaAPI(API):
                 await asyncio.sleep(wait_time)
                 attempt_traffic += 1
 
-                if attempt_traffic >= settings.N_RETRIES:
+                if attempt_traffic >= settings.N_API_CALL_RETRIES:
                     break
 
                 continue
@@ -334,7 +334,7 @@ class CloudFlareAPI(API):
                     await asyncio.sleep(wait_time)
                     attempt_traffic += 1
 
-                    if attempt_traffic >= settings.N_RETRIES:
+                    if attempt_traffic >= settings.N_API_CALL_RETRIES:
                         break
 
                     continue
@@ -349,7 +349,7 @@ class CloudFlareAPI(API):
                 await asyncio.sleep(wait_time)
                 attempt_traffic += 1
 
-                if attempt_traffic >= settings.N_RETRIES:
+                if attempt_traffic >= settings.N_API_CALL_RETRIES:
                     break
 
                 continue
