@@ -2,11 +2,12 @@ import { motion } from "framer-motion";
 import React from "react";
 import { useState } from "react";
 
-export const AnimatedChart = ({ children }) => {
+export const AnimatedChart = ({ children, scrollRoot, aspectClass="aspect-auto" }) => {
     const [hasEntered, setHasEntered] = useState(false);
 
     return (
         <motion.div
+            className={`w-full ${aspectClass} flex justify-center`}
             initial={{ 
                 opacity: 0
             }}
@@ -16,15 +17,16 @@ export const AnimatedChart = ({ children }) => {
             }}
 
             viewport={{
+                root: scrollRoot,
                 once: true,
-                amount: 0.6
+                amount: "all",
             }}
 
             onViewportEnter={
                 () => setHasEntered(true)
             }
         >
-            {React.cloneElement(children, { isAnimationActive: hasEntered })}
+            {hasEntered && children}
         </motion.div>
     )
 }
