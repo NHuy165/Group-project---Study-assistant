@@ -127,9 +127,7 @@ export const ToolsSidebar = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm("Bạn có chắc chắn muốn xóa bộ flashcard này không?")) {
-                    onDeleteFlashcardSet && onDeleteFlashcardSet(set.id);
-                  }
+                  onDeleteFlashcardSet && onDeleteFlashcardSet(set.id);
                 }}
                 className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
                   isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"

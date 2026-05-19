@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import useFlashcardManagement from '../hooks/useFlashcardManagement';
+import { Trash } from "@phosphor-icons/react";
 import { useTheme } from '../../../components/theme/ThemeWrapper';
+import { deleteCard } from '../api/flashcardAPI';
 
 const emptyDraft = {
     front: '',
     back: '',
 };
 
-const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
+const FlashcardEditView = ({ selectedSet, onBack, onStudy, onDeleteFlashcard }) => {
     const {
         cardsList,
         isLoading,
         error,
         createNewFlashcard,
         updateCard,
+        deleteFlashcard,
     } = useFlashcardManagement(selectedSet?.id);
 
     const { isNight } = useTheme();
@@ -231,14 +234,14 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                                 }`}
                             >
                                 <div className="mb-3 flex items-center justify-between gap-3">
-                                    <span className={`text-sm font-bold ${
+                                    <span className={`flex-1 text-sm font-bold whitespace-nowrap ${
                                         isNight ? 'text-gray-400' : 'text-slate-500'
                                     }`}>
                                         Thẻ {index + 1}
                                     </span>
 
                                     {isEditing ? (
-                                        <div className="flex gap-2">
+                                        <div className="flex justify-end items-center gap-2 w-full">
                                             <button
                                                 type="button"
                                                 onClick={() => handleSaveEdit(card.id)}
@@ -264,17 +267,31 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                                             </button>
                                         </div>
                                     ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleStartEdit(card)}
-                                            className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
-                                                isNight
-                                                    ? 'border-indigo-600/50 bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50'
-                                                    : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                                            }`}
-                                        >
-                                            Chỉnh sửa
-                                        </button>
+                                        <div className="flex justify-end items-center gap-2 w-full">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleStartEdit(card)}
+                                                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                                                    isNight
+                                                        ? 'border-indigo-600/50 bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50'
+                                                        : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                                                }`}
+                                            >
+                                                Chỉnh sửa
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteFlashcard(card.id);
+                                                }}
+                                                className={`flex cursor-pointer h-10 w-10 items-center justify-center rounded-xl text-red-400 opacity-100 transition-all hover:text-red-600 ${
+                                                    isNight ? "hover:bg-gray-600/80" : "hover:bg-gray-200"
+                                                }`}
+                                                >
+                                                <Trash size={18} weight="bold" />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
 

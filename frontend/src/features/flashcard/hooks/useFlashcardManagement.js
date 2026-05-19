@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { readFlashcard, addCard, updateFlashcard } from '../api/flashcardAPI';
+import { readFlashcard, addCard, updateFlashcard, deleteCard } from '../api/flashcardAPI';
 
 /**
  * Hook quản lý logic flashcard: load, tạo, xóa
@@ -100,14 +100,16 @@ const useFlashcardManagement = (study_activity_id) => {
     /**
      * Xóa flashcard
      */
-    const removeFlashcard = useCallback(async (flashcardId) => {
+    const deleteFlashcard = useCallback(async (flashcardId) => {
         try {
-            // Xóa từ local state
-            setCardsList(prev => prev.filter(card => card.id !== flashcardId));
-            setError('');
+            const response = await deleteCard(flashcardId);
+            await loadFlashcards();
+            return response
         } catch (err) {
             console.error("Lỗi xóa flashcard:", err);
             setError("Lỗi xóa flashcard");
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
@@ -132,7 +134,7 @@ const useFlashcardManagement = (study_activity_id) => {
         loadFlashcards,
         createNewFlashcard,
         updateCard,
-        removeFlashcard,
+        deleteFlashcard,
     };
 };
 
