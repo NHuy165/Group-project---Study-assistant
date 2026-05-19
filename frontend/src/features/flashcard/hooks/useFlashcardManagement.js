@@ -111,7 +111,7 @@ const useFlashcardManagement = (study_activity_id) => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [loadFlashcards]);
 
     /**
      * Tự động tải flashcards khi interactionId thay đổi

@@ -46,12 +46,11 @@ export const createFlashcard = async (interactionId, promptData) => {
         subject_type: subjectType || 'ENGLISH',
     };
 
-    // const response = await axiosClient.post(`${PATH}/${interactionId}/create`, payload);
     const response = await axiosClient.post(
             `${PATH}/${interactionId}/create`,
             payload
         )
-    // return transformBackendFlashcards(response.data);
+
     return response.data;
 };
 
@@ -61,6 +60,7 @@ export const readFlashcard = async (flashcardId) => {
         return transformBackendFlashcards(response.data);
     } catch (error) {
         console.error("Error reading flashcard:", error);
+        throw error;
         return []; 
     }
 };
@@ -76,15 +76,10 @@ export const readAllFlashcards = async (interactionId) => {
             activity.activity_format === "FLASHCARDS"
         ));
 
-        // // Lấy chi tiết từng activity
-        // const completeActivities = await Promise.all(
-        //     flashcardActivities.map((activity) => readFlashcard(activity.id)),
-        // );
-
-        // return completeActivities.flat();
         return flashcardActivities;
     } catch (error) {
         console.warn('Error reading all flashcards:', error);
+        throw error;
         return [];
     }
 };

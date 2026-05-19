@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import useFlashcardManagement from '../hooks/useFlashcardManagement';
 import { Trash } from "@phosphor-icons/react";
 import { useTheme } from '../../../components/theme/ThemeWrapper';
-import { deleteCard } from '../api/flashcardAPI';
 
 const emptyDraft = {
     front: '',
     back: '',
 };
 
-const FlashcardEditView = ({ selectedSet, onBack, onStudy, onDeleteFlashcard }) => {
+const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
     const {
         cardsList,
         isLoading,

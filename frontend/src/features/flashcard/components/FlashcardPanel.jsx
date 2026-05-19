@@ -87,13 +87,6 @@ const FlashcardPanel = ({
         }`}
         onClick={(event) => event.stopPropagation()}
       >
-        {/* <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-6 top-6 z-50 text-2xl text-gray-400 hover:text-red-500 transition-colors"
-          aria-label="Đóng flashcard"
-          title="Đóng"
-        >✕</button> */}
         {isCreateMode && (
           <button
             type="button"
@@ -107,10 +100,7 @@ const FlashcardPanel = ({
             </svg>
           </button>
         )}
-          {/* <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg> */}
-        
+          
 
         {renderContent()}
       </div>
