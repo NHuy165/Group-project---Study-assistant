@@ -3,32 +3,33 @@ import { useState } from "react";
 import { useCreateEssay } from "../../open_ended/hooks/useCreateEssay";
 import { useCreateQuiz } from "../../quiz/hooks/useQuiz";
 
-export const useInteractionTools = (interactionId, onActivityCreated) => {
-  // State to store the ID of the tool currently being setup (null, 'essay', 'quiz'...)
+export const useInteractionTools = (
+  interactionId, 
+  onActivityCreated, 
+  // Inject TTR handlers from parent (InteractionPage) to keep this hook pure
+  handleCreateTTR, 
+  isCreatingTTR = false 
+) => {
+  // State to store the ID of the tool currently being setup (null, 'essay', 'quiz', 'mindmap'...)
   const [activeToolSetup, setActiveToolSetup] = useState(null);
 
   // ==========================================
-  // 1. ACTIVITY CREATION HOOKS
+  // 1. ACTIVITY CREATION HOOKS & HANDLERS
   // ==========================================
 
   // --- ESSAY ---
   const { isCreatingEssay, handleCreateEssay } = useCreateEssay(
     interactionId,
     () => {
-      // Close the setup form
       setActiveToolSetup(null);
-      // Notify parent component to refresh the list
       if (onActivityCreated) onActivityCreated("essay");
     }
   );
 
   // --- QUIZ ---
-  // Get the mutate function (renamed to createQuiz) and isPending state from useCreateQuiz
   const { mutate: createQuiz, isPending: isCreatingQuiz } = useCreateQuiz();
 
   const handleCreateQuiz = async (setupData) => {
-    // Map data from ToolSetupArea (which sends 'subject') 
-    // to what quizAPI.js expects ('subjectType' in camelCase)
     const payload = {
       subjectType: setupData.subject,
       prompt: setupData.prompt,
@@ -37,16 +38,10 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
     console.debug("[useInteractionTools] Creating quiz, payload:", payload);
     
     try {
-      // Call the mutation function with interactionId and mapped payload
       const newQuiz = await createQuiz(interactionId, payload);
-      console.debug("[useInteractionTools] createQuiz result:", newQuiz);
       
       if (newQuiz) {
-        // Step 1: Close the setup form (ToolSetupArea) immediately upon success
         setActiveToolSetup(null); 
-        
-        // Step 2: Notify parent (InteractionPage) to update the Sidebar list
-        // Note: We pass the ID, but we expect the parent NOT to auto-open the QuizPanel
         if (onActivityCreated) {
           onActivityCreated("quiz", newQuiz.id); 
         }
@@ -58,20 +53,47 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
     }
   };
 
+  // --- TTR (MINDMAP) ---
+  // Wrap the injected TTR handler to also close the setup form automatically
+  const handleTTRDispatch = (setupData) => {
+    if (handleCreateTTR) {
+      handleCreateTTR({
+        prompt: setupData.prompt,
+        gameMode: 'normal' // Can be extended to read from setupData later
+      });
+      setActiveToolSetup(null); // Close the form immediately (Optimistic UI)
+    } else {
+      console.error("handleCreateTTR is not provided to useInteractionTools");
+    }
+  };
+
   // ==========================================
-  // 2. CENTRAL DISPATCHER FUNCTIONS
+  // 2. CENTRAL DISPATCHER (Strategy Pattern)
   // ==========================================
+  
   const handleToolClick = (toolId) => {
-    // Open the ToolSetupArea for the selected tool
     setActiveToolSetup(toolId);
   };
 
+  // The "Phonebook": Maps tool IDs to their respective creation functions.
+  // This eliminates all if-else chains and makes scaling incredibly easy!
+  const actionHandlers = {
+    essay: handleCreateEssay,
+    quiz: handleCreateQuiz,
+    mindmap: handleTTRDispatch,
+    // Future tools (e.g., flashcard) just need ONE line here:
+    // flashcard: handleCreateFlashcard,
+  };
+
   const handleConfirmCreate = (setupData) => {
-    // Dispatch the payload to the correct handler based on active tool
-    if (activeToolSetup === "essay") {
-      handleCreateEssay(setupData);
-    } else if (activeToolSetup === "quiz") {
-      handleCreateQuiz(setupData);
+    // 1. Look up the correct handler in the phonebook
+    const handler = actionHandlers[activeToolSetup];
+    
+    // 2. Execute if found, log error if not
+    if (handler) {
+      handler(setupData);
+    } else {
+      console.error(`[useInteractionTools] No handler defined for tool: ${activeToolSetup}`);
     }
   };
 
@@ -81,7 +103,7 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
   const toolLoadingStates = {
     essay: isCreatingEssay,
     quiz: isCreatingQuiz,
-    // ttr: isCreatingTTR,
+    mindmap: isCreatingTTR, // Now tracking TTR loading state
   };
 
   // Check if ANY tool is currently processing to show the loading overlay

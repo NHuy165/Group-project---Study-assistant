@@ -2,52 +2,78 @@ import React, { useState, useMemo } from "react";
 import { Trash } from "@phosphor-icons/react";
 import quizIcon from "../../../assets/icon/Quiz.svg";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
-import { ConfirmModal } from "../../../components/ConfirmModal"; 
+import { ConfirmModal } from "../../../components/ConfirmModal";
 
 // 100% original tools list
 const TOOLS_LIST = [
-  { id: 'mindmap', name: 'Tap To Review', icon: '🧠', isSvg: false },
-  { id: 'flashcard', name: 'Flashcard', icon: '📕', isSvg: false },
-  { id: 'quiz', name: 'Quiz', icon: quizIcon, isSvg: true },
-  { id: 'essay', name: 'Tự Luận', icon: '📝', isSvg: false },
+  { id: "mindmap", name: "Tap To Review", icon: "🧠", isSvg: false },
+  { id: "flashcard", name: "Flashcard", icon: "📕", isSvg: false },
+  { id: "quiz", name: "Quiz", icon: quizIcon, isSvg: true },
+  { id: "essay", name: "Tự Luận", icon: "📝", isSvg: false },
 ];
 
-export const ToolsSidebar = ({ 
+export const ToolsSidebar = ({
   activeToolId,
-  onOpenTTR, 
-  ttrTasks, 
-  onPlayTTR, 
-  onToolClick, 
-  toolLoadingStates = {}, 
-  activities = [], 
-  onActivityClick, 
-  onDeleteActivity, 
-  isCreatingNewActivity,
+  ttrTasks,
+  onPlayTTR,
+  onToolClick,
+  toolLoadingStates = {},
+  activities = [],
+  onActivityClick,
+  onDeleteActivity,
   quizzes = [],
   isQuizLoading,
   onQuizClick,
-  onDeleteQuiz
+  onDeleteQuiz,
 }) => {
-  const { isNight } = useTheme(); 
-  
+  const { isNight } = useTheme();
+  const isCreatingEssay = !!toolLoadingStates.essay;
+
   // Smart state to store the target item to delete
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   // ==========================================
-  // SMART SORTING LOGIC: UNIFIED TIMELINE
+  // SMART SORTING LOGIC & DEDUPLICATION
   // ==========================================
-  // Merge all learning materials into one array and sort descending by ID or Date
   const allLearningMaterials = useMemo(() => {
-    // 1. Tag each item with its specific type and a fallback sort key (ID or createdAt)
-    const formattedQuizzes = (quizzes || []).map(q => ({ ...q, _itemType: 'quiz', _sortKey: q.created_at || q.createdAt || q.id || 0 }));
-    const formattedTtr = (ttrTasks || []).map(t => ({ ...t, _itemType: 'ttr', _sortKey: t.created_at || t.createdAt || t.id || 0 }));
-    const formattedActivities = (activities || []).map(a => ({ ...a, _itemType: 'activity', _sortKey: a.created_at || a.createdAt || a.id || 0 }));
+    const formattedQuizzes = (quizzes || []).map((q) => ({
+      ...q,
+      _itemType: "quiz",
+      _sortKey: q.created_at || q.createdAt || q.id || 0,
+    }));
+    const formattedTtr = (ttrTasks || []).map((t) => ({
+      ...t,
+      _itemType: "ttr",
+      _sortKey: t.created_at || t.createdAt || t.id || 0,
+    }));
+    const formattedActivities = (activities || []).map((a) => ({
+      ...a,
+      _itemType: "activity",
+      _sortKey: a.created_at || a.createdAt || a.id || 0,
+    }));
 
-    // 2. Merge all arrays
-    const mergedList = [...formattedQuizzes, ...formattedTtr, ...formattedActivities];
+    const mergedList = [
+      ...formattedQuizzes,
+      ...formattedTtr,
+      ...formattedActivities,
+    ];
 
-    // 3. Sort descending (Newest first)
-    return mergedList.sort((a, b) => {
+    // [SỬA Ở ĐÂY]: Cơ chế lọc trùng lặp siêu tốc bằng Map
+    const uniqueMap = new Map();
+
+    mergedList.forEach((item) => {
+      if (uniqueMap.has(item.id)) {
+        // Nếu trùng ID, luôn ưu tiên hiển thị giao diện của Quiz/TTR thay vì Activity chung chung
+        if (item._itemType === "quiz" || item._itemType === "ttr") {
+          uniqueMap.set(item.id, item);
+        }
+      } else {
+        uniqueMap.set(item.id, item);
+      }
+    });
+
+    // Trả về mảng đã lọc sạch trùng lặp và Sort
+    return Array.from(uniqueMap.values()).sort((a, b) => {
       if (a._sortKey > b._sortKey) return -1;
       if (a._sortKey < b._sortKey) return 1;
       return 0;
@@ -63,7 +89,7 @@ export const ToolsSidebar = ({
       }`}
     >
       {/* ========================================== */}
-      {/* SECTION 1: CÔNG CỤ TẠO BÀI                 */}
+      {/* SECTION 1: TOOL CREATION BUTTONS           */}
       {/* ========================================== */}
       <section>
         <header className="mb-4 space-y-4">
@@ -75,23 +101,25 @@ export const ToolsSidebar = ({
             <span>⚙️</span>
             <h2>Công cụ</h2>
           </div>
-          <hr className={`border-t transition-colors ${isNight ? "border-gray-600/50" : "border-gray-400/30"}`} />
+          <hr
+            className={`border-t transition-colors ${isNight ? "border-gray-600/50" : "border-gray-400/30"}`}
+          />
         </header>
 
         <div className="grid grid-cols-2 gap-3">
           {TOOLS_LIST.map((item) => (
-            <button 
-              key={item.id} 
+            <button
+              key={item.id}
               onClick={() => {
-                if (item.id === 'mindmap' && onOpenTTR) {
-                  onOpenTTR();
-                } else if (onToolClick) {
+                // Unified routing: all tools go through onToolClick to open ToolSetupArea
+                // No more hardcoded bypass for 'mindmap'
+                if (onToolClick) {
                   onToolClick(item.id);
                 }
               }}
               disabled={toolLoadingStates[item.id]}
               className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
-                isNight 
+                isNight
                   ? "bg-gray-800/80 border border-gray-700 text-gray-300"
                   : "bg-[#FFEDE2B2]/80 text-gray-700"
               } ${activeToolId === item.id ? "ring-2 ring-[#4ecdc4]" : ""}`}
@@ -114,25 +142,33 @@ export const ToolsSidebar = ({
       </section>
 
       {/* ========================================== */}
-      {/* SECTION 2: DANH SÁCH HỌC LIỆU ĐÃ SORT      */}
+      {/* SECTION 2: SORTED LEARNING MATERIALS LIST  */}
       {/* ========================================== */}
       <section className="flex flex-1 flex-col overflow-hidden pt-2">
         <header className="mb-4 space-y-4">
-          <div className={`flex items-center space-x-2 text-2xl font-bold transition-colors ${
-            isNight ? "text-gray-100" : "text-gray-800"
-          }`}>
-            <span>📝</span><h2>Học Liệu</h2>
+          <div
+            className={`flex items-center space-x-2 text-2xl font-bold transition-colors ${
+              isNight ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            <span>📝</span>
+            <h2>Học Liệu</h2>
           </div>
-          <hr className={`border-t transition-colors ${isNight ? "border-gray-600/50" : "border-gray-400/30"}`} />
+          <hr
+            className={`border-t transition-colors ${isNight ? "border-gray-600/50" : "border-gray-400/30"}`}
+          />
         </header>
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-          
           {/* INDICATOR OPEN ENDED LOADING (Show at top) */}
-          {isCreatingNewActivity && (
-            <div className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
-                isNight ? "bg-gray-800/50 border-gray-600" : "bg-gray-100/80 border-gray-300" 
-            }`}>
+          {isCreatingEssay && (
+            <div
+              className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
+                isNight
+                  ? "bg-gray-800/50 border-gray-600"
+                  : "bg-gray-100/80 border-gray-300"
+              }`}
+            >
               <span className="mr-3 text-sm opacity-50 animate-spin">⏳</span>
               <span className="text-sm font-semibold text-gray-400 italic">
                 Cú Mèo đang soạn bài...
@@ -142,9 +178,13 @@ export const ToolsSidebar = ({
 
           {/* INDICATOR QUIZ LOADING (Show at top) */}
           {isQuizLoading && (
-             <div className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
-                isNight ? "bg-gray-800/50 border-gray-600" : "bg-gray-100/80 border-gray-300" 
-            }`}>
+            <div
+              className={`flex w-full animate-pulse items-center rounded-2xl px-4 py-3 shadow-sm border transition-all cursor-not-allowed ${
+                isNight
+                  ? "bg-gray-800/50 border-gray-600"
+                  : "bg-gray-100/80 border-gray-300"
+              }`}
+            >
               <span className="mr-3 text-sm opacity-50 animate-spin">⏳</span>
               <span className="text-sm font-semibold text-gray-400 italic">
                 Đang tải danh sách...
@@ -154,17 +194,19 @@ export const ToolsSidebar = ({
 
           {/* RENDER SORTED UNIFIED LIST */}
           {allLearningMaterials.map((item) => {
-            
             // --- QUIZ RENDER ---
-            if (item._itemType === 'quiz') {
+            if (item._itemType === "quiz") {
               return (
-                <div key={`quiz-${item.id}`} className="group relative flex w-full items-center">
-                  <button 
-                    onClick={() => onQuizClick && onQuizClick(item.id)} 
+                <div
+                  key={`quiz-${item.id}`}
+                  className="group relative flex w-full items-center"
+                >
+                  <button
+                    onClick={() => onQuizClick && onQuizClick(item.id)}
                     className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
-                      isNight 
-                        ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
-                        : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
+                      isNight
+                        ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300"
+                        : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700"
                     }`}
                   >
                     <span className="mr-3 text-sm opacity-80">🎯</span>
@@ -177,13 +219,17 @@ export const ToolsSidebar = ({
                       </span>
                     )}
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => {
-                      e.stopPropagation(); 
-                      setDeleteTarget({ type: 'quiz', id: item.id, name: item.title || item.name });
+                      e.stopPropagation();
+                      setDeleteTarget({
+                        type: "quiz",
+                        id: item.id,
+                        name: item.title || item.name,
+                      });
                     }}
                     className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
-                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
+                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
                     }`}
                   >
                     <Trash size={18} weight="bold" />
@@ -193,22 +239,52 @@ export const ToolsSidebar = ({
             }
 
             // --- TTR RENDER ---
-            if (item._itemType === 'ttr') {
+            if (item._itemType === "ttr") {
               return (
-                <div 
-                  key={`ttr-${item.id}`} 
-                  onClick={() => item.status === 'ready' && onPlayTTR(item.id)}
+                <div
+                  key={`ttr-${item.id}`}
+                  onClick={() =>
+                    item.status === "ready" && onPlayTTR && onPlayTTR(item.id)
+                  }
                   className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
-                  item.status === 'loading' 
-                    ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
-                    : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
-                }`}>
+                    item.status === "loading"
+                      ? isNight
+                        ? "bg-gray-800/40 border-gray-700 opacity-60 cursor-wait"
+                        : "bg-gray-100/50 border-gray-200 opacity-70 cursor-wait"
+                      : isNight
+                        ? "bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105"
+                        : "bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105"
+                  }`}
+                >
                   <span className="mr-3 text-sm flex-shrink-0">
-                    {item.status === 'loading' ? (
-                      <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    ) : '🎮'}
+                    {item.status === "loading" ? (
+                      <svg
+                        className="animate-spin h-4 w-4 text-purple-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    ) : (
+                      "🎮"
+                    )}
                   </span>
-                  <span className={`text-sm font-semibold truncate ${item.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
+                  <span
+                    className={`text-sm font-semibold truncate ${item.status === "loading" ? "animate-pulse text-gray-500" : isNight ? "text-gray-200" : "text-purple-700"}`}
+                  >
                     {item.name}
                   </span>
                 </div>
@@ -216,15 +292,18 @@ export const ToolsSidebar = ({
             }
 
             // --- ACTIVITY (OPEN ENDED) RENDER ---
-            if (item._itemType === 'activity') {
+            if (item._itemType === "activity") {
               return (
-                <div key={`oe-${item.id}`} className="group relative flex w-full items-center">
-                  <button 
-                    onClick={() => onActivityClick && onActivityClick(item.id)} 
+                <div
+                  key={`oe-${item.id}`}
+                  className="group relative flex w-full items-center"
+                >
+                  <button
+                    onClick={() => onActivityClick && onActivityClick(item.id)}
                     className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
-                      isNight 
-                        ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300" 
-                        : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700" 
+                      isNight
+                        ? "bg-gray-800/80 border-gray-700 hover:border-[#4ecdc4] text-gray-300"
+                        : "bg-white/80 border-transparent hover:border-[#4ecdc4]/50 text-gray-700"
                     }`}
                   >
                     <span className="mr-3 text-sm opacity-80">📝</span>
@@ -232,13 +311,17 @@ export const ToolsSidebar = ({
                       {item.name || `Bài tập #${item.id}`}
                     </span>
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => {
-                      e.stopPropagation(); 
-                      setDeleteTarget({ type: 'activity', id: item.id, name: item.name });
+                      e.stopPropagation();
+                      setDeleteTarget({
+                        type: "activity",
+                        id: item.id,
+                        name: item.name,
+                      });
                     }}
                     className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
-                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200" 
+                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
                     }`}
                   >
                     <Trash size={18} weight="bold" />
@@ -252,24 +335,27 @@ export const ToolsSidebar = ({
         </nav>
       </section>
 
-      {/* NHÚNG MODAL XÁC NHẬN XÓA THÔNG MINH */}
+      {/* CONFIRM DELETE MODAL */}
       <ConfirmModal
-        isOpen={!!deleteTarget} 
-        onClose={() => setDeleteTarget(null)} 
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
             // Routing delete API based on targeted item type
-            if (deleteTarget.type === 'quiz') {
+            if (deleteTarget.type === "quiz") {
               onDeleteQuiz(deleteTarget.id);
-            } else if (deleteTarget.type === 'activity') {
+            } else if (deleteTarget.type === "activity") {
               onDeleteActivity(deleteTarget.id);
+            } else if (deleteTarget.type === "ttr") {
+              // Gọi hàm xóa TTR (Bạn cần truyền thêm onDeleteTTR từ InteractionPage vào đây)
+              onDeleteTTR(deleteTarget.id);
             }
             // For future: else if (deleteTarget.type === 'ttr') onDeleteTTR(deleteTarget.id);
             setDeleteTarget(null);
           }
         }}
         title="Xóa Học Liệu?"
-        message={`Bé có chắc chắn muốn xóa bài "${deleteTarget?.name || 'này'}" không? Dữ liệu không thể khôi phục.`}
+        message={`Bé có chắc chắn muốn xóa bài "${deleteTarget?.name || "này"}" không? Dữ liệu không thể khôi phục.`}
         isDanger={true}
       />
     </aside>
