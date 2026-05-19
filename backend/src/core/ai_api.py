@@ -8,11 +8,14 @@ import httpx
 import ollama
 from fastapi import UploadFile
 from google import genai
-from google.api_core import exceptions
 from google.genai import Client, errors
 
 from backend.src.core.config import settings
-from backend.src.exceptions.core import ExceptionRequest_400
+from backend.src.exceptions.core import (
+    ExceptionExternalService_503,
+    ExceptionInternalError_500,
+    ExceptionRequest_400,
+)
 
 # ----- MODEL CONFIGURATIONS ----- #
 
@@ -22,7 +25,7 @@ from backend.src.exceptions.core import ExceptionRequest_400
 class GeminiKeysManager:
     def __init__(self, keys: list[str]):
         if len(keys) == 0:
-            raise Exception("Missing Gemini API key.")
+            raise ExceptionInternalError_500("Missing Gemini API key.")
 
         self.keys = keys
         self.current_key_index = 0
@@ -120,9 +123,11 @@ class GoogleAPI(API):
 
                     continue
                 else:
-                    raise Exception(e.message)
+                    raise ExceptionInternalError_500(
+                        e.message if e.message else "Google API error"
+                    )
 
-        raise ExceptionRequest_400(
+        raise ExceptionExternalService_503(
             "Gemini failed after multiple retries and key rotations. Please come back again later."
         )
 
@@ -217,7 +222,7 @@ class OllamaAPI(API):
                         break
                     continue
                 else:
-                    raise Exception(f"Ollama Config error: {str(e)}")
+                    raise ExceptionInternalError_500(f"Ollama Config error: {str(e)}")
 
             except httpx.RequestError:
                 # Network, connection issues
@@ -230,7 +235,7 @@ class OllamaAPI(API):
 
                 continue
 
-        raise ExceptionRequest_400(
+        raise ExceptionExternalService_503(
             "Ollama failed after multiple retries. Please come back again later."
         )
 
@@ -334,7 +339,7 @@ class CloudFlareAPI(API):
 
                     continue
                 else:
-                    raise Exception(
+                    raise ExceptionInternalError_500(
                         f"Cloudflare API error: {e.response.status_code} - {e.response.text}"
                     )
 
@@ -349,7 +354,7 @@ class CloudFlareAPI(API):
 
                 continue
 
-        raise ExceptionRequest_400(
+        raise ExceptionExternalService_503(
             "Cloudflare failed after multiple retries. Please come back again later."
         )
 
@@ -427,7 +432,7 @@ class CloudFlareAPI(API):
 
     @classmethod
     async def generate_content(cls, prompt: str, json_required: bool = False) -> str:
-        raise Exception("You weren't supposed to call this")
+        raise ExceptionInternalError_500("You weren't supposed to call this")
 
 
 class GlobalAPI:
