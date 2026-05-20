@@ -11,7 +11,7 @@ engine = create_async_engine(str(settings.POSTGRES_URL), echo=True)
 
 async def create_database_and_tables():
     async with engine.begin() as conn:
-        # Tạo extension
+        # Creates extension
         q = text("CREATE EXTENSION IF NOT EXISTS vector;")
         await conn.execute(q)
 
@@ -26,3 +26,6 @@ async def dispose():
 async def get_async_session():
     async with AsyncSession(engine) as session:
         yield session
+
+
+SessionDep = Annotated[AsyncSession, Depends(get_async_session)]

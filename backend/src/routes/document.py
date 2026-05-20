@@ -1,15 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, UploadFile, status
+from fastapi import APIRouter, Body, UploadFile, status
 
-from backend.src.core.dependencies import InteractionDep, SessionDep, UserDep
+from backend.src.core.database import SessionDep
+from backend.src.core.dependencies import InteractionDep, UserDep
 from backend.src.exceptions.core import Responses
-from backend.src.models_schema.document import (
-    DocumentInput,
-    DocumentOutput,
-    DocumentUpdate,
-)
-from backend.src.services import document
+from backend.src.models_schema.document import DocumentOutput, DocumentUpdate
+from backend.src.services import document, document_chunk
 
 router = APIRouter()
 
@@ -21,6 +18,7 @@ router = APIRouter()
     "/{interaction_id}/upload",
     response_model=DocumentOutput,
     responses={
+        400: Responses.RESPONSE_400_BAD_REQUEST,
         401: Responses.RESPONSE_401_UNAUTHORIZED,
         404: Responses.RESPONSE_404_NOT_FOUND,
     },
@@ -29,14 +27,12 @@ async def save_document(
     user: UserDep,
     session: SessionDep,
     file: UploadFile,
-    document_input: Annotated[DocumentInput, Query()],
     interaction: InteractionDep,
+    page_offset: Annotated[int, Body()] = 0,
 ):
-    """
-    Embeds and saves a user-uploaded document to the database. Documents belong to an interaction.
-    """
-    document_output = await document.save_document(
-        session, file, interaction, document_input
+    document_output = await document.save_document(session, file, interaction)
+    await document_chunk.save_document_chunks(
+        session, file, document_output, page_offset
     )
 
     await session.refresh(document_output)
@@ -60,9 +56,6 @@ async def read_all_documents(
     session: SessionDep,
     interaction: InteractionDep,
 ):
-    """
-    Reads all documents in an interaction.
-    """
     documents_output = await document.read_all_documents(session, interaction)
     return documents_output
 
@@ -84,9 +77,6 @@ async def update_document(
     document_id: int,
     document_update: DocumentUpdate,
 ):
-    """
-    Updates a document's information. Document's contents cannot be updated.
-    """
     document_output = await document.update_document(
         user, session, document_id, document_update
     )
@@ -109,7 +99,4 @@ async def delete_document(
     session: SessionDep,
     document_id: int,
 ):
-    """
-    Deletes a document from an interaction.
-    """
     await document.delete_document(user, session, document_id)

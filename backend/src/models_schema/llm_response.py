@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class LLMResponseBase(SQLModel):
-    prompt: str
+    content: str
 
 
 # ----- INPUT ----- #
@@ -25,7 +25,6 @@ class LLMResponseInput(LLMResponseBase):
 
 class LLMResponseOutput(LLMResponseBase):
     id: int
-    answer: str
     created_at: datetime
 
 
@@ -40,8 +39,6 @@ class LLMResponse(LLMResponseBase, table=True):
         int | None,
         Field(foreign_key="interaction.id", nullable=False, ondelete="CASCADE"),
     ] = None
-
-    answer: str
 
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True)),

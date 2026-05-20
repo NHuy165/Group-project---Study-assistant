@@ -1,9 +1,7 @@
 from enum import Enum
 
-from fastapi import status
 from pydantic import BaseModel
 
-status.HTTP_500_INTERNAL_SERVER_ERROR
 # ----- SCHEMAS ----- #
 
 
@@ -22,7 +20,6 @@ class ExceptionType(str, Enum):
 
     # 409
     TAKEN_INFO = "TAKEN_INFO"
-    SUBMITTED_EXERCISE = "SUBMITTED_EXERCISE"
 
     # 500
     INTERNAL_ERROR = "INTERNAL_ERROR"
@@ -86,11 +83,6 @@ class Responses:
         "description": "Request validation error.",
     }
 
-    RESPONSE_500_INTERNAL_SERVER_ERROR = {
-        "model": ExceptionResponse,
-        "description": "Internal server error.",
-    }
-
 
 # ----- SPECIFIC ERRORS ----- #
 
@@ -132,15 +124,6 @@ class ExceptionNotFound_404(ExceptionCustom):
 
 
 # === 409 === #
-
-
-class ExceptionSubmittedExercise_409(ExceptionCustom):
-    def __init__(self):
-        super().__init__(
-            status_code=409,
-            exception_type=ExceptionType.SUBMITTED_EXERCISE,
-            message="Cannot submit or answer questions in an already submitted exercise.",
-        )
 
 
 class ExceptionTakenInfo_409(ExceptionCustom):
