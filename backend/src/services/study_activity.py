@@ -1,13 +1,15 @@
+import json
 from datetime import datetime, timezone
 
-from pydantic import TypeAdapter
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlmodel import func, select
+from sqlmodel import col, delete, select
 
 from backend.src.core.ai_api import ExceptionRequest_400, GlobalAPI
 from backend.src.core.config import settings
 from backend.src.exceptions.core import (
+    ExceptionLLMError_502,
     ExceptionNotFound_404,
     ExceptionSubmittedExercise_409,
 )
@@ -16,20 +18,24 @@ from backend.src.models_schema.activity.exercise_item import (
     ExerciseItemUpdate,
 )
 from backend.src.models_schema.activity.exercise_item_content import ExerciseItemContent
-from backend.src.models_schema.activity.json_validation import (
-    FlashcardsJsonSchema,
-    GapFillJsonSchema,
-    MCQJsonSchema,
-    OpenEndedCreationJsonSchema,
-    OpenEndedGradingInitiationJsonSchema,
-    OpenEndedGradingInitiationSchema,
-    OpenEndedGradingResultJsonSchema,
+from backend.src.models_schema.activity.json_schema import (
+    FlashcardsSchema,
+    GapFillSchema,
+    MCQSchema,
+    OpenEndedCreationSchema,
+    OpenEndedGradingResultItemSchema,
     OpenEndedGradingResultSchema,
     StudyActivityValidationBase,
 )
-from backend.src.models_schema.activity.review_item import ReviewItem
+from backend.src.models_schema.activity.review_item import (
+    FlashcardInput,
+    FlashcardUpdate,
+    ReviewItem,
+)
 from backend.src.models_schema.activity.review_item_content import ReviewItemContent
 from backend.src.models_schema.activity.study_activity import (
+    FlashcardsActivityInput,
+    OpenEndedGradingInitiationSchema,
     StudyActivity,
     StudyActivityInput,
     StudyActivityOutputComplete,
@@ -55,11 +61,11 @@ from backend.src.RAG.augmentation.formatters.chunks.core import chunks_formatter
 from backend.src.RAG.augmentation.formatters.conversations.core import (
     conversations_formatter,
 )
-from backend.src.RAG.augmentation.prompts_formatting.instruction_schemas import (
-    flashcards_schema,
-    gap_fill_schema,
-    multiple_choice_questions_schema,
-    open_ended_schema,
+from backend.src.RAG.augmentation.prompts_formatting.study_activity_format_prompts import (
+    MCQ_format_prompt,
+    flashcards_format_prompt,
+    gap_fill_format_prompt,
+    open_ended_format_prompt,
 )
 from backend.src.RAG.retrieval.core import retrieval
 from backend.src.RAG.retrieval.prompt_rewrite import rewrite_prompt
@@ -67,17 +73,17 @@ from backend.src.services.llm_response import read_llm_responses
 
 # ----- CREATE ----- #
 
-schema_map: dict[
-    StudyActivityFormat | StudyActivityFormat,
+format_schema_map: dict[
+    StudyActivityFormat,
     tuple[str, type[StudyActivityValidationBase]],
 ] = {
     StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS: (
-        multiple_choice_questions_schema,
-        MCQJsonSchema,
+        MCQ_format_prompt,
+        MCQSchema,
     ),
-    StudyActivityFormat.FLASHCARDS: (flashcards_schema, FlashcardsJsonSchema),
-    StudyActivityFormat.GAP_FILL: (gap_fill_schema, GapFillJsonSchema),
-    StudyActivityFormat.OPEN_ENDED: (open_ended_schema, OpenEndedCreationJsonSchema),
+    StudyActivityFormat.FLASHCARDS: (flashcards_format_prompt, FlashcardsSchema),
+    StudyActivityFormat.GAP_FILL: (gap_fill_format_prompt, GapFillSchema),
+    StudyActivityFormat.OPEN_ENDED: (open_ended_format_prompt, OpenEndedCreationSchema),
 }
 
 
@@ -86,7 +92,7 @@ async def save_multiple_choice_questions(
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, MCQJsonSchema)
+    assert isinstance(activity_data, MCQSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -102,8 +108,6 @@ async def save_multiple_choice_questions(
             study_activity=study_activity,
         )
         session.add(exercise_item)
-        await session.commit()
-        await session.refresh(exercise_item)
 
         # Saving the contents of the item
         n_contents = len(activity_data.activity_items[i_item].answers)
@@ -118,22 +122,19 @@ async def save_multiple_choice_questions(
             )
             session.add(exercise_item_content)
 
-        await session.commit()
-
 
 async def save_open_ended(
     session: AsyncSession,
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, OpenEndedCreationJsonSchema)
+    assert isinstance(activity_data, OpenEndedCreationSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
         return
 
-    assert study_activity.total_score is not None
-    question_score = study_activity.total_score / n_items
+    question_score = settings.DEFAULT_EXERCISE_TOTAL_SCORE / n_items
 
     for i_item in range(n_items):
         # Saving the item
@@ -144,15 +145,13 @@ async def save_open_ended(
         )
         session.add(exercise_item)
 
-    await session.commit()
-
 
 async def save_gap_fill(
     session: AsyncSession,
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, GapFillJsonSchema)
+    assert isinstance(activity_data, GapFillSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -164,8 +163,6 @@ async def save_gap_fill(
             study_activity=study_activity,
         )
         session.add(review_item)
-        await session.commit()
-        await session.refresh(review_item)
 
         # Saving the contents of the item
         text_content = ReviewItemContent(
@@ -195,15 +192,13 @@ async def save_gap_fill(
             )
             session.add(review_item_content)
 
-        await session.commit()
-
 
 async def save_flashcards(
     session: AsyncSession,
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, FlashcardsJsonSchema)
+    assert isinstance(activity_data, FlashcardsSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -215,8 +210,6 @@ async def save_flashcards(
             study_activity=study_activity,
         )
         session.add(review_item)
-        await session.commit()
-        await session.refresh(review_item)
 
         # Saving the contents of the item
         front_content = ReviewItemContent(
@@ -233,8 +226,6 @@ async def save_flashcards(
         )
         session.add(back_content)
 
-        await session.commit()
-
 
 save_mapper = {
     StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS: save_multiple_choice_questions,
@@ -248,7 +239,7 @@ async def create_study_activity(
     session: AsyncSession,
     interaction: Interaction,
     study_activity_input: StudyActivityInput,
-) -> StudyActivityOutputComplete:
+) -> StudyActivity:
 
     # === Generates content from model using RAG === #
 
@@ -274,7 +265,9 @@ async def create_study_activity(
     formatted_chunks = chunks_formatter(document_chunks)
 
     # Augmentation
-    json_schema, response_validator = schema_map[study_activity_input.activity_format]
+    json_schema, response_validator = format_schema_map[
+        study_activity_input.activity_format
+    ]
 
     params = StudyActivityParams(
         prompt=study_activity_input.prompt,
@@ -287,11 +280,43 @@ async def create_study_activity(
 
     final_prompt = study_activity_augmentation(params)
 
-    # Generation
-    generated_activity = await GlobalAPI.generate_material(final_prompt)
+    i_retry = 0
+    while True:
+        try:
+            # Generation
+            generated_activity = await GlobalAPI.generate_material(final_prompt)
 
-    # Validates content from model
-    validated_activity = response_validator.model_validate_json(generated_activity)
+            # Validates content from model
+            validated_activity = response_validator.model_validate_json(
+                generated_activity
+            )
+
+            if (
+                validated_activity.name == "$!SUBJECT!$"
+                and validated_activity.description == "$!SUBJECT!$"
+            ):
+                raise ExceptionRequest_400(
+                    "User prompt contents doesn't match specified subject type."
+                )
+            if (
+                validated_activity.name == "$!FORMAT!$"
+                and validated_activity.description == "$!FORMAT!$"
+            ):
+                raise ExceptionRequest_400(
+                    "User prompt contents doesn't match specified activity format."
+                )
+
+            break
+        except (ExceptionLLMError_502, ValidationError) as e:
+            i_retry += 1
+            if i_retry >= settings.N_GENERATION_RETRIES:
+                if isinstance(e, ExceptionLLMError_502):
+                    raise
+                else:
+                    raise ExceptionLLMError_502(
+                        f"Incorrect content format. Details: {e}"
+                    )
+            continue
 
     # === Saves response === #
 
@@ -303,19 +328,18 @@ async def create_study_activity(
         name=validated_activity.name,
         description=validated_activity.description,
         interaction=interaction,
-    )
+    )  # type: ignore
 
     session.add(study_activity)
-    await session.commit()
-    await session.refresh(study_activity)
 
     saver = save_mapper[study_activity_input.activity_format]
     await saver(
         session=session, activity_data=validated_activity, study_activity=study_activity
     )
 
-    # === Refetch with all contents === #
+    await session.commit()  # Commits EVERYTHING
 
+    # === Refetch with all contents === #
     await session.refresh(study_activity)
 
     query = select(StudyActivity).where(StudyActivity.id == study_activity.id)
@@ -334,11 +358,98 @@ async def create_study_activity(
 
     study_activity = (await session.execute(query)).scalars().first()
 
-    study_activity_output_complete = StudyActivityOutputComplete.model_validate(
-        study_activity
+    assert study_activity is not None
+
+    return study_activity
+
+
+async def create_flashcards_activity(
+    session: AsyncSession,
+    interaction: Interaction,
+    flashcards_activity_input: FlashcardsActivityInput,
+) -> StudyActivity:
+
+    flashcards_activity = StudyActivity(
+        prompt=None,
+        activity_type=StudyActivityType.REVIEW,
+        activity_format=StudyActivityFormat.FLASHCARDS,
+        subject_type=flashcards_activity_input.subject_type,
+        name=flashcards_activity_input.name,
+        description=flashcards_activity_input.description,
+        interaction=interaction,
+    )  # type: ignore
+
+    session.add(flashcards_activity)
+    await session.commit()
+    await session.refresh(flashcards_activity)
+
+    return flashcards_activity
+
+
+async def add_flashcards(
+    user: User,
+    session: AsyncSession,
+    flashcard_inputs: list[FlashcardInput],
+    flashcards_activity_id: int,
+) -> StudyActivityOutputComplete:
+    query = (
+        select(StudyActivity)
+        .join(Interaction)
+        .where(
+            StudyActivity.id == flashcards_activity_id,
+            StudyActivity.activity_format == StudyActivityFormat.FLASHCARDS,
+            StudyActivity.is_deleted == False,
+            Interaction.user_id == user.id,
+        )
+    )
+    flashcards_activity = (await session.execute(query)).scalars().first()
+
+    if flashcards_activity is None:
+        raise ExceptionNotFound_404(
+            "StudyActivity",
+            {
+                "id": flashcards_activity_id,
+                "user_id": user.id,
+                "activity_format": StudyActivityFormat.FLASHCARDS.value,
+                "is_deleted": False,
+            },
+        )
+
+    for inp in flashcard_inputs:
+        flashcard = ReviewItem(study_activity=flashcards_activity)
+        session.add(flashcard)
+
+        front = ReviewItemContent(
+            content=inp.front,
+            type=ReviewItemContentType.FLASHCARDS_FRONT,
+            review_item=flashcard,
+        )
+        back = ReviewItemContent(
+            content=inp.back,
+            type=ReviewItemContentType.FLASHCARDS_BACK,
+            review_item=flashcard,
+        )
+
+        session.add(front)
+        session.add(back)
+
+    await session.commit()
+    # Refetches
+    query = (
+        select(StudyActivity)
+        .where(StudyActivity.id == flashcards_activity_id)
+        .options(
+            selectinload(
+                StudyActivity.review_items.and_(ReviewItem.is_deleted == False)  # type: ignore
+            ).selectinload(ReviewItem.contents)  # type: ignore
+        )
     )
 
-    return study_activity_output_complete
+    result = (await session.execute(query)).scalars().first()
+
+    flashcards_activity = StudyActivityOutputComplete.model_validate(result)
+
+    return flashcards_activity
 
 
 # ----- READ ----- #
@@ -348,7 +459,10 @@ async def read_all_study_activity(
     session: AsyncSession,
     interaction: Interaction,
 ) -> list[StudyActivity]:
-    query = select(StudyActivity).where(StudyActivity.interaction_id == interaction.id)
+    query = select(StudyActivity).where(
+        StudyActivity.interaction_id == interaction.id,
+        StudyActivity.is_deleted == False,
+    )
     study_activities = (await session.execute(query)).scalars().all()
 
     return list(study_activities)
@@ -358,15 +472,23 @@ async def read_study_activity_complete(
     user: User,
     session: AsyncSession,
     study_activity_id: int,
-) -> StudyActivityOutputComplete:
+) -> StudyActivity:
 
     query = (
         select(StudyActivity)
         .join(Interaction)
-        .where(StudyActivity.id == study_activity_id, Interaction.user_id == user.id)
+        .where(
+            StudyActivity.id == study_activity_id,
+            Interaction.user_id == user.id,
+            StudyActivity.is_deleted == False,
+        )
         .options(
-            selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents),  # type: ignore
-            selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
+            selectinload(
+                StudyActivity.review_items.and_(ReviewItem.is_deleted == False)  # type: ignore
+            ).selectinload(ReviewItem.contents),  # type: ignore
+            selectinload(
+                StudyActivity.exercise_items.and_(ExerciseItem.is_deleted == False)  # type: ignore
+            ).selectinload(
                 ExerciseItem.contents  # type: ignore
             ),
         )
@@ -379,19 +501,11 @@ async def read_study_activity_complete(
             {
                 "id": study_activity_id,
                 "interaction.user_id": user.id,
+                "is_deleted": False,
             },
         )
 
-    if study_activity.is_submitted:
-        study_activity_output_complete = StudyActivityOutputComplete.model_validate(
-            study_activity, context={"show_answers": True}
-        )
-    else:
-        study_activity_output_complete = StudyActivityOutputComplete.model_validate(
-            study_activity
-        )
-
-    return study_activity_output_complete
+    return study_activity
 
 
 # ----- UPDATE ----- #
@@ -406,7 +520,11 @@ async def update_study_activity(
     query = (
         select(StudyActivity)
         .join(Interaction)
-        .where(StudyActivity.id == study_activity_id, Interaction.user_id == user.id)
+        .where(
+            StudyActivity.id == study_activity_id,
+            Interaction.user_id == user.id,
+            StudyActivity.is_deleted == False,
+        )
     )
 
     study_activity = (await session.execute(query)).scalars().first()
@@ -417,6 +535,7 @@ async def update_study_activity(
             {
                 "id": study_activity_id,
                 "interaction.user_id": user.id,
+                "is_deleted": False,
             },
         )
 
@@ -431,6 +550,50 @@ async def update_study_activity(
     return study_activity
 
 
+async def update_flashcard(
+    user: User,
+    session: AsyncSession,
+    flashcard_id: int,
+    flashcard_update: FlashcardUpdate,
+) -> ReviewItem:
+    query = (
+        select(ReviewItem)
+        .join(StudyActivity)
+        .join(Interaction)
+        .where(
+            ReviewItem.id == flashcard_id,
+            ReviewItem.is_deleted == False,
+            StudyActivity.activity_format == StudyActivityFormat.FLASHCARDS,
+            Interaction.user_id == user.id,
+        )
+        .options(selectinload(ReviewItem.contents))  # type: ignore
+    )
+
+    flashcard = (await session.execute(query)).scalars().first()
+
+    if flashcard is None:
+        raise ExceptionNotFound_404(
+            "ReviewItem",
+            {
+                "id": flashcard_id,
+                "user_id": user.id,
+                "activity_format": StudyActivityFormat.FLASHCARDS.value,
+                "is_deleted": False,
+            },
+        )
+
+    for face in flashcard.contents:
+        if face.type == ReviewItemContentType.FLASHCARDS_BACK:
+            face.content = flashcard_update.back
+        elif face.type == ReviewItemContentType.FLASHCARDS_FRONT:
+            face.content = flashcard_update.front
+
+    await session.commit()
+    await session.refresh(flashcard, attribute_names=["contents"])
+
+    return flashcard
+
+
 async def answer_exercise_item(
     user: User,
     session: AsyncSession,
@@ -441,7 +604,11 @@ async def answer_exercise_item(
         select(ExerciseItem, StudyActivity)
         .join(StudyActivity)
         .join(Interaction)
-        .where(ExerciseItem.id == exercise_item_id, Interaction.user_id == user.id)
+        .where(
+            ExerciseItem.id == exercise_item_id,
+            Interaction.user_id == user.id,
+            ExerciseItem.is_deleted == False,
+        )
         .options(selectinload(ExerciseItem.contents))  # type: ignore
     )
 
@@ -452,7 +619,8 @@ async def answer_exercise_item(
             "ExerciseItem",
             {
                 "id": exercise_item_id,
-                "interaction.user_id": user.id,
+                "user_id": user.id,
+                "is_deleted": False,
             },
         )
 
@@ -492,7 +660,13 @@ async def answer_exercise_item(
 
     session.add(exercise_item)
     await session.commit()
-    await session.refresh(exercise_item)
+
+    query = (
+        select(ExerciseItem)
+        .where(ExerciseItem.id == exercise_item_id)
+        .options(selectinload(ExerciseItem.contents))  # type: ignore
+    )
+    exercise_item = (await session.execute(query)).scalar_one()
 
     return exercise_item
 
@@ -508,12 +682,15 @@ async def submit_exercise_activity(
         select(StudyActivity, Interaction)
         .join(Interaction)
         .where(
-            StudyActivity.id == study_activity_id,
             Interaction.user_id == user.id,
+            StudyActivity.id == study_activity_id,
             StudyActivity.activity_type == StudyActivityType.EXERCISE,
+            StudyActivity.is_deleted == False,
         )
         .options(
-            selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
+            selectinload(
+                StudyActivity.exercise_items.and_(ExerciseItem.is_deleted == False)  # type: ignore
+            ).selectinload(
                 ExerciseItem.contents  # type: ignore
             ),
         )
@@ -526,8 +703,9 @@ async def submit_exercise_activity(
             "StudyActivity",
             {
                 "id": study_activity_id,
-                "interaction.user_id": user.id,
+                "user_id": user.id,
                 "activity_type": StudyActivityType.EXERCISE.value,
+                "is_deleted": False,
             },
         )
 
@@ -542,7 +720,7 @@ async def submit_exercise_activity(
     # Grades if not yet graded
     if study_activity.activity_format == StudyActivityFormat.OPEN_ENDED:
         # === Preparing the json input === #
-        questions = OpenEndedGradingInitiationJsonSchema.model_validate(
+        questions = OpenEndedGradingInitiationSchema.model_validate(
             {
                 "questions_answers": [
                     item.model_dump() for item in study_activity.exercise_items
@@ -563,48 +741,53 @@ async def submit_exercise_activity(
 
         params = AnswersGradingParams(
             prompt=questions.model_dump_json(),
-            creation_prompt=study_activity.prompt,
+            creation_prompt=study_activity.prompt,  # type: ignore
             context_document=formatted_chunks,
         )
 
         final_prompt = answers_grading_augmentation(params)
 
         # === Grading === #
-        graded_results = await GlobalAPI.grade_answers(final_prompt)
+        i_retry = 0
 
-        validated_graded_results = OpenEndedGradingResultJsonSchema.model_validate_json(
-            graded_results
-        )
+        while True:
+            try:
+                grading_results = await GlobalAPI.grade_answers(final_prompt)
+                grading_results_python: dict = json.loads(grading_results)
+                grading_results_python.update({"grading_input": questions.model_dump()})
+
+                validated_grading_results = OpenEndedGradingResultSchema.model_validate(
+                    grading_results_python
+                )
+                break
+
+            except (ExceptionLLMError_502, ValidationError) as e:
+                i_retry += 1
+                if i_retry >= settings.N_GENERATION_RETRIES:
+                    if isinstance(e, ExceptionLLMError_502):
+                        raise
+                    else:
+                        raise ExceptionLLMError_502(
+                            f"Incorrect content format. Details: {e}"
+                        )
+                continue
 
         # === Updates the results === #
-        results_map: dict[int, OpenEndedGradingResultSchema] = {
-            res.id: res for res in validated_graded_results.grading_results
+        results_map: dict[int, OpenEndedGradingResultItemSchema] = {
+            res.id: res for res in validated_grading_results.grading_results
         }
 
         for exercise_item in study_activity.exercise_items:
             assert exercise_item.id is not None
-            graded_result = results_map.get(exercise_item.id)
-
-            if graded_result is None:
-                raise Exception("Something went wrong with the model exercise grading.")
+            graded_result = results_map[exercise_item.id]
 
             exercise_item.sqlmodel_update(graded_result.model_dump(exclude={"id"}))
             session.add(exercise_item)
 
         await session.commit()
 
-    # Updates total score
-    query_total_score = (
-        select(func.sum(ExerciseItem.user_score))
-        .select_from(ExerciseItem)
-        .where(ExerciseItem.study_activity_id == study_activity_id)
-    )
-    total_score = (await session.execute(query_total_score)).scalars().first()
-
-    assert total_score is not None
-
+    # Updates
     await session.refresh(study_activity)
-    study_activity.total_score = total_score
     study_activity.is_submitted = True
     study_activity.submitted_at = datetime.now(timezone.utc)
     session.add(study_activity)
@@ -615,8 +798,12 @@ async def submit_exercise_activity(
         select(StudyActivity)
         .where(StudyActivity.id == study_activity_id)
         .options(
-            selectinload(StudyActivity.review_items).selectinload(ReviewItem.contents),  # type: ignore
-            selectinload(StudyActivity.exercise_items).selectinload(  # type: ignore
+            selectinload(
+                StudyActivity.review_items.and_(ReviewItem.is_deleted == False)  # type: ignore
+            ).selectinload(ReviewItem.contents),  # type: ignore
+            selectinload(
+                StudyActivity.exercise_items.and_(ExerciseItem.is_deleted == False)  # type: ignore
+            ).selectinload(
                 ExerciseItem.contents  # type: ignore
             ),
         )
@@ -633,6 +820,41 @@ async def submit_exercise_activity(
 # ----- DELETE ----- #
 
 
+async def delete_flashcard(
+    user: User,
+    session: AsyncSession,
+    flashcard_id: int,
+) -> None:
+    query = (
+        select(ReviewItem)
+        .join(StudyActivity)
+        .join(Interaction)
+        .where(
+            ReviewItem.id == flashcard_id,
+            ReviewItem.is_deleted == False,
+            StudyActivity.activity_format == StudyActivityFormat.FLASHCARDS,
+            Interaction.user_id == user.id,
+        )
+    )
+
+    flashcard = (await session.execute(query)).scalars().first()
+
+    if flashcard is None:
+        raise ExceptionNotFound_404(
+            "ReviewItem",
+            {
+                "id": flashcard_id,
+                "user_id": user.id,
+                "activity_format": StudyActivityFormat.FLASHCARDS.value,
+                "is_deleted": False,
+            },
+        )
+
+    flashcard.is_deleted = True
+
+    await session.commit()
+
+
 async def delete_study_activity(
     user: User,
     session: AsyncSession,
@@ -641,7 +863,19 @@ async def delete_study_activity(
     query = (
         select(StudyActivity)
         .join(Interaction)
-        .where(StudyActivity.id == study_activity_id, Interaction.user_id == user.id)
+        .where(
+            StudyActivity.id == study_activity_id,
+            Interaction.user_id == user.id,
+            StudyActivity.is_deleted == False,
+        )
+        .options(
+            selectinload(
+                StudyActivity.review_items.and_(ReviewItem.is_deleted == False)  # type: ignore
+            ),
+            selectinload(
+                StudyActivity.exercise_items.and_(ExerciseItem.is_deleted == False)  # type: ignore
+            ),
+        )
     )
 
     study_activity = (await session.execute(query)).scalars().first()
@@ -652,8 +886,30 @@ async def delete_study_activity(
             {
                 "id": study_activity_id,
                 "interaction.user_id": user.id,
+                "is_deleted": False,
             },
         )
 
-    await session.delete(study_activity)
+    for item in study_activity.items:
+        item.is_deleted = True
+
+    subquery_review = select(ReviewItem.id).where(
+        ReviewItem.study_activity_id == study_activity_id
+    )
+    subquery_exercise = select(ExerciseItem.id).where(
+        ExerciseItem.study_activity_id == study_activity_id
+    )
+
+    query_delete_review_contents = delete(ReviewItemContent).where(
+        col(ReviewItemContent.review_item_id).in_(subquery_review)
+    )
+    query_delete_exercise_contents = delete(ExerciseItemContent).where(
+        col(ExerciseItemContent.exercise_item_id).in_(subquery_exercise)
+    )
+
+    await session.execute(query_delete_review_contents)
+    await session.execute(query_delete_exercise_contents)
+
+    study_activity.is_deleted = True
+
     await session.commit()

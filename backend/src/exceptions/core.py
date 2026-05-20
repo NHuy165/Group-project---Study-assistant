@@ -1,5 +1,6 @@
 from enum import Enum
 
+from fastapi import status
 from pydantic import BaseModel
 
 # ----- SCHEMAS ----- #
@@ -7,7 +8,8 @@ from pydantic import BaseModel
 
 class ExceptionType(str, Enum):
     # 400
-    REQUEST = "REQUEST"
+    BAD_REQUEST = "BAD_REQUEST"
+    REQUEST_VALIDATION = "REQUEST_VALIDATION"
 
     # 401
     AUTHENTICATION = "AUTHENTICATION"
@@ -20,9 +22,16 @@ class ExceptionType(str, Enum):
 
     # 409
     TAKEN_INFO = "TAKEN_INFO"
+    SUBMITTED_EXERCISE = "SUBMITTED_EXERCISE"
 
     # 500
     INTERNAL_ERROR = "INTERNAL_ERROR"
+
+    # 502
+    LLM_ERROR = "LLM_ERROR"
+
+    # 503
+    EXTERNAL_SERVICE = "EXTERNAL_SERVICE"
 
 
 class ExceptionCustom(Exception):
@@ -83,6 +92,21 @@ class Responses:
         "description": "Request validation error.",
     }
 
+    RESPONSE_500_INTERNAL_SERVER_ERROR = {
+        "model": ExceptionResponse,
+        "description": "Internal server error.",
+    }
+
+    RESPONSE_502_BAD_GATEWAY = {
+        "model": ExceptionResponse,
+        "description": "External LLM failed to fulfill a task.",
+    }
+
+    RESPONSE_503_SERVICE_UNAVAILABLE = {
+        "model": ExceptionResponse,
+        "description": "External service unavailable.",
+    }
+
 
 # ----- SPECIFIC ERRORS ----- #
 
@@ -93,8 +117,19 @@ class ExceptionRequest_400(ExceptionCustom):
     def __init__(self, custom_message: str | None = None):
         super().__init__(
             status_code=400,
-            exception_type=ExceptionType.REQUEST,
+            exception_type=ExceptionType.BAD_REQUEST,
             message=custom_message if custom_message is not None else "Request error.",
+        )
+
+
+class ExceptionRequestValidation_400(ExceptionCustom):
+    def __init__(self, custom_message: str | None = None):
+        super().__init__(
+            status_code=400,
+            exception_type=ExceptionType.REQUEST_VALIDATION,
+            message=custom_message
+            if custom_message is not None
+            else "Request validation error.",
         )
 
 
@@ -126,10 +161,55 @@ class ExceptionNotFound_404(ExceptionCustom):
 # === 409 === #
 
 
+class ExceptionSubmittedExercise_409(ExceptionCustom):
+    def __init__(self):
+        super().__init__(
+            status_code=409,
+            exception_type=ExceptionType.SUBMITTED_EXERCISE,
+            message="Cannot submit or answer questions in an already submitted exercise.",
+        )
+
+
 class ExceptionTakenInfo_409(ExceptionCustom):
     def __init__(self, obj: str, info: str):
         super().__init__(
             status_code=409,
             exception_type=ExceptionType.TAKEN_INFO,
             message=f"Another {obj} with this {info} already exists.",
+        )
+
+
+# === 500 === #
+
+
+class ExceptionInternalError_500(ExceptionCustom):
+    def __init__(self, custom_message: str):
+        super().__init__(
+            status_code=500,
+            exception_type=ExceptionType.INTERNAL_ERROR,
+            message=custom_message,
+        )
+
+
+# === 502 === #
+
+
+class ExceptionLLMError_502(ExceptionCustom):
+    def __init__(self, custom_message: str):
+        super().__init__(
+            status_code=502,
+            exception_type=ExceptionType.LLM_ERROR,
+            message=custom_message,
+        )
+
+
+# === 503 === #
+
+
+class ExceptionExternalService_503(ExceptionCustom):
+    def __init__(self, custom_message: str):
+        super().__init__(
+            status_code=503,
+            exception_type=ExceptionType.EXTERNAL_SERVICE,
+            message=custom_message,
         )

@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BeforeValidator
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
-from backend.src.models_schema.utils import beva_forbid_none
+from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
+    from backend.src.models_schema.activity.study_activity import StudyActivity
     from backend.src.models_schema.document import Document
     from backend.src.models_schema.llm_response import LLMResponse
     from backend.src.models_schema.note import Note
@@ -40,7 +41,7 @@ class InteractionOutput(InteractionBase):
 
 class InteractionUpdate(SQLModel):
     name: Annotated[str | None, BeforeValidator(beva_forbid_none)] = (
-        None  # User cannot explicitly enter a None
+        None  # User không được enter giá trị None
     )
     description: str = ""
 
@@ -52,10 +53,15 @@ class Interaction(InteractionBase, table=True):
     id: Annotated[int | None, Field(primary_key=True, nullable=False)] = None
     user_id: Annotated[int | None, Field(foreign_key="user.id", nullable=False)] = None
 
-    created_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True)),
-        default_factory=lambda: datetime.now(timezone.utc),
-    )
+    created_at: Annotated[
+        datetime,
+        Field(
+            sa_column=Column(DateTime(timezone=True)),
+            default_factory=lambda: datetime.now(timezone.utc),
+        ),
+    ]
+
+    is_deleted: bool = False
 
     user: "User" = Relationship(back_populates="interactions")
     documents: list["Document"] = Relationship(
@@ -70,3 +76,6 @@ class Interaction(InteractionBase, table=True):
         back_populates="interaction",
         cascade_delete=True,
     )
+    study_activities: list["StudyActivity"] = Relationship(
+        back_populates="interaction",
+    )  # Uses soft delete

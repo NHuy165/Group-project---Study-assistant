@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Annotated
 
-from fastapi import UploadFile
 from pydantic import BeforeValidator
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
-from backend.src.models_schema.utils import beva_forbid_none
+from backend.src.models_schema.miscellaneous.enums import DocumentType
+from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
     from backend.src.models_schema.document_chunk import DocumentChunk
@@ -16,9 +16,14 @@ if TYPE_CHECKING:
 
 class DocumentBase(SQLModel):
     name: str
+    page_starts_at: int = 1
 
 
 # ----- INPUT ----- #
+
+
+class DocumentInput(DocumentBase):
+    name: Annotated[str | None, BeforeValidator(beva_forbid_none)] = None
 
 
 # ----- OUTPUT ----- #
@@ -27,13 +32,15 @@ class DocumentBase(SQLModel):
 class DocumentOutput(DocumentBase):
     id: int
     created_at: datetime
+    type: DocumentType
 
 
 # ----- UPDATE ----- #
 
 
-class DocumentUpdate(SQLModel):
-    name: Annotated[str, Field(min_length=1)]
+class DocumentUpdate(DocumentBase):
+    name: Annotated[str | None, BeforeValidator(beva_forbid_none)] = None
+    page_starts_at: Annotated[int | None, BeforeValidator(beva_forbid_none)] = None
 
 
 # ----- TABLE MODEL ----- #
@@ -46,10 +53,14 @@ class Document(DocumentBase, table=True):
         Field(foreign_key="interaction.id", nullable=False, ondelete="CASCADE"),
     ] = None
 
-    created_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True)),
-        default_factory=lambda: datetime.now(timezone.utc),
-    )
+    created_at: Annotated[
+        datetime,
+        Field(
+            sa_column=Column(DateTime(timezone=True)),
+            default_factory=lambda: datetime.now(timezone.utc),
+        ),
+    ]
+    type: DocumentType
 
     interaction: "Interaction" = Relationship(back_populates="documents")
     document_chunks: list["DocumentChunk"] = Relationship(

@@ -2,19 +2,29 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import (
+    CORSMiddleware,  # Tuấn sửa, thêm CORS do khác địa port giữa frontend và backend
+)
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from fastapi.middleware.cors import CORSMiddleware # Tuấn sửa, thêm CORS do khác địa port giữa frontend và backend
-
 from backend.src.core.database import create_database_and_tables, dispose
-from backend.src.exceptions.core import ExceptionCustom
+from backend.src.exceptions.core import ExceptionCustom, Responses
 from backend.src.exceptions.handlers import (
     custom_exceptions_handler,
     generic_exceptions_handler,
     starlette_exceptions_handlers,
     validation_exceptions_handler,
 )
-from backend.src.routes import auth, document, interaction, llm_response, note, user
+from backend.src.routes import (
+    auth,
+    document,
+    interaction,
+    llm_response,
+    note,
+    study_activity,
+    study_progress,
+    user,
+)
 
 # ----- Setting up app ----- #
 
@@ -28,7 +38,13 @@ async def lifespan(app: FastAPI):
     await dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    responses={
+        400: Responses.RESPONSE_400_BAD_REQUEST,
+        500: Responses.RESPONSE_500_INTERNAL_SERVER_ERROR,
+    },
+)
 
 
 # Đoạn này là để test xem backend đã chạy được chưa, có thể xóa sau khi đã xác nhận backend hoạt động bình thường
@@ -91,4 +107,16 @@ app.include_router(
     user.router,
     prefix="/user",
     tags=["user"],
+)
+
+app.include_router(
+    study_activity.router,
+    prefix="/study-activity",
+    tags=["study-activity"],
+)
+
+app.include_router(
+    study_progress.router,
+    prefix="/study-progress",
+    tags=["study-progress"],
 )

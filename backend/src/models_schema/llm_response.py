@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class LLMResponseBase(SQLModel):
-    content: str
+    prompt: str
 
 
 # ----- INPUT ----- #
@@ -25,6 +25,7 @@ class LLMResponseInput(LLMResponseBase):
 
 class LLMResponseOutput(LLMResponseBase):
     id: int
+    answer: str
     created_at: datetime
 
 
@@ -40,10 +41,15 @@ class LLMResponse(LLMResponseBase, table=True):
         Field(foreign_key="interaction.id", nullable=False, ondelete="CASCADE"),
     ] = None
 
-    created_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True)),
-        default_factory=lambda: datetime.now(timezone.utc),
-    )
+    answer: str
+
+    created_at: Annotated[
+        datetime,
+        Field(
+            sa_column=Column(DateTime(timezone=True)),
+            default_factory=lambda: datetime.now(timezone.utc),
+        ),
+    ]
 
     # type: flashcard, quiz...
 

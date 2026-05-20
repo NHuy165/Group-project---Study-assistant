@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BeforeValidator
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
-from backend.src.models_schema.utils import beva_forbid_none
+from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
     from .interaction import Interaction
@@ -54,9 +54,12 @@ class Note(NoteBase, table=True):
         Field(foreign_key="interaction.id", nullable=False, ondelete="CASCADE"),
     ] = None
 
-    created_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True)),
-        default_factory=lambda: datetime.now(timezone.utc),
-    )
+    created_at: Annotated[
+        datetime,
+        Field(
+            sa_column=Column(DateTime(timezone=True)),
+            default_factory=lambda: datetime.now(timezone.utc),
+        ),
+    ]
 
     interaction: "Interaction" = Relationship(back_populates="notes")
