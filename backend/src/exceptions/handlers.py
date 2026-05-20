@@ -31,7 +31,7 @@ async def starlette_exceptions_handlers(request: Request, exc: StarletteHTTPExce
 
     # Just to be safe. Realistically never gonna happen.
     else:
-        exception_type = ExceptionType.REQUEST
+        exception_type = ExceptionType.BAD_REQUEST
 
     exception_response = ExceptionResponse(
         exception_type=exception_type, message=str(exc.detail)
@@ -46,8 +46,8 @@ async def starlette_exceptions_handlers(request: Request, exc: StarletteHTTPExce
 
 async def validation_exceptions_handler(request: Request, exc: RequestValidationError):
     exception_response = ExceptionResponse(
-        exception_type=ExceptionType.REQUEST,
-        message=str(exc.errors()),
+        exception_type=ExceptionType.REQUEST_VALIDATION,
+        message="Request validation error.",
     )
 
     return JSONResponse(status_code=400, content=exception_response.model_dump())
