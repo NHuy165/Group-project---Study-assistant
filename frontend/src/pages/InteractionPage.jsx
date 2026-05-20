@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom"; 
+import { useParams } from "react-router-dom";
 
 // ==========================================
 // 1. IMPORTS HOOKS
 // ==========================================
 import { useInteractions } from "../features/interactions/hooks/useInteractions";
-import { useDocuments } from "../features/documents/hooks/useDocuments"; 
-import { useChat } from "../features/chat/hooks/useChat"; 
+import { useDocuments } from "../features/documents/hooks/useDocuments";
+import { useChat } from "../features/chat/hooks/useChat";
 import { useStudyActivities } from "../features/open_ended/hooks/useStudyActivities";
 import { useInteractionTools } from "../features/interactions/hooks/useInteractionTools";
 
@@ -21,12 +21,16 @@ import { AddSourceModal } from "../features/documents/components/AddSourceModal"
 import { OpenEndedContainer } from "../features/open_ended/components/OpenEndedContainer";
 import { ToolSetupArea } from "../features/interactions/components/ToolSetupArea";
 
-import { TTRFeature } from "../features/ttr/index"; 
-import { TTRSetupModal } from "../features/ttr/components/TTRSetupModal"; 
-import { createTTRActivity, fetchActivitiesByInteraction } from "../features/ttr/api/ttrApi";
+import { TTRFeature } from "../features/ttr/index";
+import { TTRSetupModal } from "../features/ttr/components/TTRSetupModal";
+import {
+  createTTRActivity,
+  fetchActivitiesByInteraction,
+} from "../features/ttr/api/ttrApi";
+import { QuizPanel } from "../features/quiz/components";
 
 export const InteractionPage = () => {
-  const { interactionId } = useParams(); 
+  const { interactionId } = useParams();
 
   // ==========================================
   // STATE QUẢN LÝ GIAO DIỆN
@@ -37,34 +41,67 @@ export const InteractionPage = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
 
   // State Tap To Review (TTR)
-  const [isSetupOpen, setIsSetupOpen] = useState(false); 
-  const [isTTROpen, setIsTTROpen] = useState(false);     
-  const [currentActivityId, setCurrentActivityId] = useState(null); 
-  const [currentIsNew, setCurrentIsNew] = useState(false); 
-  const [ttrTasks, setTtrTasks] = useState([]); 
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [isTTROpen, setIsTTROpen] = useState(false);
+  const [currentActivityId, setCurrentActivityId] = useState(null);
+  const [currentIsNew, setCurrentIsNew] = useState(false);
+  const [ttrTasks, setTtrTasks] = useState([]);
 
   // State Open Ended
   const [selectedActivityId, setSelectedActivityId] = useState(null);
+  // State Quiz
+  const [currentQuizId, setCurrentQuizId] = useState(null);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
 
   // ==========================================
   // GỌI CÁC CUSTOM HOOKS
   // ==========================================
   const { handleNewChatClick } = useInteractions();
-  
-  const { 
-    documents, selectedDocIds, uploadMultipleFiles, updateDocument, 
-    documentName, setDocumentName, editingID, handleStartEdit, 
-    handleDocCheck, deleteDocument, isLoading: isDocsLoading 
-  } = useDocuments(interactionId);
-  
-  const { chatlog, promptText, setPromptText, askLLM, isLoading: isChatLoading } = useChat(interactionId);
 
-  const { activities, fetchActivities, handleDeleteActivity } = useStudyActivities(interactionId);
-  
-  const { 
-    handleToolClick, activeToolSetup, setActiveToolSetup, handleConfirmCreate, 
-    toolLoadingStates, isCreatingNewActivity 
-  } = useInteractionTools(interactionId, fetchActivities);
+  const {
+    documents,
+    selectedDocIds,
+    uploadMultipleFiles,
+    updateDocument,
+    documentName,
+    setDocumentName,
+    editingID,
+    handleStartEdit,
+    handleDocCheck,
+    deleteDocument,
+    isLoading: isDocsLoading,
+  } = useDocuments(interactionId);
+
+  const {
+    chatlog,
+    promptText,
+    setPromptText,
+    askLLM,
+    isLoading: isChatLoading,
+  } = useChat(interactionId);
+
+  const { activities, fetchActivities, handleDeleteActivity } =
+    useStudyActivities(interactionId);
+
+  // wrapper để nhận callback từ useInteractionTools
+  const handleActivityCreated = (type, id) => {
+    // Quiz: chỉ refresh danh sách để hiển thị trong Học Liệu, không auto-open
+    if (type === "quiz" && id) {
+      fetchActivities();
+      return;
+    }
+    // Mặc định: refresh activities (open-ended list)
+    fetchActivities();
+  };
+
+  const {
+    handleToolClick,
+    activeToolSetup,
+    setActiveToolSetup,
+    handleConfirmCreate,
+    toolLoadingStates,
+    isCreatingNewActivity,
+  } = useInteractionTools(interactionId, handleActivityCreated);
 
   // ==========================================
   // LOGIC TTR CHẠY NGẦM
@@ -75,11 +112,14 @@ export const InteractionPage = () => {
         const data = await fetchActivitiesByInteraction(interactionId);
         if (data && data.length > 0) {
           const sortedData = data.sort((a, b) => b.id - a.id);
-          const formatted = sortedData.map(item => ({
+          const formatted = sortedData.map((item) => ({
             id: item.id,
-            name: item.name.length > 25 ? item.name.substring(0, 25) + "..." : item.name,
-            status: 'ready',
-            isNew: false 
+            name:
+              item.name.length > 25
+                ? item.name.substring(0, 25) + "..."
+                : item.name,
+            status: "ready",
+            isNew: false,
           }));
           setTtrTasks(formatted);
         }
@@ -92,92 +132,195 @@ export const InteractionPage = () => {
 
   const handleCreateTTRBackground = ({ prompt: finalPrompt }) => {
     const tempId = Date.now();
-    const newTask = { id: tempId, name: "Đang AI tạo bài...", status: 'loading' };
-    setTtrTasks(prev => [newTask, ...prev]); 
+    const newTask = {
+      id: tempId,
+      name: "Đang AI tạo bài...",
+      status: "loading",
+    };
+    setTtrTasks((prev) => [newTask, ...prev]);
     setIsSetupOpen(false);
 
-    const promptName = finalPrompt.split("Nội dung/Chủ đề:")[1]?.substring(0, 25) || "Bài tập AI";
+    const promptName =
+      finalPrompt.split("Nội dung/Chủ đề:")[1]?.substring(0, 25) ||
+      "Bài tập AI";
 
-    createTTRActivity(interactionId, { name: promptName + "...", description: "Tự động tạo", prompt: finalPrompt })
-      .then(newActivity => {
-        setTtrTasks(prev => prev.map(task => 
-          task.id === tempId ? { ...task, id: newActivity.id, name: newActivity.name, status: 'ready', isNew: true } : task
-        ));
+    createTTRActivity(interactionId, {
+      name: promptName + "...",
+      description: "Tự động tạo",
+      prompt: finalPrompt,
+    })
+      .then((newActivity) => {
+        setTtrTasks((prev) =>
+          prev.map((task) =>
+            task.id === tempId
+              ? {
+                  ...task,
+                  id: newActivity.id,
+                  name: newActivity.name,
+                  status: "ready",
+                  isNew: true,
+                }
+              : task,
+          ),
+        );
       })
-      .catch(error => {
-        setTtrTasks(prev => prev.filter(task => task.id !== tempId));
+      .catch((error) => {
+        setTtrTasks((prev) => prev.filter((task) => task.id !== tempId));
       });
+  };
+
+  // ==========================================
+  // LỌC HỌC LIỆU (Quiz vs Tự luận)
+  // ==========================================
+  const normalizeValue = (value) =>
+    String(value ?? "")
+      .trim()
+      .toUpperCase();
+  const getActivityFormat = (act) =>
+    normalizeValue(act?.activity_format ?? act?.activityFormat);
+  const getActivityType = (act) =>
+    normalizeValue(act?.activity_type ?? act?.activityType);
+  const openEndedActivities = (activities || [])
+    .filter(
+      (act) =>
+        getActivityType(act) === "EXERCISE" &&
+        getActivityFormat(act) === "OPEN_ENDED",
+    )
+    .sort((a, b) => b.id - a.id);
+  const quizActivities = (activities || [])
+    .filter(
+      (act) =>
+        getActivityType(act) === "EXERCISE" &&
+        getActivityFormat(act) === "MULTIPLE_CHOICE_QUESTIONS",
+    )
+    .sort((a, b) => b.id - a.id);
+
+  const handleQuizClick = (id) => {
+    setSelectedActivityId(null);
+    setCurrentQuizId(id);
+    setIsQuizOpen(true);
+  };
+
+  const handleOpenEndedClick = (id) => {
+    setIsQuizOpen(false);
+    setCurrentQuizId(null);
+    setSelectedActivityId(id);
   };
 
   // ==========================================
   // RENDER GIAO DIỆN
   // ==========================================
-  return ( 
-    <InteractionLayout 
+  return (
+    <InteractionLayout
       onNewChat={handleNewChatClick}
       modals={
         <>
-          <AddSourceModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAdd={uploadMultipleFiles} />
-          <TTRSetupModal isOpen={isSetupOpen} onClose={() => setIsSetupOpen(false)} onSubmit={handleCreateTTRBackground} />
-          
+          <AddSourceModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onAdd={uploadMultipleFiles}
+          />
+          <TTRSetupModal
+            isOpen={isSetupOpen}
+            onClose={() => setIsSetupOpen(false)}
+            onSubmit={handleCreateTTRBackground}
+          />
+
           {/* LỚP PHỦ GAME TTR */}
           {isTTROpen && currentActivityId && (
-            <TTRFeature activityId={currentActivityId} isNew={currentIsNew} onClose={() => { setIsTTROpen(false); setCurrentActivityId(null); }} />
+            <TTRFeature
+              activityId={currentActivityId}
+              isNew={currentIsNew}
+              onClose={() => {
+                setIsTTROpen(false);
+                setCurrentActivityId(null);
+              }}
+            />
+          )}
+
+          {/* Quiz Panel */}
+          {isQuizOpen && currentQuizId && (
+            <QuizPanel
+              interactionId={interactionId}
+              quizId={currentQuizId}
+              onClose={() => {
+                setIsQuizOpen(false);
+                setCurrentQuizId(null);
+              }}
+            />
           )}
         </>
       }
     >
       {/* 1. CỘT TRÁI */}
-      <SourceSidebar 
-        documents={documents} isLoading={isDocsLoading} selectedDocIds={selectedDocIds}
-        onAddClick={() => setIsModalOpen(true)} editingId={editingID} setEditingId={handleStartEdit}
-        tempName={documentName} setTempName={setDocumentName} onRename={updateDocument} 
-        onDelete={deleteDocument} onDocCheck={handleDocCheck}
-        onPreview={(doc) => { setSelectedDoc(doc); setIsPreviewOpen(true); }}
+      <SourceSidebar
+        documents={documents}
+        isLoading={isDocsLoading}
+        selectedDocIds={selectedDocIds}
+        onAddClick={() => setIsModalOpen(true)}
+        editingId={editingID}
+        setEditingId={handleStartEdit}
+        tempName={documentName}
+        setTempName={setDocumentName}
+        onRename={updateDocument}
+        onDelete={deleteDocument}
+        onDocCheck={handleDocCheck}
+        onPreview={(doc) => {
+          setSelectedDoc(doc);
+          setIsPreviewOpen(true);
+        }}
       />
 
       {/* 2. CỘT GIỮA */}
       {activeToolSetup ? (
-        <ToolSetupArea 
+        <ToolSetupArea
           toolId={activeToolSetup}
           isLoading={isCreatingNewActivity}
           onConfirm={handleConfirmCreate}
           onCancel={() => setActiveToolSetup(null)}
         />
       ) : (
-        <ChatArea 
-          messages={chatlog} isLoading={isChatLoading} promptText={promptText}
-          setPromptText={setPromptText} onSend={() => askLLM()} 
+        <ChatArea
+          messages={chatlog}
+          isLoading={isChatLoading}
+          promptText={promptText}
+          setPromptText={setPromptText}
+          onSend={() => askLLM()}
         />
       )}
 
       {/* 3. CỘT PHẢI (Truyền toàn bộ Props của cả 2 tính năng vào) */}
-      <ToolsSidebar 
+      <ToolsSidebar
         // Props TTR
-        onOpenTTR={() => setIsSetupOpen(true)} 
-        ttrTasks={ttrTasks} 
+        onOpenTTR={() => setIsSetupOpen(true)}
+        ttrTasks={ttrTasks}
         onPlayTTR={(id) => {
-          const task = ttrTasks.find(t => t.id === id);
+          const task = ttrTasks.find((t) => t.id === id);
           setCurrentActivityId(id);
           setCurrentIsNew(task ? task.isNew : false);
           setIsTTROpen(true);
           if (task && task.isNew) {
-            setTtrTasks(prev => prev.map(t => t.id === id ? { ...t, isNew: false } : t));
+            setTtrTasks((prev) =>
+              prev.map((t) => (t.id === id ? { ...t, isNew: false } : t)),
+            );
           }
-        }} 
+        }}
         // Props Open-Ended
-        activities={activities}
+        activities={openEndedActivities}
+        // Props Quiz
+        quizActivities={quizActivities}
         onToolClick={handleToolClick}
-        onActivityClick={(id) => setSelectedActivityId(id)}
+        onActivityClick={handleOpenEndedClick}
+        onQuizClick={handleQuizClick}
         onDeleteActivity={handleDeleteActivity}
         toolLoadingStates={toolLoadingStates}
         isCreatingNewActivity={isCreatingNewActivity}
       />
 
       {/* 4. LỚP PHỦ BÀI TẬP OPEN ENDED */}
-      <OpenEndedContainer 
-        activityId={selectedActivityId} 
-        onClose={() => setSelectedActivityId(null)} 
+      <OpenEndedContainer
+        activityId={selectedActivityId}
+        onClose={() => setSelectedActivityId(null)}
       />
     </InteractionLayout>
   );
