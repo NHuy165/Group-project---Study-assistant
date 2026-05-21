@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import videoIcon from "../../../assets/icon/video.svg";
 import slideIcon from "../../../assets/icon/slide.svg";
 import quizIcon from "../../../assets/icon/Quiz.svg";
 import { Trash } from "@phosphor-icons/react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
+import { ConfirmModal } from "../../../components/ConfirmModal";
 
 const TOOLS_LIST = [
   { id: "mindmap", name: "Tap To Review", icon: "🧠", isSvg: false },
@@ -27,6 +28,26 @@ export const ToolsSidebar = ({
   isCreatingNewActivity,
 }) => {
   const { isNight } = useTheme();
+  const [quizDeleteTarget, setQuizDeleteTarget] = useState(null);
+  const [isQuizDeleteOpen, setIsQuizDeleteOpen] = useState(false);
+
+  const handleQuizDeleteRequest = (quiz) => {
+    setQuizDeleteTarget(quiz);
+    setIsQuizDeleteOpen(true);
+  };
+
+  const handleQuizDeleteClose = () => {
+    setIsQuizDeleteOpen(false);
+    setQuizDeleteTarget(null);
+  };
+
+  const handleQuizDeleteConfirm = () => {
+    if (!quizDeleteTarget) return;
+    if (onDeleteActivity) {
+      onDeleteActivity(quizDeleteTarget.id);
+    }
+    handleQuizDeleteClose();
+  };
 
   return (
     <aside
@@ -106,13 +127,6 @@ export const ToolsSidebar = ({
 
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
           {/* HIỂN THỊ DANH SÁCH BÀI TTR */}
-          {ttrTasks && ttrTasks.length > 0 && (
-            <div
-              className={`px-2 text-xs font-bold uppercase tracking-wider ${isNight ? "text-purple-300" : "text-purple-600"}`}
-            >
-              Tap To Review
-            </div>
-          )}
           {ttrTasks &&
             ttrTasks.map((task) => (
               <div
@@ -163,13 +177,6 @@ export const ToolsSidebar = ({
             ))}
 
           {/* HIỂN THỊ DANH SÁCH BÀI QUIZ */}
-          {quizActivities && quizActivities.length > 0 && (
-            <div
-              className={`px-2 text-xs font-bold uppercase tracking-wider ${isNight ? "text-violet-300" : "text-violet-600"}`}
-            >
-              Quiz
-            </div>
-          )}
           {quizActivities &&
             quizActivities.map((quiz) => (
               <div
@@ -189,17 +196,21 @@ export const ToolsSidebar = ({
                     {quiz.name || `Quiz #${quiz.id}`}
                   </span>
                 </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuizDeleteRequest(quiz);
+                  }}
+                  className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                    isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
+                  }`}
+                >
+                  <Trash size={18} weight="bold" />
+                </button>
               </div>
             ))}
 
           {/* HIỂN THỊ DANH SÁCH BÀI OPEN-ENDED */}
-          {activities && activities.length > 0 && (
-            <div
-              className={`px-2 pt-2 text-xs font-bold uppercase tracking-wider ${isNight ? "text-emerald-300" : "text-emerald-600"}`}
-            >
-              Tự luận
-            </div>
-          )}
           {activities &&
             activities.map((act) => (
               <div
@@ -256,6 +267,21 @@ export const ToolsSidebar = ({
           )}
         </nav>
       </section>
+
+      <ConfirmModal
+        isOpen={isQuizDeleteOpen}
+        onClose={handleQuizDeleteClose}
+        onConfirm={handleQuizDeleteConfirm}
+        title="Xác nhận xóa quiz"
+        message={
+          quizDeleteTarget?.name
+            ? `Bé có chắc chắn muốn xóa quiz "${quizDeleteTarget.name}" không?`
+            : "Bé có chắc chắn muốn xóa quiz này không?"
+        }
+        confirmText="Xóa"
+        cancelText="Hủy"
+        isDanger={true}
+      />
     </aside>
   );
 };

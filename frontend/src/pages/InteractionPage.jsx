@@ -49,6 +49,7 @@ export const InteractionPage = () => {
 
   // State Open Ended
   const [selectedActivityId, setSelectedActivityId] = useState(null);
+
   // State Quiz
   const [currentQuizId, setCurrentQuizId] = useState(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -83,17 +84,6 @@ export const InteractionPage = () => {
   const { activities, fetchActivities, handleDeleteActivity } =
     useStudyActivities(interactionId);
 
-  // wrapper để nhận callback từ useInteractionTools
-  const handleActivityCreated = (type, id) => {
-    // Quiz: chỉ refresh danh sách để hiển thị trong Học Liệu, không auto-open
-    if (type === "quiz" && id) {
-      fetchActivities();
-      return;
-    }
-    // Mặc định: refresh activities (open-ended list)
-    fetchActivities();
-  };
-
   const {
     handleToolClick,
     activeToolSetup,
@@ -101,7 +91,14 @@ export const InteractionPage = () => {
     handleConfirmCreate,
     toolLoadingStates,
     isCreatingNewActivity,
-  } = useInteractionTools(interactionId, handleActivityCreated);
+  } = useInteractionTools(interactionId, fetchActivities);
+
+  const normalizeValue = (value) =>
+    String(value ?? "")
+      .trim()
+      .toUpperCase();
+  const getActivityFormat = (item) => normalizeValue(item?.activity_format);
+  const getActivityType = (item) => normalizeValue(item?.activity_type);
 
   // ==========================================
   // LOGIC TTR CHẠY NGẦM
@@ -110,8 +107,14 @@ export const InteractionPage = () => {
     const loadTTR = async () => {
       try {
         const data = await fetchActivitiesByInteraction(interactionId);
-        if (data && data.length > 0) {
-          const sortedData = data.sort((a, b) => b.id - a.id);
+        if (Array.isArray(data)) {
+          const filteredData = data.filter(
+            (item) =>
+              getActivityType(item) === "REVIEW" &&
+              getActivityFormat(item) === "GAP_FILL",
+          );
+          console.log("[InteractionPage] TTR activities:", filteredData);
+          const sortedData = filteredData.sort((a, b) => b.id - a.id);
           const formatted = sortedData.map((item) => ({
             id: item.id,
             name:
@@ -122,6 +125,8 @@ export const InteractionPage = () => {
             isNew: false,
           }));
           setTtrTasks(formatted);
+        } else {
+          setTtrTasks([]);
         }
       } catch (err) {
         console.error("Lỗi tải TTR Data:", err);
@@ -129,6 +134,18 @@ export const InteractionPage = () => {
     };
     loadTTR();
   }, [interactionId]);
+
+  const openEndedActivities = (activities || []).filter(
+    (item) =>
+      getActivityType(item) === "EXERCISE" &&
+      getActivityFormat(item) === "OPEN_ENDED",
+  );
+
+  const quizActivities = (activities || []).filter(
+    (item) =>
+      getActivityType(item) === "EXERCISE" &&
+      getActivityFormat(item) === "MULTIPLE_CHOICE_QUESTIONS",
+  );
 
   const handleCreateTTRBackground = ({ prompt: finalPrompt }) => {
     const tempId = Date.now();
@@ -170,44 +187,6 @@ export const InteractionPage = () => {
   };
 
   // ==========================================
-  // LỌC HỌC LIỆU (Quiz vs Tự luận)
-  // ==========================================
-  const normalizeValue = (value) =>
-    String(value ?? "")
-      .trim()
-      .toUpperCase();
-  const getActivityFormat = (act) =>
-    normalizeValue(act?.activity_format ?? act?.activityFormat);
-  const getActivityType = (act) =>
-    normalizeValue(act?.activity_type ?? act?.activityType);
-  const openEndedActivities = (activities || [])
-    .filter(
-      (act) =>
-        getActivityType(act) === "EXERCISE" &&
-        getActivityFormat(act) === "OPEN_ENDED",
-    )
-    .sort((a, b) => b.id - a.id);
-  const quizActivities = (activities || [])
-    .filter(
-      (act) =>
-        getActivityType(act) === "EXERCISE" &&
-        getActivityFormat(act) === "MULTIPLE_CHOICE_QUESTIONS",
-    )
-    .sort((a, b) => b.id - a.id);
-
-  const handleQuizClick = (id) => {
-    setSelectedActivityId(null);
-    setCurrentQuizId(id);
-    setIsQuizOpen(true);
-  };
-
-  const handleOpenEndedClick = (id) => {
-    setIsQuizOpen(false);
-    setCurrentQuizId(null);
-    setSelectedActivityId(id);
-  };
-
-  // ==========================================
   // RENDER GIAO DIỆN
   // ==========================================
   return (
@@ -238,7 +217,7 @@ export const InteractionPage = () => {
             />
           )}
 
-          {/* Quiz Panel */}
+          {/* LỚP PHỦ QUIZ */}
           {isQuizOpen && currentQuizId && (
             <QuizPanel
               interactionId={interactionId}
@@ -299,6 +278,9 @@ export const InteractionPage = () => {
           setCurrentActivityId(id);
           setCurrentIsNew(task ? task.isNew : false);
           setIsTTROpen(true);
+          setSelectedActivityId(null);
+          setIsQuizOpen(false);
+          setCurrentQuizId(null);
           if (task && task.isNew) {
             setTtrTasks((prev) =>
               prev.map((t) => (t.id === id ? { ...t, isNew: false } : t)),
@@ -310,8 +292,16 @@ export const InteractionPage = () => {
         // Props Quiz
         quizActivities={quizActivities}
         onToolClick={handleToolClick}
-        onActivityClick={handleOpenEndedClick}
-        onQuizClick={handleQuizClick}
+        onActivityClick={(id) => {
+          setIsQuizOpen(false);
+          setCurrentQuizId(null);
+          setSelectedActivityId(id);
+        }}
+        onQuizClick={(id) => {
+          setSelectedActivityId(null);
+          setIsQuizOpen(true);
+          setCurrentQuizId(id);
+        }}
         onDeleteActivity={handleDeleteActivity}
         toolLoadingStates={toolLoadingStates}
         isCreatingNewActivity={isCreatingNewActivity}

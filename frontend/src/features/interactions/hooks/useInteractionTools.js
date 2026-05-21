@@ -19,9 +19,9 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
     },
   );
 
-  // Quiz: sử dụng hook chung từ feature `quiz` và bọc lại thành API giống các hook khác
   const { mutate: createQuizMutate, isPending: isCreatingQuiz } =
     useCreateQuiz();
+
   const handleCreateQuiz = async (setupData) => {
     if (!interactionId) return;
     try {
@@ -29,22 +29,25 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
         subjectType: setupData?.subject,
         prompt: setupData?.prompt,
       };
+      console.log("[useInteractionTools] Create quiz payload:", payload);
       const newQuiz = await createQuizMutate(interactionId, payload);
-      console.debug("[useInteractionTools] Created quiz", newQuiz);
-      // Sau khi tạo quiz xong, đóng setup
-      setActiveToolSetup(null);
+      console.log("[useInteractionTools] Created quiz:", newQuiz);
       if (newQuiz && newQuiz.id) {
-        if (onActivityCreated) onActivityCreated("quiz", newQuiz.id);
+        setActiveToolSetup(null);
+        if (onActivityCreated) onActivityCreated();
       } else {
-        console.error("Quiz creation did not return an id:", newQuiz);
-        alert("Không tạo được quiz. Vui lòng thử lại.");
+        console.error(
+          "[useInteractionTools] Quiz creation did not return an id:",
+          newQuiz,
+        );
       }
-    } catch (err) {
-      console.error("Error creating quiz:", err);
+    } catch (error) {
+      console.error("[useInteractionTools] Create quiz error:", error);
     }
   };
 
   // Tương lai:
+  // const { isCreatingQuiz, handleCreateQuiz } = useCreateQuiz(interactionId, onActivityCreated);
   // const { isCreatingTTR, handleCreateTTR } = useCreateTTR(interactionId, onActivityCreated);
 
   // 2. Hàm điều phối trung tâm
@@ -61,7 +64,7 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
       handleCreateQuiz(setupData);
       return;
     }
-    // Sau này bổ sung cho các tool khác
+    // Sau này bổ sung: if (activeToolSetup === 'quiz') { ... }
   };
 
   // 3. Gom trạng thái Loading của tất cả các nút lại thành 1 Object
