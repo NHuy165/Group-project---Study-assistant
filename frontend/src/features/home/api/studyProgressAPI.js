@@ -54,3 +54,11 @@ export const fetchScoreTrendMultiLineChart = async (payload) => {
 export const fetchFavoriteActivityBarChart = async (payload) => {
     return await getStudyProgress('COUNT_ACTIVITY', payload);
 };
+
+
+// Lấy thông tin đã tạo bất kỳ câu hỏi nào chưa
+export const fetchTotalExercisesCount = async () => {
+    // Payload rỗng để không bị giới hạn bởi thời gian hay môn học
+    const payload = [];
+    return await getStudyProgress('COUNT_ITEM', payload);
+};

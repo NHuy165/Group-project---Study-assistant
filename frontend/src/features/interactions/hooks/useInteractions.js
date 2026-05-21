@@ -1,6 +1,7 @@
 // src/features/interactions/hooks/useInteractions.js
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../api/interactionsAPI";
+import { useChartStore } from "../../home/hooks/useChartStore";
 
 // Helper tập trung xử lý thông báo lỗi
 const getErrorMessage = (status) => {
@@ -13,6 +14,7 @@ const getErrorMessage = (status) => {
 };
 
 export const useInteractions = () => {
+    const triggerRefresh = useChartStore((state) => state.triggerRefresh);
     // 1. STATE CHÍNH
     const [interactions, setInteractions] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -86,6 +88,8 @@ export const useInteractions = () => {
     const deleteInteraction = (id) => {
         return executeRequest(() => api.deleteInteraction(id), () => {
             setInteractions((prev) => prev.filter((item) => item.id !== id));
+
+            triggerRefresh(); // Báo cho các component khác biết là đã có thay đổi (VD: để Home fetch lại biểu đồ)
         });
     };
 

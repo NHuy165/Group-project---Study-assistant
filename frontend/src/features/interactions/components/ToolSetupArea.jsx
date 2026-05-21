@@ -7,7 +7,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
   
   // States
   const [userInput, setUserInput] = useState("");
-  const [subject, setSubject] = useState("LITERATURE");
+  const [subject, setSubject] = useState("VIETNAMESE");
   const [selectedSamples, setSelectedSamples] = useState([]);
 
   // Dữ liệu mẫu tùy theo tool
@@ -123,7 +123,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
             </h4>
             <div className="flex gap-2">
               {[
-                { id: 'LITERATURE', label: 'Tiếng Việt' },
+                { id: 'VIETNAMESE', label: 'Tiếng Việt' },
                 { id: 'MATHS', label: 'Toán' },
                 { id: 'ENGLISH', label: 'Tiếng Anh' }
               ].map(sub => (

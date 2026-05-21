@@ -43,14 +43,14 @@ export const CompletionDonut = ({ data, isAnimationActive }) => {
 
 
   return (
-    <ChartContainer config={chartConfig} className="w-full aspect-square">
+    <ChartContainer config={chartConfig} className="w-full aspect-square relative">
       <PieChart>
         <Pie 
             data={data} 
             dataKey="count" 
             nameKey="label" 
             cx="50%" 
-            cy="50%" 
+            cy="45%" 
             innerRadius="50%" 
             outerRadius="70%" 
             cornerRadius="10%" 
@@ -63,6 +63,7 @@ export const CompletionDonut = ({ data, isAnimationActive }) => {
           <ChartTooltip 
               cursor={false} 
               isAnimationActive={false}
+              wrapperStyle={{ zIndex: 100 }}
               content={
                   <ChartTooltipContent 
                       className={isNight ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200"}
@@ -79,6 +80,7 @@ export const CompletionDonut = ({ data, isAnimationActive }) => {
                               <div className="flex items-center gap-1.5">
                                   <span className="font-medium">{chartConfig[name]?.label || name}:</span>
                                   <span className="font-bold">{value}</span>
+                                  <span className="font-light">({props.payload.displayPercent}%)</span>
                               </div>
                               
                           </div>
@@ -86,8 +88,27 @@ export const CompletionDonut = ({ data, isAnimationActive }) => {
                   />
               }
             />
-            <Legend />
+            {/* <Legend /> */}
         </PieChart>
+        <div 
+          // pointer-events-none: GIÚP CHUỘT XUYÊN QUA CHỮ ĐỂ HOVER VÀO ĐỒ THỊ NHƯ BÌNH THƯỜNG
+          className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8 z-0"
+        >
+          {/* Lặp qua data để in 3 thông số ra giữa màn hình */}
+          {data && data.map((item, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm leading-tight">
+                  {/* Dấu chấm màu nhỏ */}
+                  <div 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: item.fill }} 
+                  />
+                  {/* Tên môn và Số phần trăm */}
+                  <span className={`font-medium ${isNight ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {item.label}: <span className="font-bold text-base">{item.count}</span>
+                  </span>
+              </div>
+          ))}
+        </div>
     </ChartContainer>
   );
 }

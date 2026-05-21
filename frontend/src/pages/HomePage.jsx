@@ -50,14 +50,13 @@ import React from "react";
 import { ThemeWrapper, useTheme } from "../components/theme/ThemeWrapper";
 import { NotebookHeader } from "../features/home/components/LeftBlock/NotebookHeader";
 import { UserProfileCard } from "../features/home/components/LeftBlock/UserProfileCard"; 
+import { getSidebarCardClasses } from "../features/home/utils/dropdownColor";
 
 const HomeContent = () => {
   const { isNight } = useTheme();
 
   // Thêm backdrop-blur-xl và giảm bg xuống 60% để mờ ảo
-  const sidebarCardCls = isNight
-    ? "bg-slate-900/60 border-white/[0.08] backdrop-blur-xl"
-    : "bg-white/60 border-white/60 backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]";
+  const sidebarCardCls = getSidebarCardClasses(isNight);
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">

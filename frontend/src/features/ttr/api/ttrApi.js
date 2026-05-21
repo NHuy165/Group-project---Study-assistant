@@ -27,7 +27,7 @@ export const createTTRActivity = async (interactionId, payload) => {
       prompt: payload.prompt,
       activity_type: "REVIEW", 
       activity_format: "GAP_FILL",
-      subject_type: payload.subject_type || "MATH"
+      subject_type: payload.subject_type || "MATHS"
     })
   });
   if (!response.ok) throw new Error("Không thể tạo bài tập");

@@ -17,6 +17,8 @@ import { useFavoriteActivityChart } from "../hooks/useFavoriteActivityChart";
 import { useTheme } from "@/components/theme/ThemeWrapper";
 import { getDropdownClasses } from "../utils/dropdownColor";
 
+import { ChartFallback } from "./ChartFallback";
+
 
 export const FavoriteActivityWidget = () => {
     const [filterValue, setFilterValue] = useState("7 ngày");
@@ -59,7 +61,23 @@ export const FavoriteActivityWidget = () => {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </ChartHeader>
-            <FavoriteActivity data={activityData} />
+            {/* <FavoriteActivity data={activityData} /> */}
+            <div className="flex-1 w-full h-full flex items-center justify-center p-4 relative">
+                {/* 1. Trạng thái Loading */}
+                {isLoading && (
+                    <div className="text-slate-400 text-sm animate-pulse">Đang tải dữ liệu...</div>
+                )}
+                
+                {/* 2. Trạng thái Lỗi / Trống */}
+                {!isLoading && error && (
+                    <ChartFallback error={error} />
+                )}
+
+                {/* 3. Trạng thái Thành công (Render Biểu đồ) */}
+                {!isLoading && !error && activityData && (
+                    <FavoriteActivity data={activityData} />
+                )}
+            </div>
         </div>
     )
 }

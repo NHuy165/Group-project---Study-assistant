@@ -20,3 +20,9 @@ export const getDropdownClasses = (isNight) => {
         itemCls
     }
 }
+
+export const getSidebarCardClasses = (isNight) => {
+    return isNight 
+        ? "bg-slate-900 border-slate-800 text-slate-200" 
+        : "bg-white border-slate-200 text-slate-800";
+};
