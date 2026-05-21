@@ -15,7 +15,11 @@ from backend.src.services.study_activity import StudyActivityFormat, StudyActivi
 
 class Criterion(BaseModel):
     attribute: CriterionAttribute
+<<<<<<< HEAD
     value: int | str | datetime | None
+=======
+    value: bool | int | str | datetime | None
+>>>>>>> origin/backend-main
     operator: OperatorType
 
     @model_validator(mode="after")
@@ -53,10 +57,14 @@ class Criterion(BaseModel):
 
     @model_validator(mode="after")
     def validate_datetime(self):
-        if self.attribute in ("created_at", "submitted_at") and self.value is not None:
+        if (
+            self.attribute
+            in (CriterionAttribute.CREATED_AT, CriterionAttribute.SUBMITTED_AT)
+            and self.value is not None
+        ):
             try:
-                parsed_date = datetime.strptime(self.value, "%d%m%Y")  # type: ignore
-                self.value = parsed_date
+                parsed_date = datetime.strptime(self.value, "%d%m%Y").date()  # type: ignore
+                self.value = parsed_date  # type: ignore
             except (TypeError, ValueError):
                 raise ExceptionRequestValidation_400(
                     custom_message=f"value không hợp lệ cho đặc trưng {self.attribute}."

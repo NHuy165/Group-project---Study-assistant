@@ -3,7 +3,6 @@ from enum import Enum
 from fastapi import status
 from pydantic import BaseModel
 
-status.HTTP_500_INTERNAL_SERVER_ERROR
 # ----- SCHEMAS ----- #
 
 
@@ -27,6 +26,12 @@ class ExceptionType(str, Enum):
 
     # 500
     INTERNAL_ERROR = "INTERNAL_ERROR"
+
+    # 502
+    LLM_ERROR = "LLM_ERROR"
+
+    # 503
+    EXTERNAL_SERVICE = "EXTERNAL_SERVICE"
 
 
 class ExceptionCustom(Exception):
@@ -90,6 +95,16 @@ class Responses:
     RESPONSE_500_INTERNAL_SERVER_ERROR = {
         "model": ExceptionResponse,
         "description": "Internal server error.",
+    }
+
+    RESPONSE_502_BAD_GATEWAY = {
+        "model": ExceptionResponse,
+        "description": "External LLM failed to fulfill a task.",
+    }
+
+    RESPONSE_503_SERVICE_UNAVAILABLE = {
+        "model": ExceptionResponse,
+        "description": "External service unavailable.",
     }
 
 
@@ -161,4 +176,40 @@ class ExceptionTakenInfo_409(ExceptionCustom):
             status_code=409,
             exception_type=ExceptionType.TAKEN_INFO,
             message=f"Another {obj} with this {info} already exists.",
+        )
+
+
+# === 500 === #
+
+
+class ExceptionInternalError_500(ExceptionCustom):
+    def __init__(self, custom_message: str):
+        super().__init__(
+            status_code=500,
+            exception_type=ExceptionType.INTERNAL_ERROR,
+            message=custom_message,
+        )
+
+
+# === 502 === #
+
+
+class ExceptionLLMError_502(ExceptionCustom):
+    def __init__(self, custom_message: str):
+        super().__init__(
+            status_code=502,
+            exception_type=ExceptionType.LLM_ERROR,
+            message=custom_message,
+        )
+
+
+# === 503 === #
+
+
+class ExceptionExternalService_503(ExceptionCustom):
+    def __init__(self, custom_message: str):
+        super().__init__(
+            status_code=503,
+            exception_type=ExceptionType.EXTERNAL_SERVICE,
+            message=custom_message,
         )
