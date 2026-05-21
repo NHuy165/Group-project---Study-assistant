@@ -2,7 +2,14 @@ import React, { useState, useMemo } from "react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { BookOpenText, Target, MagicWand, X, Sparkle, WarningCircle, Trash } from "@phosphor-icons/react";
 
-export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
+export const ToolSetupArea = ({
+  toolId,
+  onConfirm,
+  onCancel,
+  isLoading,
+  errorMessage,
+  onClearError,
+}) => {
   const { isNight } = useTheme();
   
   // States
@@ -28,6 +35,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
 
   // Logic cộng dồn Prompt
   const handleToggleSample = (sample) => {
+    if (onClearError) onClearError();
     setSelectedSamples(prev => 
       prev.includes(sample) ? prev.filter(s => s !== sample) : [...prev, sample]
     );
@@ -37,6 +45,7 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
 
   const handleConfirm = () => {
     if (!isFormValid) return;
+    if (onClearError) onClearError();
     // Gộp prompt: Input + Các sample đã chọn
     const finalPrompt = [userInput.trim(), ...selectedSamples].filter(Boolean).join(". ");
     onConfirm({ subject, prompt: finalPrompt });
@@ -81,7 +90,10 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
               }`}
               placeholder="Nhập yêu cầu của bé hoặc dán văn bản vào đây..."
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
+              onChange={(e) => {
+                if (onClearError) onClearError();
+                setUserInput(e.target.value);
+              }}
             />
             {userInput && (
               <button 
@@ -127,7 +139,10 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
                 { id: 'MATHS', label: 'Toán' },
                 { id: 'ENGLISH', label: 'Tiếng Anh' }
               ].map(sub => (
-                <button key={sub.id} onClick={() => setSubject(sub.id)}
+                <button key={sub.id} onClick={() => {
+                  if (onClearError) onClearError();
+                  setSubject(sub.id);
+                }}
                   className={`flex-1 rounded-xl py-3 text-xs font-black transition-all border-2 ${
                     subject === sub.id 
                       ? "border-purple-500 bg-purple-500 text-white shadow-lg" 
@@ -149,6 +164,11 @@ export const ToolSetupArea = ({ toolId, onConfirm, onCancel, isLoading }) => {
         {/* NÚT HÀNH ĐỘNG */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
+            {errorMessage && (
+              <div className="mb-2 max-w-[28rem] rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400">
+                {errorMessage}
+              </div>
+            )}
             {!isFormValid && (
               <span className="text-red-500 text-xs font-bold flex items-center gap-1 animate-pulse">
                 <WarningCircle size={16} /> Bé chưa nhập nội dung bài học!

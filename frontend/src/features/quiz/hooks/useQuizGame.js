@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { quizService } from "../services/quiz.service";
 import { mergeExerciseItem } from "../utils/quizHelpers";
+import { resolveQuizError } from "../utils/quizErrorHandler";
 
 export const useQuizGame = (quiz, onQuizUpdate) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [flaggedQuestionIds, setFlaggedQuestionIds] = useState([]);
+  const [actionError, setActionError] = useState(null);
 
   // --- STATE MỚI: Quản lý cột mốc (Milestones) ---
   const [notifiedMilestones, setNotifiedMilestones] = useState([]);
@@ -19,6 +21,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     setFlaggedQuestionIds([]);
     setNotifiedMilestones([]); // Reset mốc thưởng khi đổi quiz
     setMilestoneMessage(null);
+    setActionError(null);
   }, [quiz?.id]);
 
   const currentQuestion = useMemo(
@@ -86,6 +89,7 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
   const handleSelectOption = async (optionId) => {
     if (!quiz || quiz.isSubmitted || !currentQuestion) return;
 
+    setActionError(null);
     const optimisticQuestion = { ...currentQuestion, attemptId: optionId };
     if (onQuizUpdate) {
       onQuizUpdate(mergeExerciseItem(quiz, optimisticQuestion));
@@ -100,7 +104,15 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
         onQuizUpdate(mergeExerciseItem(quiz, updatedItem));
       }
     } catch (error) {
-      console.error("Failed to auto-save answer", error);
+      if (onQuizUpdate) {
+        onQuizUpdate(mergeExerciseItem(quiz, currentQuestion));
+      }
+      const { userMessage } = resolveQuizError(error, {
+        action: "submitAnswer",
+        fallbackMessage: "Bé chưa lưu được câu trả lời. Bé thử lại nhé.",
+        scope: "useQuizGame.handleSelectOption",
+      });
+      setActionError(userMessage);
     }
   };
 
@@ -128,16 +140,24 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
   const submitQuiz = async () => {
     if (!quiz || quiz.isSubmitted) return;
 
+    setActionError(null);
     setIsSubmitting(true);
     try {
       const updated = await quizService.submitQuiz(quiz.id);
       if (updated && onQuizUpdate) onQuizUpdate(updated);
     } catch (error) {
-      console.error("Failed to submit quiz", error);
+      const { userMessage } = resolveQuizError(error, {
+        action: "submitQuiz",
+        fallbackMessage: "Bé chưa nộp bài được. Bé thử lại sau ít phút nhé.",
+        scope: "useQuizGame.submitQuiz",
+      });
+      setActionError(userMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const clearActionError = () => setActionError(null);
 
   return {
     currentQuestion,
@@ -150,6 +170,8 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
     progress, // Export progress ra để UI sử dụng
     milestoneMessage, // Export message để hiện Popup
     clearMilestoneMessage, // Export hàm tắt Popup
+    actionError,
+    clearActionError,
     isSubmitting,
     handleSelectOption,
     nextQuestion,

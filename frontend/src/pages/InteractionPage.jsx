@@ -88,6 +88,8 @@ export const InteractionPage = () => {
     handleToolClick,
     activeToolSetup,
     setActiveToolSetup,
+    createToolError,
+    clearCreateToolError,
     handleConfirmCreate,
     toolLoadingStates,
     isCreatingNewActivity,
@@ -255,6 +257,8 @@ export const InteractionPage = () => {
         <ToolSetupArea
           toolId={activeToolSetup}
           isLoading={isCreatingNewActivity}
+          errorMessage={createToolError}
+          onClearError={clearCreateToolError}
           onConfirm={handleConfirmCreate}
           onCancel={() => setActiveToolSetup(null)}
         />

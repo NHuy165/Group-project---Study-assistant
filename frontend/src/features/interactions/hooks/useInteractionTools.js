@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { useCreateEssay } from "../../open_ended/hooks/useCreateEssay";
 import { useCreateQuiz } from "../../quiz/hooks/useQuiz";
+import { resolveQuizError } from "../../quiz/utils/quizErrorHandler";
 // Tương lai nhóm code xong thì mở comment ra:
 // import { useCreateTTR } from "../../mindmap/hooks/useCreateTTR";
 // import { useCreateFlashcard } from "../../flashcard/hooks/useCreateFlashcard";
@@ -9,6 +10,7 @@ import { useCreateQuiz } from "../../quiz/hooks/useQuiz";
 export const useInteractionTools = (interactionId, onActivityCreated) => {
   // State lưu ID của tool đang được setup (null, 'essay', 'quiz'...)
   const [activeToolSetup, setActiveToolSetup] = useState(null);
+  const [createToolError, setCreateToolError] = useState(null);
 
   // 1. Gọi các hooks của từng tính năng
   const { isCreatingEssay, handleCreateEssay } = useCreateEssay(
@@ -25,6 +27,7 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
   const handleCreateQuiz = async (setupData) => {
     if (!interactionId) return;
     try {
+      setCreateToolError(null);
       const payload = {
         subjectType: setupData?.subject,
         prompt: setupData?.prompt,
@@ -40,9 +43,17 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
           "[useInteractionTools] Quiz creation did not return an id:",
           newQuiz,
         );
+        setCreateToolError(
+          "Hệ thống chưa trả về bài trắc nghiệm hợp lệ. Bé thử lại giúp Cú Mèo nhé.",
+        );
       }
     } catch (error) {
-      console.error("[useInteractionTools] Create quiz error:", error);
+      const { userMessage } = resolveQuizError(error, {
+        action: "create",
+        fallbackMessage: "Chưa tạo được bài trắc nghiệm. Bé thử lại sau nhé.",
+        scope: "useInteractionTools.handleCreateQuiz",
+      });
+      setCreateToolError(userMessage);
     }
   };
 
@@ -52,6 +63,7 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
 
   // 2. Hàm điều phối trung tâm
   const handleToolClick = (toolId) => {
+    setCreateToolError(null);
     setActiveToolSetup(toolId);
   };
 
@@ -83,6 +95,8 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
   return {
     activeToolSetup,
     setActiveToolSetup,
+    createToolError,
+    clearCreateToolError: () => setCreateToolError(null),
     handleToolClick,
     handleConfirmCreate,
     toolLoadingStates,

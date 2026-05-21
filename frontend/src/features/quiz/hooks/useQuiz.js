@@ -17,7 +17,7 @@ const createMutation = (fn) => {
       return result;
     } catch (err) {
       setError(err);
-      return null;
+      throw err;
     } finally {
       setIsPending(false);
     }

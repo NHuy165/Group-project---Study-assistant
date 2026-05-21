@@ -65,6 +65,7 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
   const {
     currentQuestion, currentIndex, totalQuestions, selectedOption, questionStatus,
     unansweredCount, flaggedCount, milestoneMessage, clearMilestoneMessage,
+    actionError, clearActionError,
     isSubmitting, handleSelectOption, nextQuestion, prevQuestion, jumpToQuestion,
     toggleFlagCurrentQuestion, submitQuiz
   } = game;
@@ -216,6 +217,18 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
       )}
 
       <QuizMilestone milestoneMessage={milestoneMessage} clearMilestoneMessage={clearMilestoneMessage} />
+
+      {actionError && (
+        <div className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${isNight ? "border-red-400/30 bg-red-500/10 text-red-200" : "border-red-300 bg-red-50 text-red-700"}`}>
+          <span>{actionError}</span>
+          <button
+            onClick={clearActionError}
+            className={`rounded-lg px-2 py-1 text-xs font-bold ${isNight ? "bg-red-500/20 text-red-100" : "bg-red-100 text-red-700"}`}
+          >
+            Đã hiểu
+          </button>
+        </div>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_260px] items-start">
         

@@ -10,6 +10,8 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
   const {
     quizzes,
     isLoading,
+    error,
+    clearError,
     loadQuizDetail,
     updateQuizMeta,
     updateQuizInList,
@@ -94,6 +96,17 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
               : "border-[#89e2d7]/40 bg-gradient-to-br from-white/95 via-[#f6fffd]/95 to-[#eefbff]/95"
           }`}
         >
+          {error && (
+            <div className={`mb-3 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${isNight ? "border-red-400/30 bg-red-500/10 text-red-200" : "border-red-300 bg-red-50 text-red-700"}`}>
+              <span>{error}</span>
+              <button
+                onClick={clearError}
+                className={`rounded-lg px-2 py-1 text-xs font-bold ${isNight ? "bg-red-500/20 text-red-100" : "bg-red-100 text-red-700"}`}
+              >
+                Đã hiểu
+              </button>
+            </div>
+          )}
           {!quizId ? (
             <div className="flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-4">
