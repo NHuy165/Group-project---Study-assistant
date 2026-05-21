@@ -66,7 +66,18 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
         setIsLoading(false);
       } 
       catch (err) {
-        setError("Không thể tải dữ liệu bài tập. Vui lòng thử lại!");
+        console.error("Lỗi tải game:", err);
+        let errorMsg = "Không thể tải dữ liệu bài tập. Vui lòng thử lại!";
+        
+        if (err.status === 401) {
+          errorMsg = "Bạn cần đăng nhập lại để chơi bài tập này.";
+        } else if (err.status === 404 || err.type === 'NOT_FOUND') {
+          errorMsg = "Bài tập này không tồn tại hoặc đã bị xóa ở nơi khác.";
+        } else if (err.status === 500) {
+          errorMsg = "Lỗi máy chủ nội bộ. Không thể lấy dữ liệu bài tập.";
+        }
+
+        setError(errorMsg);
         setIsLoading(false);
       }
     };

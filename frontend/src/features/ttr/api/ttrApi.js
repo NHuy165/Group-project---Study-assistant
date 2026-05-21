@@ -1,11 +1,29 @@
 const API_BASE_URL = 'http://localhost:8000/study-activity'; 
 const getToken = () => localStorage.getItem('token'); 
 
+// Hàm dùng chung để xử lý lỗi từ response
+const handleApiError = async (response) => {
+  if (!response.ok) {
+    let errorData = {};
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: "Không thể kết nối đến máy chủ." };
+    }
+    throw {
+      status: response.status,
+      type: errorData.exception_type || 'UNKNOWN_ERROR',
+      message: errorData.message || 'Đã xảy ra lỗi không xác định.'
+    };
+  }
+};
+
 export const fetchActivitiesByInteraction = async (interactionId) => {
   const response = await fetch(`${API_BASE_URL}/${interactionId}/`, {
     headers: { 'Authorization': `Bearer ${getToken()}` }
   });
-  if (!response.ok) return []; 
+  if (response.status === 404) return []; // Nếu không tìm thấy trả về mảng rỗng
+  await handleApiError(response);
   return await response.json();
 };
 
@@ -13,7 +31,7 @@ export const fetchStudyActivity = async (studyActivityId) => {
   const response = await fetch(`${API_BASE_URL}/${studyActivityId}`, {
     headers: { 'Authorization': `Bearer ${getToken()}` }
   });
-  if (!response.ok) throw new Error("Lỗi tải bài tập");
+  await handleApiError(response);
   return await response.json();
 };
 
@@ -30,6 +48,6 @@ export const createTTRActivity = async (interactionId, payload) => {
       subject_type: payload.subject_type || "MATHS"
     })
   });
-  if (!response.ok) throw new Error("Không thể tạo bài tập");
+  await handleApiError(response);
   return await response.json();
 };

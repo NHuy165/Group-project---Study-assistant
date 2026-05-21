@@ -42,7 +42,8 @@ class ExerciseItemContentType(str, Enum):
 
 
 class AggregateTarget(str, Enum):
-    COUNT = "COUNT"
+    COUNT_ACTIVITY = "COUNT_ACTIVITY"
+    COUNT_ITEM = "COUNT_ITEM"
     SCORE = "SCORE"
 
 
@@ -53,7 +54,7 @@ class CriterionAttribute(str, Enum):
     CREATED_AT = "created_at"
     SUBMITTED_AT = "submitted_at"
     IS_SUBMITTED = "is_submitted"
-    STUDY_ACTIVITY_ID = "study_activity_id"
+    INTERACTION_ID = "interaction_id"
 
 
 class OperatorType(str, Enum):

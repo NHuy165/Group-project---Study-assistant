@@ -23,7 +23,7 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
       setContent(''); 
       setSelectedPrompts([]); 
       setErrorMsg(''); 
-      setSubject('MATH'); // [MỚI] Reset về Toán
+      setSubject('MATHS'); // [MỚI] Reset về Toán
     } 
   }, [isOpen]);
 
@@ -51,6 +51,8 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
       - QUY ĐỊNH QUAN TRỌNG: Chỉ sử dụng cụm từ [BLANK] để đại diện cho các chỗ trống. Tuyệt đối không sử dụng $!BLANK!$ hay bất kỳ ký hiệu nào khác.
     `;
 
+    console.log("Subject đang gửi đi:", subject);
+    
     // [MỚI] Truyền thêm subjectType ra ngoài
     onSubmit({ prompt: finalPrompt, gameMode: mode, subjectType: subject });
   };
