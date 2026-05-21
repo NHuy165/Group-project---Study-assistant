@@ -12,7 +12,7 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
   const [content, setContent] = useState('');
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
-  const [subject, setSubject] = useState('MATH'); // [MỚI] State môn học mặc định Toán
+  const [subject, setSubject] = useState('MATHS'); // [MỚI] State môn học mặc định Toán
   const [mode, setMode] = useState('normal'); 
   const [difficulty, setDifficulty] = useState('easy'); 
   const [questionCount, setQuestionCount] = useState(10);
@@ -106,7 +106,7 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
               <p className="text-sm font-bold mb-3 flex items-center gap-2">📚 Môn học:</p>
               <div className="flex gap-2">
                 {[
-                  { id: 'MATH', label: 'TOÁN' },
+                  { id: 'MATHS', label: 'TOÁN' },
                   { id: 'VIETNAMESE', label: 'T.VIỆT' },
                   { id: 'ENGLISH', label: 'T.ANH' }
                 ].map(s => (

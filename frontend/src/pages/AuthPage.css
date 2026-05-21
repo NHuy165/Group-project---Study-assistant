@@ -95,7 +95,7 @@
   top: 22%; 
   transform: translateX(-50%) translateY(-20px);
   transform-origin: top center;
-  width: min(480px, 88vw);
+  width: min(420px, 88vw);
   z-index: 40;
   opacity: 0;
   /* Form hơi mờ hiện ra và trượt nhẹ xuống */
@@ -156,7 +156,7 @@
 
 /* Thả xuống: Mở rộng tờ giấy ra tối đa */
 .form-panel.dropped .form-panel-inner {
-  max-height: 650px; 
+  max-height: 550px; 
 }
 
 /* Kéo lên: Cuộn tờ giấy lại như cũ */
@@ -167,7 +167,7 @@
 
 /* 3. KHỐI CHỨA NỘI DUNG (Giữ nguyên form không méo) */
 .form-panel-content {
-  padding: 28px 34px 24px;
+  padding: 20px 28px 2px;
   width: 100%;
 }
 

@@ -17,10 +17,14 @@ const PATHS = [
 
 export const LearningPathCard = () => {
   const { isNight } = useTheme();
-  const cardCls = isNight ? "bg-slate-900/90 border-white/[0.1] shadow-2xl" : "bg-white/95 border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)]";
+  
+  // ĐÃ SỬA NỀN KÍNH
+  const cardCls = isNight 
+    ? "bg-slate-900/90 border-white/[0.1] shadow-2xl" 
+    : "bg-white/60 border-white/60 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]";
 
   return (
-    <div className={`backdrop-blur-xl rounded-[2rem] px-5 py-4 border-2 h-full flex flex-col ${cardCls}`}>
+    <div className={`rounded-[2rem] px-5 py-4 border-2 h-full flex flex-col transition-all ${cardCls}`}>
       
       <div className="flex items-center gap-3 mb-2 shrink-0">
         <img src={schoolBag} alt="School Bag" className="w-7 h-7 drop-shadow-sm" />
@@ -43,7 +47,6 @@ export const LearningPathCard = () => {
               <div style={{ backgroundColor: isNight ? item.nightBg : item.bg, borderColor: isNight ? 'transparent' : item.border }}
                 className="border-2 rounded-[1.5rem] p-3 flex flex-row items-center gap-3.5 cursor-pointer h-full hover:-translate-y-1 hover:shadow-lg transition-all duration-300 overflow-hidden relative"
               >
-                {/* ĐÃ BỎ KHUNG NỀN, ĐỂ ẢNH TRONG SUỐT VÀ ÉP KÍCH THƯỚC W-16 H-16 */}
                 <img src={item.icon} alt={item.title} className="w-16 h-16 shrink-0 object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300 origin-bottom" />
                 
                 <div className="flex-1 min-w-0 flex flex-col justify-center">

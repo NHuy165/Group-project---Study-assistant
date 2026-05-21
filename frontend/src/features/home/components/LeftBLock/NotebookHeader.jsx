@@ -21,14 +21,13 @@ export const NotebookHeader = () => {
     });
   };
 
-  // GIẢI QUYẾT CHỐNG CHÓI: Nền đặc hơn, đổ bóng sâu và dày hơn để nhìn rõ vào buổi sáng
+  // ĐÃ SỬA: Đổi giao diện ban ngày sang kính mờ (Glassmorphism) đồng bộ với Sidebar phải
   const cardCls = isNight
     ? "bg-slate-900/90 border-white/[0.1] shadow-2xl"
-    : "bg-white/95 border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)]";
+    : "bg-white/60 border-white/60 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]";
 
   return (
     <div className="relative flex flex-col gap-4 h-[90vh] overflow-hidden pr-2 pb-4 pt-10">
-      {/* LOGO EDUSPARK CAO LÊN TRÊN ĐẦU VÀ CỐ ĐỊNH GÓC TRÁI */}
       <Link
         to="/dashboard"
         className={`
@@ -53,11 +52,10 @@ export const NotebookHeader = () => {
 
       {/* ROW 1: Lời chào + Tạo sổ */}
       <div className="flex gap-4 shrink-0 items-center">
-        <div className={`flex-[1.2] h-full backdrop-blur-xl rounded-[2rem] px-6 py-5 border-2 flex flex-col justify-center transition-all ${cardCls}`}>
+        <div className={`flex-[1.2] h-full rounded-[2rem] px-6 py-5 border-2 flex flex-col justify-center transition-all ${cardCls}`}>
           <WelcomeCard name="Hiệp" />
         </div>
         
-        {/* VÁCH NGĂN CHẤT CHƠI GIỮA HÀNG 1 */}
         <div className="hidden md:flex flex-col items-center justify-center h-16 w-2 shrink-0 relative mx-1">
           <div className={`h-full w-[2px] rounded-full ${isNight ? 'bg-gradient-to-b from-transparent via-blue-500/40 to-transparent' : 'bg-gradient-to-b from-transparent via-blue-500/60 to-transparent'}`} />
           <div className="absolute w-4 h-4 rounded-full bg-blue-500/10 border border-blue-400/40 flex items-center justify-center">
@@ -65,7 +63,7 @@ export const NotebookHeader = () => {
           </div>
         </div>
 
-        <div className={`flex-[2] h-full backdrop-blur-xl rounded-[2rem] px-6 py-5 border-2 transition-all ${cardCls}`}>
+        <div className={`flex-[2] h-full rounded-[2rem] px-6 py-5 border-2 transition-all ${cardCls}`}>
           <CreateNotebookCard formData={formData} onChange={handleFormChange} onSubmit={handleCreateSubmit} isLoading={isLoading} />
         </div>
       </div>
@@ -76,7 +74,6 @@ export const NotebookHeader = () => {
           <LearningPathCard />
         </div>
         
-        {/* VÁCH NGĂN CHẤT CHƠI GIỮA HÀNG 2 */}
         <div className="hidden md:flex flex-col items-center justify-center h-24 w-2 shrink-0 relative mx-1">
           <div className={`h-full w-[2px] rounded-full ${isNight ? 'bg-gradient-to-b from-transparent via-purple-500/40 to-transparent' : 'bg-gradient-to-b from-transparent via-purple-500/60 to-transparent'}`} />
           <div className="absolute w-4 h-4 rounded-full bg-purple-500/10 border border-purple-400/40 flex items-center justify-center">
@@ -91,8 +88,7 @@ export const NotebookHeader = () => {
       
       {/* ROW 3: Sổ gần đây */}
       <div className="flex-1 min-h-0">
-        <RecentNotebooksCard interactions={interactions} isLoading={isLoading} onEdit={updateInteraction}
-          onDelete={deleteInteraction} />
+        <RecentNotebooksCard interactions={interactions} isLoading={isLoading} onEdit={updateInteraction} onDelete={deleteInteraction} />
       </div>
       
     </div>

@@ -13,7 +13,13 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
     if (passwordRef.current) {
-      passwordRef.current.focus();
+      setTimeout(() => {
+        if (passwordRef.current) {
+          passwordRef.current.focus();
+          const length = passwordRef.current.value.length;
+          passwordRef.current.setSelectionRange(length, length);
+        }
+      }, 0);
       setFocusField(password.length > 0 ? "password" : "password-empty");
     }
   };
@@ -26,7 +32,8 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
   return (
     <form 
       onSubmit={handleSubmit} 
-      className="mx-auto flex w-full max-w-[400px] flex-col justify-between h-[355px] text-center relative"
+      /* ĐÃ SỬA: Bỏ chiều cao fix cứng */
+      className="mx-auto flex w-full max-w-[400px] h-auto flex-col justify-start items-stretch gap-3 text-center relative"
     >
       {/* --- WATERMARK CHÌM --- */}
       <svg className="absolute -bottom-4 -left-6 w-32 h-32 text-[#4ecdc4] opacity-[0.07] -rotate-12 pointer-events-none z-0" viewBox="0 0 24 24" fill="currentColor">
@@ -36,10 +43,7 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
         <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
       </svg>
 
-      {/* --- KHỐI INPUTS --- */}
-      <div className="flex flex-col gap-4 pt-4 relative z-10">
-        
-        {/* USERNAME INPUT WITH ICON */}
+      <div className="flex flex-col gap-3 relative z-10 pt-2">
         <div className="relative text-[#999] focus-within:text-[#4ecdc4] transition-colors">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -51,11 +55,10 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
             onChange={(e) => setUsername(e.target.value)}
             onFocus={() => setFocusField("username")} onBlur={() => setFocusField("default")}
             placeholder="Tên người dùng"
-            className="w-full rounded-[14px] border-[2px] border-[#e0e0e0] bg-[#f9f9f9] dark:bg-[#1a2238] dark:border-[#2d3748] dark:text-white pl-11 pr-4 py-3.5 text-[1rem] font-bold text-[#333] placeholder-[#aaa] outline-none transition focus:border-[#4ecdc4] focus:bg-white dark:focus:bg-[#1f2937]"
+            className="w-full rounded-[14px] border-[2px] border-[#e0e0e0] bg-[#f9f9f9] dark:bg-[#1a2238] dark:border-[#2d3748] dark:text-white pl-10 pr-3 py-3.5 text-[1rem] font-bold text-[#333] placeholder-[#aaa] outline-none transition focus:border-[#4ecdc4] focus:bg-white dark:focus:bg-[#1f2937]"
           />
         </div>
 
-        {/* EMAIL INPUT WITH ICON */}
         <div className="relative text-[#999] focus-within:text-[#4ecdc4] transition-colors">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -67,11 +70,10 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
             onChange={(e) => setEmail(e.target.value)}
             onFocus={() => setFocusField("email")} onBlur={() => setFocusField("default")}
             placeholder="Email (be@eduspark.vn)"
-            className="w-full rounded-[14px] border-[2px] border-[#e0e0e0] bg-[#f9f9f9] dark:bg-[#1a2238] dark:border-[#2d3748] dark:text-white pl-11 pr-4 py-3.5 text-[1rem] font-bold text-[#333] placeholder-[#aaa] outline-none transition focus:border-[#4ecdc4] focus:bg-white dark:focus:bg-[#1f2937]"
+            className="w-full rounded-[14px] border-[2px] border-[#e0e0e0] bg-[#f9f9f9] dark:bg-[#1a2238] dark:border-[#2d3748] dark:text-white pl-10 pr-3 py-3.5 text-[1rem] font-bold text-[#333] placeholder-[#aaa] outline-none transition focus:border-[#4ecdc4] focus:bg-white dark:focus:bg-[#1f2937]"
           />
         </div>
 
-        {/* PASSWORD INPUT WITH ICON */}
         <div className="relative text-[#999] focus-within:text-[#4ecdc4] transition-colors">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -88,7 +90,7 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
             onFocus={() => setFocusField(password.length > 0 ? "password" : "password-empty")}
             onBlur={() => setFocusField("default")}
             placeholder="Mật khẩu"
-            className="w-full rounded-[14px] border-[2px] border-[#e0e0e0] bg-[#f9f9f9] dark:bg-[#1a2238] dark:border-[#2d3748] dark:text-white pl-11 pr-12 py-3.5 text-[1rem] font-bold text-[#333] placeholder-[#aaa] outline-none transition focus:border-[#4ecdc4] focus:bg-white dark:focus:bg-[#1f2937]"
+            className="w-full rounded-[14px] border-[2px] border-[#e0e0e0] bg-[#f9f9f9] dark:bg-[#1a2238] dark:border-[#2d3748] dark:text-white pl-10 pr-11 py-3.5 text-[1rem] font-bold text-[#333] placeholder-[#aaa] outline-none transition focus:border-[#4ecdc4] focus:bg-white dark:focus:bg-[#1f2937]"
           />
           <button
             type="button" onMouseDown={(e) => e.preventDefault()} onClick={handleTogglePassword}
@@ -103,7 +105,6 @@ export const RegisterForm = ({ setFocusField, showPassword, setShowPassword, onS
         </div>
       </div>
 
-      {/* --- KHỐI BUTTON & BÁO LỖI --- */}
       <div className="flex flex-col gap-3 pb-2 relative z-10">
         {error && <p className="text-center font-bold text-[#ff4757] text-sm">{error}</p>}
         <button type="submit" disabled={isLoading} className="w-full rounded-[14px] border-[2px] border-[#2d7a72] bg-[#4ecdc4] px-4 py-3.5 text-[1.1rem] font-black text-white transition duration-300 hover:bg-[#45b7aa] hover:shadow-[0_4px_12px_rgba(78,205,196,0.4)] disabled:cursor-not-allowed disabled:bg-[#ccc] disabled:border-[#aaa]">

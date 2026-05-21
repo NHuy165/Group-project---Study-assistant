@@ -43,11 +43,12 @@ export const UserProfileCard = ({ name = "Minh" }) => {
         
         {/* NÚT ĐĂNG XUẤT GIÃN NỞ NỔI TUYỆT ĐỐI */}
         <button 
-          className="absolute right-0 top-0 group flex items-center w-10 h-10 rounded-[14px] overflow-hidden transition-all duration-300 hover:w-[105px] bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 shadow-sm hover:shadow-[0_0_20px_rgba(239,68,68,0.6)] active:scale-95 z-10"
+          /* ĐÃ SỬA: Tăng độ giãn từ w-[105px] lên w-[125px] để đủ chỗ cho chữ */
+          className="absolute right-0 top-0 group flex items-center w-10 h-10 rounded-[13px] overflow-hidden transition-all duration-300 hover:w-[115px] bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 shadow-sm hover:shadow-[0_0_20px_rgba(239,68,68,0.6)] active:scale-95 z-10"
           onClick={handleLogout}
         >
-          {/* Chữ hiển thị khi Hover */}
-          <span className="absolute left-2.5 text-[11px] font-black tracking-wide text-white opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none">
+          {/* ĐÃ SỬA: Chỉnh left-2.5 thành left-3 để cân đối lề */}
+          <span className="absolute left-2.75 text-[11px] font-black tracking-wide text-white opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none">
             ĐĂNG XUẤT
           </span>
           {/* Icon giữ vị trí cố định */}

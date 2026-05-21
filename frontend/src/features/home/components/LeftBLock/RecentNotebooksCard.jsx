@@ -15,17 +15,20 @@ export const RecentNotebooksCard = ({ interactions = [], isLoading, onEdit, onDe
   const navigate = useNavigate();
   const { isNight } = useTheme();
 
-  // State quản lý Modal
   const [editingItem, setEditingItem] = useState(null);
   const [deletingItem, setDeletingItem] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const displayItems = interactions && interactions.length > 0 ? [...interactions].reverse() : [];
 
-  const cardCls = isNight ? "bg-slate-900/90 border-white/[0.1] shadow-2xl" : "bg-white/95 border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)]";
-  const itemBaseCls = isNight ? "bg-slate-800/40 border-white/[0.06] hover:bg-slate-800/80" : "bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-sm hover:border-slate-200";
+  const cardCls = isNight 
+    ? "bg-slate-900/90 border-white/[0.1] shadow-2xl" 
+    : "bg-white/60 border-white/60 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]";
+  
+  const itemBaseCls = isNight 
+    ? "bg-slate-800/40 border-white/[0.06] hover:bg-slate-800/80" 
+    : "bg-white/40 border-white/60 backdrop-blur-sm hover:bg-white/70 hover:shadow-sm hover:border-white/80";
 
-  // Xử lý API qua props
   const handleSaveEdit = async (id, updatedData) => {
     setIsProcessing(true);
     if (onEdit) await onEdit(id, updatedData);
@@ -45,14 +48,18 @@ export const RecentNotebooksCard = ({ interactions = [], isLoading, onEdit, onDe
       <EditNotebookModal isOpen={!!editingItem} notebook={editingItem} onClose={() => setEditingItem(null)} onSave={handleSaveEdit} isLoading={isProcessing} />
       <DeleteNotebookModal isOpen={!!deletingItem} notebook={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={handleConfirmDelete} isLoading={isProcessing} />
 
-      <div className={`backdrop-blur-xl rounded-[2rem] p-5 border-2 transition-all duration-500 flex flex-col h-full ${cardCls}`}>
+      <div className={`rounded-[2rem] p-5 border-2 transition-all duration-500 flex flex-col h-full ${cardCls}`}>
         <div className="flex items-center justify-between mb-3 shrink-0 px-1">
           <h3 className={`text-[15px] font-black ${isNight ? "text-slate-200" : "text-[#1e293b]"}`}>Sổ ghi chú gần đây</h3>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-1">
+          {/* LỖI CŨ: (isLoading || displayItems.length > 0) ? { <div...> } : { <div...> } */}
+          {/* LỖI MỚI: Dấu ngoặc nhọn { } ngay sau dấu ? là sai cú pháp */}
+          
           {(isLoading || displayItems.length > 0) ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            // ĐÃ SỬA: Chỉ dùng ngoặc tròn ( ) cho khối JSX
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {isLoading && (
                 <div className={`border-2 border-dashed rounded-2xl p-3 flex items-center justify-between h-[76px] animate-pulse transition-all ${isNight ? "border-blue-500/50 bg-blue-950/40" : "border-blue-400 bg-blue-50/60"}`}>
                   <div className="flex items-center gap-3 w-full">
@@ -68,9 +75,10 @@ export const RecentNotebooksCard = ({ interactions = [], isLoading, onEdit, onDe
                   <div key={item.id} onClick={() => navigate(`/interaction/${item.id}`)} className={`border-2 rounded-2xl p-3 flex items-center justify-between cursor-pointer group transition-all h-[76px] ${itemBaseCls}`}>
                     <div className="flex items-center gap-3 w-full overflow-hidden">
                       <div className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-xl border" style={{ backgroundColor: color.bg, borderColor: color.border }}>{color.emoji}</div>
+                      
                       <div className="min-w-0 flex-1">
-                        <p className={`text-[13.5px] font-extrabold truncate ${isNight ? "text-slate-200" : "text-slate-700"}`}>{item.name}</p>
-                        <p className={`text-[11px] font-semibold mt-0.5 truncate ${isNight ? "text-slate-500" : "text-slate-400"}`}>{item.description}</p>
+                        <p className={`text-[13.5px] font-extrabold truncate block w-full ${isNight ? "text-slate-200" : "text-slate-700"}`} title={item.name}>{item.name}</p>
+                        <p className={`text-[11px] font-semibold mt-0.5 truncate block w-full ${isNight ? "text-slate-500" : "text-slate-400"}`} title={item.description}>{item.description}</p>
                       </div>
                     </div>
 
@@ -87,6 +95,7 @@ export const RecentNotebooksCard = ({ interactions = [], isLoading, onEdit, onDe
               })}
             </div>
           ) : (
+            // ĐÃ SỬA: Chỉ dùng ngoặc tròn ( ) cho khối JSX
             <div className="flex flex-col items-center justify-center h-full opacity-90 animate-in fade-in zoom-in duration-500 pb-4">
               <span className="text-[3rem] mb-3 drop-shadow-sm filter grayscale-[30%] opacity-80">📭</span>
               <h4 className={`text-[15px] font-black mb-1.5 ${isNight ? 'text-gray-300' : 'text-gray-600'}`}>Bé chưa có sổ ghi chú nào!</h4>
