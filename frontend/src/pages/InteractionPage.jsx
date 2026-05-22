@@ -25,6 +25,8 @@ import { TTRFeature } from "../features/ttr/index";
 import { TTRSetupModal } from "../features/ttr/components/TTRSetupModal"; 
 import { createTTRActivity, fetchActivitiesByInteraction } from "../features/ttr/api/ttrApi";
 
+import { OpenEndedFallback } from "../features/open_ended/components/OpenEndedFallback";
+
 export const InteractionPage = () => {
   const { interactionId } = useParams(); 
 
@@ -63,7 +65,7 @@ export const InteractionPage = () => {
   
   const { 
     handleToolClick, activeToolSetup, setActiveToolSetup, handleConfirmCreate, 
-    toolLoadingStates, isCreatingNewActivity 
+    toolLoadingStates, isCreatingNewActivity, essayError, clearEssayError
   } = useInteractionTools(interactionId, fetchActivities);
 
   // ==========================================
@@ -179,6 +181,14 @@ export const InteractionPage = () => {
         activityId={selectedActivityId} 
         onClose={() => setSelectedActivityId(null)} 
       />
+
+      {/* THÊM ĐOẠN NÀY ĐỂ BẮT LỖI TẠO BÀI: */}
+      {essayError && (
+          <OpenEndedFallback 
+              error={essayError} 
+              onClose={clearEssayError} 
+          />
+      )}
     </InteractionLayout>
   );
 };

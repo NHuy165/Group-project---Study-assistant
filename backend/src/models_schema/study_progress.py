@@ -15,11 +15,7 @@ from backend.src.services.study_activity import StudyActivityFormat, StudyActivi
 
 class Criterion(BaseModel):
     attribute: CriterionAttribute
-<<<<<<< HEAD
-    value: int | str | datetime | None
-=======
     value: bool | int | str | datetime | None
->>>>>>> origin/backend-main
     operator: OperatorType
 
     @model_validator(mode="after")

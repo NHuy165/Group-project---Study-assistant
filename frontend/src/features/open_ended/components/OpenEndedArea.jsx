@@ -4,7 +4,7 @@ import { useExerciseStore } from "../hooks/useExerciseStore";
 import { OpenEndedSidebar } from "./OpenEndedSidebar";
 import { OpenEndedWorkspace } from "./OpenEndedWorkspace";
 
-export const OpenEndedArea = ({ activityData, isLoading, isSubmitting, onSaveDraft, onSubmit, onExit }) => {
+export const OpenEndedArea = ({ activityData, isLoading, isSubmitting, draftSyncError, onSaveDraft, onSubmit, onExit }) => {
   const { isNight } = useTheme(); 
   const [currentIndex, setCurrentIndex] = useState(0); 
   const [drafts, setDrafts] = useState({}); 
@@ -63,8 +63,13 @@ export const OpenEndedArea = ({ activityData, isLoading, isSubmitting, onSaveDra
       <OpenEndedSidebar items={items} currentIndex={currentIndex} drafts={drafts} unsureItems={unsureItems} onSelect={setCurrentIndex} onExit={onExit} />
       
       <OpenEndedWorkspace 
-        currentItem={currentItem} currentIndex={currentIndex} totalItems={items.length} 
-        draftValue={drafts[currentItem.id] || ""} isSubmitted={activityData.is_submitted} isUnsure={unsureItems.has(currentItem.id)} 
+        currentItem={currentItem} 
+        currentIndex={currentIndex} 
+        totalItems={items.length} 
+        draftValue={drafts[currentItem.id] || ""} 
+        isSubmitted={activityData.is_submitted} 
+        isUnsure={unsureItems.has(currentItem.id)} 
+        draftSyncError={draftSyncError}
         onChange={(id, val) => setDrafts(p => ({...p, [id]: val}))} 
         onBlur={(id) => { if (!activityData.is_submitted && onSaveDraft) onSaveDraft(id, drafts[id]); }} 
         onToggleUnsure={(id) => { if (activityData?.id) toggleUnsure(activityData.id, id); }} 

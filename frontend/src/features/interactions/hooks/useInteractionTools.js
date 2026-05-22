@@ -11,7 +11,7 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
     const [activeToolSetup, setActiveToolSetup] = useState(null);
 
     // 1. Gọi các hooks của từng tính năng
-    const { isCreatingEssay, handleCreateEssay } = useCreateEssay(interactionId, () => {
+    const { isCreatingEssay, handleCreateEssay, error: essayError, clearError: clearEssayError } = useCreateEssay(interactionId, () => {
         setActiveToolSetup(null); 
         if (onActivityCreated) onActivityCreated(); 
     });
@@ -49,6 +49,8 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
         handleToolClick,
         handleConfirmCreate,
         toolLoadingStates,
-        isCreatingNewActivity
+        isCreatingNewActivity,
+        essayError,
+        clearEssayError
     };
 };

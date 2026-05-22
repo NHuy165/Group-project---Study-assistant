@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { CaretLeft, CaretRight, BookmarkSimple, PaperPlaneRight, Checks, TextT, Clock, Sparkle } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, BookmarkSimple, PaperPlaneRight, Checks, TextT, Clock, Sparkle, WarningCircle } from "@phosphor-icons/react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { SmartContent } from "../../../components/SmartContent";
 
 export const OpenEndedWorkspace = ({
   currentItem, currentIndex, totalItems, draftValue, isSubmitted, isUnsure,
+  draftSyncError,
   onChange, onBlur, onToggleUnsure, onPrev, onNext, onSubmit
 }) => {
   const { isNight } = useTheme();
@@ -86,7 +87,19 @@ export const OpenEndedWorkspace = ({
           <span className="flex items-center gap-2"><TextT size={18} /> {wordCount} từ</span>
           <span className="flex items-center gap-2"><Clock size={18} /> ~{readTime} phút đọc</span>
           <div className={`ml-auto flex items-center gap-2 text-green-500 transition-all ${showSaved ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <Checks size={18} weight="bold" /> Tự động lưu
+            {/* 3. KIỂM TRA LỖI LƯU NHÁP */}
+            {draftSyncError ? (
+                // Nếu có lỗi -> Hiện màu cam chớp nháy nhẹ
+                <span className="flex items-center gap-2 text-orange-500 animate-pulse">
+                    <WarningCircle size={18} weight="bold" /> 
+                    {draftSyncError}
+                </span>
+            ) : (
+                // Nếu an toàn -> Hiện chữ xanh
+                <span className={`flex items-center gap-2 text-green-500 transition-all ${showSaved ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                    <Checks size={18} weight="bold" /> Tự động lưu
+                </span>
+            )}
           </div>
         </div>
       </div>

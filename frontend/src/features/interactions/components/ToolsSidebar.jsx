@@ -47,7 +47,7 @@ export const ToolsSidebar = ({
                   onToolClick(item.id);
                 }
               }}
-              disabled={toolLoadingStates[item.id]}
+              // disabled={toolLoadingStates[item.id]}
               className={`flex flex-col items-center justify-center rounded-2xl p-3 shadow-sm hover:scale-105 transition-all ${
                 isNight 
                   ? "bg-gray-800/80 border border-gray-700 text-gray-300"
