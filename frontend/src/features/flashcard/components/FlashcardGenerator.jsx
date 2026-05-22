@@ -1,18 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Cards, MagicWand, Sparkle, WarningCircle } from '@phosphor-icons/react';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
-
-const SUBJECTS = [
-    { id: 'VIETNAMESE', label: 'Tiếng Việt' },
-    { id: 'MATHS', label: 'Toán' },
-    { id: 'ENGLISH', label: 'Tiếng Anh' },
-];
-
-const SUGGESTED_PROMPTS = [
-    'Ôn tập kiến thức',
-    '10 từ vựng tiếng Anh về trường học',
-    'Khái niệm chính của bài',
-];
+import { SUBJECTS, SUGGESTED_PROMPTS } from '../constants';
 
 const FlashcardGenerator = ({
     isLoading,
@@ -33,7 +22,7 @@ const FlashcardGenerator = ({
     });
 
     const subjectLabel = useMemo(
-        () => SUBJECTS.find((item) => item.id === subject)?.label || 'Tiếng Việt',
+        () => SUBJECTS.find((item) => item.id === subject)?.label,
         [subject],
     );
 

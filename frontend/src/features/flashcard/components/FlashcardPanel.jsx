@@ -23,11 +23,10 @@ const FlashcardPanel = ({
   }, [initialViewMode, initialSelectedSet]);
 
   const handleCreateWithAi = async (promptData) => {
-    const createdSet = await onCreateFlashcardSet(promptData.prompt);
+    const createdSet = await onCreateFlashcardSet(promptData);
 
     if (createdSet) {
       setGeneratorPrompt('');
-      // onClose();
     }
   };
 

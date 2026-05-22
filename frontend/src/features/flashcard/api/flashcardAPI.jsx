@@ -43,7 +43,7 @@ export const createFlashcard = async (interactionId, promptData) => {
         prompt: promptText,
         activity_type: "REVIEW",
         activity_format: "FLASHCARDS",
-        subject_type: subjectType || 'ENGLISH',
+        subject_type: subjectType,
     };
 
     const response = await axiosClient.post(

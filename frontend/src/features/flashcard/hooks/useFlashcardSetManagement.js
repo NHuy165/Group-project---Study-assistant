@@ -40,6 +40,7 @@ const useFlashcardSetManagement = (interactionId) => {
      */
     const createNewFlashcardSet = useCallback(async (promptData) => {
         const promptText = typeof promptData === 'object' ? promptData.prompt : promptData;
+        const subjectType = typeof promptData === 'object' ? promptData.subject_type : null;
 
         if (!promptText?.trim() || !interactionId) {
             setError('Bé vui lòng nhập nội dung nhé');
@@ -50,7 +51,10 @@ const useFlashcardSetManagement = (interactionId) => {
         setError('');
         try {
             // createFlashcard trả về array of { id, front, back, ... }
-            const newFlashcardSet = await createFlashcard(interactionId, promptData);
+            const newFlashcardSet = await createFlashcard(interactionId, {
+                prompt: promptText,
+                subject_type: subjectType,
+            });
 
             if (newFlashcardSet) {
                 setFlashcardSets(prev => [newFlashcardSet, ...prev]); 
