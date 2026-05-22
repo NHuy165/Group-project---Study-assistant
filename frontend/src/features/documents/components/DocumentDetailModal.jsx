@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from "../../../components/theme/ThemeWrapper"; 
 
 export const DocumentDetailModal = ({ 
   document, isOpen, onClose, onRename, onDelete 
 }) => {
+  const { isNight } = useTheme(); // <-- Lấy biến isNight
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
 
-  // Tách tên và đuôi ngay từ document prop
   const dotIndex = document?.name?.lastIndexOf('.') ?? -1;
   const baseName = dotIndex !== -1 ? document.name.substring(0, dotIndex) : (document?.name || "");
   const ext = dotIndex !== -1 ? document.name.substring(dotIndex) : "";
@@ -14,14 +15,13 @@ export const DocumentDetailModal = ({
   useEffect(() => {
     if (document) {
       setTempName(baseName);
-      setIsEditingName(false); // Đóng chế độ edit mỗi khi mở modal mới
+      setIsEditingName(false);
     }
   }, [document, isOpen, baseName]);
 
   if (!isOpen || !document) return null;
 
   const handleRename = () => {
-    // Ghép tên mới với đuôi cũ để gửi lên
     const newFullName = tempName.trim() + ext;
     if (tempName.trim() && newFullName !== document.name) {
       onRename(document.id, newFullName); 
@@ -30,12 +30,16 @@ export const DocumentDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-md" onClick={onClose}>
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md ${isNight ? 'bg-black/60' : 'bg-slate-900/40'}`} onClick={onClose}>
       <div 
-        className="relative w-full max-w-md animate-in zoom-in fade-in rounded-[2.5rem] border border-white/20 bg-white p-8 shadow-2xl duration-200"
+        className={`relative w-full max-w-md animate-in zoom-in fade-in rounded-[2.5rem] border p-8 shadow-2xl duration-200 ${
+          isNight ? 'bg-gray-900 border-gray-700' : 'bg-white border-white/20'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute right-6 top-6 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-50">
+        <button onClick={onClose} className={`absolute right-6 top-6 rounded-full p-2 transition-colors ${
+          isNight ? 'text-gray-400 hover:bg-gray-800' : 'text-slate-400 hover:bg-slate-50'
+        }`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
 
@@ -50,14 +54,16 @@ export const DocumentDetailModal = ({
                 onChange={(e) => setTempName(e.target.value)}
                 onBlur={handleRename}
                 onKeyDown={(e) => e.key === "Enter" && handleRename()}
-                className="w-full min-w-0 bg-transparent text-2xl font-black text-slate-800 outline-none"
+                className={`w-full min-w-0 bg-transparent text-2xl font-black outline-none ${isNight ? 'text-white' : 'text-slate-800'}`}
               />
-              <span className="select-none pl-1 text-2xl font-black text-slate-400">{ext}</span>
+              <span className={`select-none pl-1 text-2xl font-black ${isNight ? 'text-gray-500' : 'text-slate-400'}`}>{ext}</span>
             </div>
           ) : (
             <h3 
               onDoubleClick={() => setIsEditingName(true)}
-              className="line-clamp-2 cursor-pointer text-2xl font-black leading-tight text-slate-800 transition-colors hover:text-[#4ecdc4]"
+              className={`line-clamp-2 cursor-pointer text-2xl font-black leading-tight transition-colors hover:text-[#4ecdc4] ${
+                isNight ? 'text-gray-100' : 'text-slate-800'
+              }`}
               title="Nhấp đúp để đổi tên"
             >
               {document.name} 
@@ -66,10 +72,10 @@ export const DocumentDetailModal = ({
         </div>
         
         <div className="mb-8 mt-4 flex items-center gap-2">
-          <span className="rounded-lg bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase text-slate-500">
+          <span className={`rounded-lg px-3 py-1 text-[10px] font-bold uppercase ${isNight ? 'bg-gray-800 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
             📅 {new Date(document.createdAt || document.created_at).toLocaleDateString("vi-VN")}
           </span>
-          <span className="rounded-lg bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase text-slate-500">
+          <span className={`rounded-lg px-3 py-1 text-[10px] font-bold uppercase ${isNight ? 'bg-gray-800 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
             📄 {ext.replace('.', '') || "FILE"}
           </span>
         </div>
@@ -77,13 +83,17 @@ export const DocumentDetailModal = ({
         <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={() => setIsEditingName(true)}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-slate-50 py-4 font-bold text-slate-600 transition-all hover:bg-slate-100 active:scale-95"
+            className={`flex items-center justify-center gap-2 rounded-2xl py-4 font-bold transition-all active:scale-95 ${
+              isNight ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+            }`}
           >
             ✏️ Đổi tên
           </button>
           <button 
             onClick={() => { onDelete(document.id); onClose(); }}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-red-50 py-4 font-bold text-red-500 transition-all hover:bg-red-100 active:scale-95"
+            className={`flex items-center justify-center gap-2 rounded-2xl py-4 font-bold transition-all active:scale-95 ${
+              isNight ? 'bg-red-900/20 text-red-400 hover:bg-red-900/40' : 'bg-red-50 text-red-500 hover:bg-red-100'
+            }`}
           >
             🗑️ Xóa file
           </button>
