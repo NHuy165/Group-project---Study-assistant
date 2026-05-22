@@ -12,6 +12,7 @@ const useFlashcardSetManagement = (interactionId) => {
     const [error, setError] = useState('');
 
     const [prompt, setPrompt] = useState('');
+    const [isCreatingWithAI, setIsCreatingWithAI] = useState(false);
 
     /**
      * Tải toàn bộ flashcards từ backend
@@ -45,13 +46,16 @@ const useFlashcardSetManagement = (interactionId) => {
             return null;
         }
 
-        setIsLoading(true);
+        setIsCreatingWithAI(true);
         setError('');
         try {
             // createFlashcard trả về array of { id, front, back, ... }
             const newFlashcardSet = await createFlashcard(interactionId, promptData);
 
-            await loadFlashcardSets();
+            if (newFlashcardSet) {
+                setFlashcardSets(prev => [newFlashcardSet, ...prev]); 
+            }
+            // loadFlashcardSets();
 
             setPrompt('');
             return newFlashcardSet;
@@ -60,10 +64,10 @@ const useFlashcardSetManagement = (interactionId) => {
             console.error("Lỗi tạo flashcard:", err);
             setError("Lỗi tạo flashcard. Vui lòng thử lại");
         } finally {
-            setIsLoading(false);
+            setIsCreatingWithAI(false);
         }
         return null;
-    }, [interactionId, loadFlashcardSets]);
+    }, [interactionId]);//, loadFlashcardSets]);
 
     /**
      * Tạo bộ flashcard trống
@@ -94,7 +98,10 @@ const useFlashcardSetManagement = (interactionId) => {
             }
             );
 
-            await loadFlashcardSets();
+            if (newFlashcardSet) {
+                setFlashcardSets(prev => [newFlashcardSet, ...prev]); 
+            }
+            // await loadFlashcardSets();
 
             setPrompt('');
             return newFlashcardSet;
@@ -106,12 +113,14 @@ const useFlashcardSetManagement = (interactionId) => {
             setIsLoading(false);
         }
         return null;
-    }, [interactionId, loadFlashcardSets]);
+    }, [interactionId]);//, loadFlashcardSets]);
 
     /**
      * Xóa bộ flashcard
      */
     const removeFlashcardSet = useCallback(async (study_activity_id) => {
+        setIsLoading(true);
+        setError('');
         try {
             // Gọi API xóa trước
             await deleteFlashcard(study_activity_id);
@@ -120,7 +129,9 @@ const useFlashcardSetManagement = (interactionId) => {
             setError('');
         } catch (err) {
             console.error("Lỗi xóa flashcard:", err);
-            setError("Lỗi xóa flashcard");
+            setError("Lỗi xóa bộ flashcard. Vui lòng thử lại");
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
@@ -141,6 +152,7 @@ const useFlashcardSetManagement = (interactionId) => {
         flashcardSets, 
         setFlashcardSets, // Để component có thể update nếu cần
         isLoading,
+        isCreatingWithAI,
         error,
         prompt, 
         setPrompt,

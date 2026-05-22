@@ -5,6 +5,7 @@ import FlashcardStudyView from './FlashcardStudyView';
 
 const FlashcardPanel = ({
   isLoading,
+  isCreatingWithAI,
   onCreateFlashcardSet,
   onCreateEmptyFlashcardSet,
   error,
@@ -21,12 +22,12 @@ const FlashcardPanel = ({
     setSelectedSet(initialSelectedSet);
   }, [initialViewMode, initialSelectedSet]);
 
-  const handleCreateWithAi = async (text) => {
-    const createdSet = await onCreateFlashcardSet(text);
+  const handleCreateWithAi = async (promptData) => {
+    const createdSet = await onCreateFlashcardSet(promptData.prompt);
 
     if (createdSet) {
       setGeneratorPrompt('');
-      onClose();
+      // onClose();
     }
   };
 
@@ -48,6 +49,7 @@ const FlashcardPanel = ({
       {isCreateMode && (
         <FlashcardGenerator
           isLoading={isLoading}
+          isCreatingWithAI={isCreatingWithAI}
           error={error}
           prompt={generatorPrompt}
           setPrompt={setGeneratorPrompt}

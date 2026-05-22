@@ -68,6 +68,7 @@ export const InteractionPage = () => {
   const {
     flashcardSets,
     isLoading,
+    isCreatingWithAI,
     error,
     createNewFlashcardSet,
     createEmptyFlashcardSet,
@@ -161,6 +162,7 @@ export const InteractionPage = () => {
             <FlashcardPanel
               isLoading={isLoading}
               error={error}
+              isCreatingWithAI={isCreatingWithAI}
               initialViewMode={flashcardPanelMode}
               initialSelectedSet={selectedFlashcardSet}
               onCreateFlashcardSet={createNewFlashcardSet}

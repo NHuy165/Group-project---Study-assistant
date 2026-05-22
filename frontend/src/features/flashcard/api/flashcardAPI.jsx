@@ -61,7 +61,6 @@ export const readFlashcard = async (flashcardId) => {
     } catch (error) {
         console.error("Error reading flashcard:", error);
         throw error;
-        return []; 
     }
 };
 
@@ -80,7 +79,6 @@ export const readAllFlashcards = async (interactionId) => {
     } catch (error) {
         console.warn('Error reading all flashcards:', error);
         throw error;
-        return [];
     }
 };
 

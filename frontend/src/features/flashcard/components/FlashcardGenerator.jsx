@@ -16,6 +16,7 @@ const SUGGESTED_PROMPTS = [
 
 const FlashcardGenerator = ({
     isLoading,
+    isCreatingWithAI,
     error,
     prompt,
     setPrompt,
@@ -51,6 +52,8 @@ const FlashcardGenerator = ({
     );
     const isFormValid = createMode === 'ai' ? canCreateWithAi : canCreateEmptySet;
 
+    const isSubmitting = createMode === 'ai' ? isCreatingWithAI : isLoading;
+
     const updateEmptySetForm = (field, value) => {
         setEmptySetForm((prev) => ({
             ...prev,
@@ -65,7 +68,7 @@ const FlashcardGenerator = ({
     };
 
     const handleSubmit = async () => {
-        if (!isFormValid) return;
+        if (!isFormValid || isSubmitting) return;
 
         if (createMode === 'ai') {
             const createdSet = await onCreateFlashcardSet({
@@ -133,6 +136,17 @@ const FlashcardGenerator = ({
                 ))}
             </div>
 
+            {isCreatingWithAI && (
+                <div className={`mb-5 flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold ${
+                    isNight
+                        ? 'border-indigo-500/30 bg-indigo-900/20 text-indigo-300'
+                        : 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                }`}>
+                    <Sparkle size={18} className="animate-spin shrink-0" />
+                    AI đang tạo bộ thẻ... Bé có thể mở bộ flashcard cũ trong lúc chờ!
+                </div>
+            )}
+
             {error && (
                 <div className="mb-5 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm font-bold text-red-700">
                     {error}
@@ -151,7 +165,7 @@ const FlashcardGenerator = ({
                             placeholder="Nhập yêu cầu của bé hoặc dán văn bản vào đây..."
                             value={prompt}
                             onChange={(event) => setPrompt(event.target.value)}
-                            disabled={isLoading}
+                            disabled={isCreatingWithAI}
                         />
 
                         <div className="mt-5 flex flex-wrap gap-2">
@@ -187,7 +201,7 @@ const FlashcardGenerator = ({
                             value={emptySetForm.name}
                             onChange={(event) => updateEmptySetForm('name', event.target.value)}
                             placeholder="Tên bộ thẻ, ví dụ: Unit 4 vocabulary"
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                         />
                         <textarea
                             className={`h-36 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.05rem] leading-relaxed outline-none transition-all custom-scrollbar ${
@@ -198,7 +212,7 @@ const FlashcardGenerator = ({
                             value={emptySetForm.description}
                             onChange={(event) => updateEmptySetForm('description', event.target.value)}
                             placeholder="Mục tiêu hoặc mô tả ngắn cho bộ flashcard..."
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                         />
                     </div>
                 )}
@@ -250,7 +264,7 @@ const FlashcardGenerator = ({
 
                 <button
                     type="button"
-                    disabled={isLoading || !isFormValid}
+                    disabled={isSubmitting || !isFormValid}
                     onClick={handleSubmit}
                     className={`group flex items-center gap-3 rounded-2xl px-10 py-4 font-black text-white shadow-xl transition-all active:scale-95 ${
                         !isFormValid
@@ -258,12 +272,12 @@ const FlashcardGenerator = ({
                             : 'bg-gradient-to-r from-purple-500 to-indigo-600 shadow-purple-500/20 hover:-translate-y-1 hover:from-purple-600 hover:to-indigo-700'
                     }`}
                 >
-                    {isLoading ? (
+                    {isSubmitting ? (
                         <Sparkle size={24} className="animate-spin" />
                     ) : (
                         <MagicWand size={24} weight="fill" className="transition-transform group-hover:rotate-12" />
                     )}
-                    {isLoading
+                    {isSubmitting
                         ? 'ĐANG TẠO BỘ THẺ...'
                         : createMode === 'ai'
                             ? 'BẮT ĐẦU TẠO BỘ THẺ'

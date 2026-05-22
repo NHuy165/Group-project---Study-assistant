@@ -40,7 +40,7 @@ const useFlashcardManagement = (study_activity_id) => {
         const backText = typeof back === 'string' ? back : back?.content || '';
 
         if (!frontText.trim() || !backText.trim() || !study_activity_id ) {
-            setError('Vui lòng nhập nội dung');
+            setError('Vui lòng nhập nội dung đầy đủ');
             return null;
         }
 
@@ -101,13 +101,16 @@ const useFlashcardManagement = (study_activity_id) => {
      * Xóa flashcard
      */
     const deleteFlashcard = useCallback(async (flashcardId) => {
+        setIsLoading(true);
+        setError('');
         try {
             const response = await deleteCard(flashcardId);
             await loadFlashcards();
+            setError('');
             return response
         } catch (err) {
             console.error("Lỗi xóa flashcard:", err);
-            setError("Lỗi xóa flashcard");
+            setError("Lỗi xóa flashcard. Vui lòng thử lại");
         } finally {
             setIsLoading(false);
         }

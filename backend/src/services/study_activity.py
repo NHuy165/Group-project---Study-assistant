@@ -355,6 +355,9 @@ async def add_flashcards(
     flashcard_inputs: list[FlashcardInput],
     flashcards_activity_id: int,
 ) -> StudyActivityOutputComplete:
+    if not flashcard_inputs:
+        raise ExceptionRequest_400("Danh sách flashcard không được trống")
+    
     query = (
         select(StudyActivity)
         .join(Interaction)
