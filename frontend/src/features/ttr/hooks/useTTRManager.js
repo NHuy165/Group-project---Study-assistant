@@ -31,26 +31,24 @@ export const useTTRManager = (interactionId) => {
   }, [interactionId]);
 
   // [MỚI] Nhận thêm subjectType
-  const handleCreateTTRBackground = ({ prompt: finalPrompt, gameMode, subjectType }) => {
+  const handleCreateTTRBackground = (data) => {
+    // 1. Hút dữ liệu an toàn tuyệt đối từ Component cha truyền vào
+    const finalPrompt = data.prompt;
+    const gameMode = data.gameMode || 'normal';
+    const finalSubject = data.subjectType || data.subject_type || "MATHS";
+
     const tempId = Date.now();
     const newTask = { id: tempId, name: "AI đang tạo bài...", status: 'loading' };
     setTtrTasks(prev => [newTask, ...prev]);
     setIsSetupOpen(false);
 
-    const promptName = finalPrompt.split("Nội dung/Chủ đề:")[1]?.substring(0, 25) || "Bài tập AI";
-    
-    console.log("Giá trị subjectType nhận được từ Modal:", subjectType);
-
-
-    // [MỚI] Đưa subject_type vào payload
+    // 2. Gom đúng 2 trường cần thiết đưa xuống ttrApi
     const payload = { 
-      name: promptName + "...", 
-      description: "Tự động tạo", 
       prompt: finalPrompt,
-      subject_type: subjectType || "MATHS"
+      subject_type: finalSubject 
     };
 
-    console.log("Payload gửi lên API:", { ...payload, subject_type: subjectType });
+    console.log("🔥 Payload cuối cùng trước khi gọi API:", payload);
 
     createTTRActivity(interactionId, payload)
       .then(newActivity => {
@@ -59,29 +57,9 @@ export const useTTRManager = (interactionId) => {
         ));
       })
       .catch(error => {
-        // Xóa task loading ảo đi
         setTtrTasks(prev => prev.filter(task => task.id !== tempId));
         console.error("Lỗi tạo bài: ", error);
-
-        // Xử lý báo lỗi ra UI theo Exception Document
-        let errorMsg = "Không thể tạo bài tập, vui lòng thử lại!";
-        
-        if (error.status === 401) {
-          errorMsg = "Phiên đăng nhập đã hết hạn. Vui lòng tải lại trang hoặc đăng nhập lại!";
-        } 
-        else if (error.status === 400) {
-          errorMsg = "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại thiết lập!";
-        }
-        // Bắt lỗi LLM (502) hoặc API chết (503)
-        else if (error.status === 502 || error.status === 503 || error.type === 'LLM_ERROR' || error.type === 'EXTERNAL_SERVICE') {
-          errorMsg = "AI không thể sinh bài tập từ nội dung này. Bé thử viết yêu cầu (prompt) dễ hiểu hơn, ngắn gọn hơn hoặc thử lại sau nhé!";
-        }
-        else if (error.status === 500) {
-          errorMsg = "Hệ thống đang gặp trục trặc (Lỗi 500). Hãy thử lại sau nhé!";
-        }
-
-        // Tạm thời dùng alert, nếu app bạn có Toast (ví dụ react-toastify) thì thay alert bằng toast.error() sẽ đẹp hơn
-        alert(`❌ LỖI TẠO BÀI:\n${errorMsg}`);
+        alert(`❌ LỖI TẠO BÀI:\nHệ thống không thể xử lý. Hãy chắc chắn bạn đã chọn Độ Khó là DỄ!`);
       });
   };
 

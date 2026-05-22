@@ -14,7 +14,7 @@ const TOOLS_LIST = [
 
 // NHẬN GỘP PROPS TỪ CẢ 2 NHÁNH
 export const ToolsSidebar = ({ 
-  onOpenTTR, ttrTasks, onPlayTTR, 
+  onOpenTTR, ttrTasks, onPlayTTR, onRemoveTTRTask, // <-- Bổ sung onRemoveTTRTask để xóa task lỗi
   onToolClick, toolLoadingStates = {}, activities = [], onActivityClick, onDeleteActivity, isCreatingNewActivity 
 }) => {
   const { isNight } = useTheme(); 
@@ -79,25 +79,54 @@ export const ToolsSidebar = ({
         <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
 
           {/* HIỂN THỊ DANH SÁCH BÀI TTR */}
-          {ttrTasks && ttrTasks.map((task) => (
-            <div 
-              key={`ttr-${task.id}`} 
-              onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
-              className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
-              task.status === 'loading' 
-                ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
-                : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
-            }`}>
-              <span className="mr-3 text-sm flex-shrink-0">
-                {task.status === 'loading' ? (
-                  <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                ) : '🎮'}
-              </span>
-              <span className={`text-sm font-semibold truncate ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
-                {task.name}
-              </span>
-            </div>
-          ))}
+          {ttrTasks && ttrTasks.map((task) => {
+            
+            // UI RIÊNG CHO TRẠNG THÁI LỖI
+            if (task.status === 'error') {
+              return (
+                <div key={`ttr-${task.id}`} className={`flex flex-col rounded-2xl px-3 py-2 shadow-sm border transition-all ${
+                  isNight ? 'bg-red-900/20 border-red-800/50 text-red-400' : 'bg-red-50 border-red-200 text-red-500'
+                }`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-bold text-xs flex items-center gap-1">❌ Thất bại</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onRemoveTTRTask) onRemoveTTRTask(task.id);
+                      }}
+                      className="text-[10px] underline opacity-70 hover:opacity-100 transition-opacity"
+                    >
+                      Bỏ qua
+                    </button>
+                  </div>
+                  <span className="text-[11px] leading-snug font-medium opacity-90">
+                    {task.errorMessage || "Có lỗi xảy ra."}
+                  </span>
+                </div>
+              );
+            }
+
+            // UI CHO TRẠNG THÁI LOADING / READY
+            return (
+              <div 
+                key={`ttr-${task.id}`} 
+                onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
+                className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
+                task.status === 'loading' 
+                  ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
+                  : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
+              }`}>
+                <span className="mr-3 text-sm flex-shrink-0">
+                  {task.status === 'loading' ? (
+                    <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  ) : '🎮'}
+                </span>
+                <span className={`text-sm font-semibold truncate ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
+                  {task.name}
+                </span>
+              </div>
+            );
+          })}
         
           {/* HIỂN THỊ DANH SÁCH BÀI OPEN-ENDED */}
           {activities && activities.map((act) => (

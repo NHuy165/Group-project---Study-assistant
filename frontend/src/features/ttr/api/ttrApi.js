@@ -10,9 +10,11 @@ const handleApiError = async (response) => {
     } catch (e) {
       errorData = { message: "Không thể kết nối đến máy chủ." };
     }
+    
+    // Ném ra object lỗi chuẩn xác theo tài liệu Backend
     throw {
-      status: response.status,
-      type: errorData.exception_type || 'UNKNOWN_ERROR',
+      status_code: response.status,
+      exception_type: errorData.exception_type || 'UNKNOWN_ERROR',
       message: errorData.message || 'Đã xảy ra lỗi không xác định.'
     };
   }
@@ -36,18 +38,23 @@ export const fetchStudyActivity = async (studyActivityId) => {
 };
 
 export const createTTRActivity = async (interactionId, payload) => {
+  // Quét cả 2 kiểu viết biến, nếu không có mới chịu thua về MATHS
+  const finalSubject = payload.subject_type || payload.subjectType || "MATHS";
+
   const response = await fetch(`${API_BASE_URL}/${interactionId}/create`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+    headers: { 
+      'Content-Type': 'application/json', 
+      'Authorization': `Bearer ${getToken()}` 
+    },
     body: JSON.stringify({
-      name: payload.name,
-      description: payload.description,
       prompt: payload.prompt,
       activity_type: "REVIEW", 
       activity_format: "GAP_FILL",
-      subject_type: payload.subject_type || "MATHS"
+      subject_type: finalSubject // Ép thẳng môn học vào đây
     })
   });
+  
   await handleApiError(response);
   return await response.json();
 };

@@ -42,6 +42,7 @@ export const InteractionPage = () => {
   const [currentActivityId, setCurrentActivityId] = useState(null); 
   const [currentIsNew, setCurrentIsNew] = useState(false); 
   const [ttrTasks, setTtrTasks] = useState([]); 
+  const [currentMode, setCurrentMode] = useState('normal');
 
   // State Open Ended
   const [selectedActivityId, setSelectedActivityId] = useState(null);
@@ -90,22 +91,84 @@ export const InteractionPage = () => {
     loadTTR();
   }, [interactionId]);
 
-  const handleCreateTTRBackground = ({ prompt: finalPrompt }) => {
+
+  // ==========================================
+  // HÀM GIẢ LẬP ĐỂ TEST LỖI UI (Sẽ xóa sau khi test xong)
+  // ==========================================
+
+  // const mockCreateTTRActivity = async (interactionId, payload) => {
+  //   return new Promise((resolve, reject) => {
+  //     // Giả lập thời gian chờ AI suy nghĩ (1.5 giây)
+  //     setTimeout(() => {
+        
+  //       // 🔴 THAY ĐỔI MÃ LỖI Ở ĐÂY ĐỂ TEST (Ví dụ: 401, 404, 400, 500, 502)
+  //       // Nếu muốn test trạng thái tạo THÀNH CÔNG, hãy đổi thành: const TEST_ERROR_CODE = null;
+  //       const TEST_ERROR_CODE = null; 
+
+  //       if (TEST_ERROR_CODE) {
+  //         reject({
+  //           status_code: TEST_ERROR_CODE,
+  //           exception_type: 'TEST_MOCK_ERROR',
+  //           message: 'Đây là thông báo lỗi giả lập từ Frontend để test giao diện.'
+  //         });
+  //       } else {
+  //         resolve({ 
+  //           id: Math.floor(Math.random() * 10000), 
+  //           name: "Bài tập Mock Test..." 
+  //         });
+  //       }
+  //     }, 1500); 
+  //   });
+  // };
+
+  const handleCreateTTRBackground = (data) => {
+    // 1. Hứng đầy đủ cả 3 thông tin từ Modal gửi lên
+    const { prompt: finalPrompt, gameMode, subjectType } = data;
+
     const tempId = Date.now();
     const newTask = { id: tempId, name: "Đang AI tạo bài...", status: 'loading' };
     setTtrTasks(prev => [newTask, ...prev]); 
     setIsSetupOpen(false);
 
-    const promptName = finalPrompt.split("Nội dung/Chủ đề:")[1]?.substring(0, 25) || "Bài tập AI";
+    // 2. Gom đúng chuẩn Payload mà API yêu cầu (KHÔNG gửi name, description)
+    const payload = { 
+      prompt: finalPrompt,
+      subject_type: subjectType 
+    };
 
-    createTTRActivity(interactionId, { name: promptName + "...", description: "Tự động tạo", prompt: finalPrompt })
+    
+    // mockCreateTTRActivity(interactionId, payload) // Hàm test
+    // Gọi API thật
+    createTTRActivity(interactionId, payload)
       .then(newActivity => {
         setTtrTasks(prev => prev.map(task => 
           task.id === tempId ? { ...task, id: newActivity.id, name: newActivity.name, status: 'ready', isNew: true } : task
         ));
       })
       .catch(error => {
-        setTtrTasks(prev => prev.filter(task => task.id !== tempId));
+        // PHÂN LOẠI LỖI THEO ĐÚNG TÀI LIỆU BACKEND
+        let uiMessage = "Lỗi hệ thống. Vui lòng thử lại.";
+        
+        if (error.status_code === 401) {
+          uiMessage = "Phiên đăng nhập hết hạn. Vui lòng tải lại trang.";
+        } else if (error.status_code === 404) {
+          uiMessage = "Tài nguyên không tìm thấy hoặc đã bị xóa.";
+        } else if (error.status_code === 400) {
+          uiMessage = "Dữ liệu gửi lên không hợp lệ.";
+        } else if (error.status_code === 502 || error.status_code === 503) {
+          uiMessage = "AI bị nghẽn hoặc làm sai. Hãy thử giảm độ khó hoặc viết prompt rõ hơn.";
+        } else if (error.status_code === 500) {
+          uiMessage = "Lỗi từ Backend (500). Đã báo cáo hệ thống.";
+        }
+
+        // ĐƯA LỖI VÀO UI (Cập nhật task thành trạng thái lỗi thay vì xóa nó đi)
+        setTtrTasks(prev => prev.map(task => 
+          task.id === tempId 
+            ? { ...task, status: 'error', errorMessage: uiMessage, rawError: error.exception_type } 
+            : task
+        ));
+        
+        console.error("Lỗi tạo bài: ", error.message);
       });
   };
 
@@ -118,11 +181,28 @@ export const InteractionPage = () => {
       modals={
         <>
           <AddSourceModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAdd={uploadMultipleFiles} />
-          <TTRSetupModal isOpen={isSetupOpen} onClose={() => setIsSetupOpen(false)} onSubmit={handleCreateTTRBackground} />
+          <TTRSetupModal 
+            isOpen={isSetupOpen} 
+            onClose={() => setIsSetupOpen(false)} 
+            onSubmit={(data) => {
+              // Ép buộc bắt đúng object data từ Modal và truyền thẳng xuống hook
+              console.log("Dữ liệu bẫy được tại Component cha:", data);
+              handleCreateTTRBackground({
+                prompt: data.prompt,
+                gameMode: data.gameMode,
+                subjectType: data.subjectType
+              });
+            }} 
+          />
           
           {/* LỚP PHỦ GAME TTR */}
           {isTTROpen && currentActivityId && (
-            <TTRFeature activityId={currentActivityId} isNew={currentIsNew} onClose={() => { setIsTTROpen(false); setCurrentActivityId(null); }} />
+            <TTRFeature 
+            activityId={currentActivityId} 
+            isNew={currentIsNew} 
+            initialMode={currentMode}
+            onClose={() => { setIsTTROpen(false); setCurrentActivityId(null); }} 
+          />
           )}
         </>
       }
@@ -156,10 +236,14 @@ export const InteractionPage = () => {
         // Props TTR
         onOpenTTR={() => setIsSetupOpen(true)} 
         ttrTasks={ttrTasks} 
+
+        onRemoveTTRTask={(id) => setTtrTasks(prev => prev.filter(t => t.id !== id))}
+
         onPlayTTR={(id) => {
           const task = ttrTasks.find(t => t.id === id);
           setCurrentActivityId(id);
           setCurrentIsNew(task ? task.isNew : false);
+          setCurrentMode(task?.gameMode || 'normal');
           setIsTTROpen(true);
           if (task && task.isNew) {
             setTtrTasks(prev => prev.map(t => t.id === id ? { ...t, isNew: false } : t));

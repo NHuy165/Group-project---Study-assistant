@@ -1,5 +1,7 @@
+import json
 from datetime import datetime, timezone
 
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import col, delete, select
@@ -7,6 +9,7 @@ from sqlmodel import col, delete, select
 from backend.src.core.ai_api import ExceptionRequest_400, GlobalAPI
 from backend.src.core.config import settings
 from backend.src.exceptions.core import (
+    ExceptionLLMError_502,
     ExceptionNotFound_404,
     ExceptionSubmittedExercise_409,
 )
@@ -15,13 +18,12 @@ from backend.src.models_schema.activity.exercise_item import (
     ExerciseItemUpdate,
 )
 from backend.src.models_schema.activity.exercise_item_content import ExerciseItemContent
-from backend.src.models_schema.activity.json_validation import (
-    FlashcardsJsonSchema,
-    GapFillJsonSchema,
-    MCQJsonSchema,
-    OpenEndedCreationJsonSchema,
-    OpenEndedGradingInitiationJsonSchema,
-    OpenEndedGradingResultJsonSchema,
+from backend.src.models_schema.activity.json_schema import (
+    FlashcardsSchema,
+    GapFillSchema,
+    MCQSchema,
+    OpenEndedCreationSchema,
+    OpenEndedGradingResultItemSchema,
     OpenEndedGradingResultSchema,
     StudyActivityValidationBase,
 )
@@ -33,6 +35,7 @@ from backend.src.models_schema.activity.review_item import (
 from backend.src.models_schema.activity.review_item_content import ReviewItemContent
 from backend.src.models_schema.activity.study_activity import (
     FlashcardsActivityInput,
+    OpenEndedGradingInitiationSchema,
     StudyActivity,
     StudyActivityInput,
     StudyActivityOutputComplete,
@@ -58,11 +61,11 @@ from backend.src.RAG.augmentation.formatters.chunks.core import chunks_formatter
 from backend.src.RAG.augmentation.formatters.conversations.core import (
     conversations_formatter,
 )
-from backend.src.RAG.augmentation.prompts_formatting.instruction_schemas import (
-    flashcards_schema,
-    gap_fill_schema,
-    multiple_choice_questions_schema,
-    open_ended_schema,
+from backend.src.RAG.augmentation.prompts_formatting.study_activity_format_prompts import (
+    MCQ_format_prompt,
+    flashcards_format_prompt,
+    gap_fill_format_prompt,
+    open_ended_format_prompt,
 )
 from backend.src.RAG.retrieval.core import retrieval
 from backend.src.RAG.retrieval.prompt_rewrite import rewrite_prompt
@@ -70,17 +73,17 @@ from backend.src.services.llm_response import read_llm_responses
 
 # ----- CREATE ----- #
 
-schema_map: dict[
+format_schema_map: dict[
     StudyActivityFormat,
     tuple[str, type[StudyActivityValidationBase]],
 ] = {
     StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS: (
-        multiple_choice_questions_schema,
-        MCQJsonSchema,
+        MCQ_format_prompt,
+        MCQSchema,
     ),
-    StudyActivityFormat.FLASHCARDS: (flashcards_schema, FlashcardsJsonSchema),
-    StudyActivityFormat.GAP_FILL: (gap_fill_schema, GapFillJsonSchema),
-    StudyActivityFormat.OPEN_ENDED: (open_ended_schema, OpenEndedCreationJsonSchema),
+    StudyActivityFormat.FLASHCARDS: (flashcards_format_prompt, FlashcardsSchema),
+    StudyActivityFormat.GAP_FILL: (gap_fill_format_prompt, GapFillSchema),
+    StudyActivityFormat.OPEN_ENDED: (open_ended_format_prompt, OpenEndedCreationSchema),
 }
 
 
@@ -89,7 +92,7 @@ async def save_multiple_choice_questions(
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, MCQJsonSchema)
+    assert isinstance(activity_data, MCQSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -125,7 +128,7 @@ async def save_open_ended(
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, OpenEndedCreationJsonSchema)
+    assert isinstance(activity_data, OpenEndedCreationSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -148,7 +151,7 @@ async def save_gap_fill(
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, GapFillJsonSchema)
+    assert isinstance(activity_data, GapFillSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -195,7 +198,7 @@ async def save_flashcards(
     activity_data: StudyActivityValidationBase,
     study_activity: StudyActivity,
 ) -> None:
-    assert isinstance(activity_data, FlashcardsJsonSchema)
+    assert isinstance(activity_data, FlashcardsSchema)
 
     n_items = len(activity_data.activity_items)
     if n_items == 0:
@@ -261,8 +264,13 @@ async def create_study_activity(
     )
     formatted_chunks = chunks_formatter(document_chunks)
 
+    # Temporary close
+    await session.commit()
+
     # Augmentation
-    json_schema, response_validator = schema_map[study_activity_input.activity_format]
+    json_schema, response_validator = format_schema_map[
+        study_activity_input.activity_format
+    ]
 
     params = StudyActivityParams(
         prompt=study_activity_input.prompt,
@@ -275,11 +283,43 @@ async def create_study_activity(
 
     final_prompt = study_activity_augmentation(params)
 
-    # Generation
-    generated_activity = await GlobalAPI.generate_material(final_prompt)
+    i_retry = 0
+    while True:
+        try:
+            # Generation
+            generated_activity = await GlobalAPI.generate_material(final_prompt)
 
-    # Validates content from model
-    validated_activity = response_validator.model_validate_json(generated_activity)
+            # Validates content from model
+            validated_activity = response_validator.model_validate_json(
+                generated_activity
+            )
+
+            if (
+                validated_activity.name == "$!SUBJECT!$"
+                and validated_activity.description == "$!SUBJECT!$"
+            ):
+                raise ExceptionRequest_400(
+                    "User prompt contents doesn't match specified subject type."
+                )
+            if (
+                validated_activity.name == "$!FORMAT!$"
+                and validated_activity.description == "$!FORMAT!$"
+            ):
+                raise ExceptionRequest_400(
+                    "User prompt contents doesn't match specified activity format."
+                )
+
+            break
+        except (ExceptionLLMError_502, ValidationError) as e:
+            i_retry += 1
+            if i_retry >= settings.N_GENERATION_RETRIES:
+                if isinstance(e, ExceptionLLMError_502):
+                    raise
+                else:
+                    raise ExceptionLLMError_502(
+                        f"Incorrect content format. Details: {e}"
+                    )
+            continue
 
     # === Saves response === #
 
@@ -291,7 +331,7 @@ async def create_study_activity(
         name=validated_activity.name,
         description=validated_activity.description,
         interaction=interaction,
-    )
+    )  # type: ignore
 
     session.add(study_activity)
 
@@ -340,7 +380,7 @@ async def create_flashcards_activity(
         name=flashcards_activity_input.name,
         description=flashcards_activity_input.description,
         interaction=interaction,
-    )
+    )  # type: ignore
 
     session.add(flashcards_activity)
     await session.commit()
@@ -623,7 +663,13 @@ async def answer_exercise_item(
 
     session.add(exercise_item)
     await session.commit()
-    await session.refresh(exercise_item, attribute_names=["contents"])
+
+    query = (
+        select(ExerciseItem)
+        .where(ExerciseItem.id == exercise_item_id)
+        .options(selectinload(ExerciseItem.contents))  # type: ignore
+    )
+    exercise_item = (await session.execute(query)).scalar_one()
 
     return exercise_item
 
@@ -677,7 +723,7 @@ async def submit_exercise_activity(
     # Grades if not yet graded
     if study_activity.activity_format == StudyActivityFormat.OPEN_ENDED:
         # === Preparing the json input === #
-        questions = OpenEndedGradingInitiationJsonSchema.model_validate(
+        questions = OpenEndedGradingInitiationSchema.model_validate(
             {
                 "questions_answers": [
                     item.model_dump() for item in study_activity.exercise_items
@@ -694,6 +740,9 @@ async def submit_exercise_activity(
             raw_prompt=prompt,
             embedded_prompt=embedded_prompt,
         )
+        # Temporary close
+        await session.commit()
+
         formatted_chunks = chunks_formatter(document_chunks)
 
         params = AnswersGradingParams(
@@ -705,35 +754,29 @@ async def submit_exercise_activity(
         final_prompt = answers_grading_augmentation(params)
 
         # === Grading === #
-        graded_results = await GlobalAPI.grade_answers(final_prompt)
+        i_retry = 0
 
-        validated_graded_results = OpenEndedGradingResultJsonSchema.model_validate_json(
-            graded_results
-        )
+        while True:
+            try:
+                grading_results = await GlobalAPI.grade_answers(final_prompt)
+                grading_results_python: dict = json.loads(grading_results)
+                grading_results_python.update({"grading_input": questions.model_dump()})
 
-        # === Updates the results === #
-        results_map: dict[int, OpenEndedGradingResultSchema] = {
-            res.id: res for res in validated_graded_results.grading_results
-        }
+                validated_grading_results = OpenEndedGradingResultSchema.model_validate(
+                    grading_results_python
+                )
+                break
 
-        for exercise_item in study_activity.exercise_items:
-            assert exercise_item.id is not None
-            graded_result = results_map.get(exercise_item.id)
-
-            if graded_result is None:
-                raise Exception("Something went wrong with the model exercise grading.")
-
-            exercise_item.sqlmodel_update(graded_result.model_dump(exclude={"id"}))
-            session.add(exercise_item)
-
-        await session.commit()
-
-    # Updates
-    await session.refresh(study_activity)
-    study_activity.is_submitted = True
-    study_activity.submitted_at = datetime.now(timezone.utc)
-    session.add(study_activity)
-    await session.commit()
+            except (ExceptionLLMError_502, ValidationError) as e:
+                i_retry += 1
+                if i_retry >= settings.N_GENERATION_RETRIES:
+                    if isinstance(e, ExceptionLLMError_502):
+                        raise
+                    else:
+                        raise ExceptionLLMError_502(
+                            f"Incorrect content format. Details: {e}"
+                        )
+                continue
 
     # Refetchs
     query_refetch = (
@@ -750,11 +793,32 @@ async def submit_exercise_activity(
             ),
         )
     )
-    study_activity_refetch = (await session.execute(query_refetch)).scalars().first()
+    study_activity = (await session.execute(query_refetch)).scalars().first()
+
+    assert study_activity is not None
+
+    # Updates
+    study_activity.is_submitted = True
+    study_activity.submitted_at = datetime.now(timezone.utc)
+
+    # Updates item grading if open_ended
+    if study_activity.activity_format == StudyActivityFormat.OPEN_ENDED:
+        results_map: dict[int, OpenEndedGradingResultItemSchema] = {
+            res.id: res for res in validated_grading_results.grading_results
+        }
+
+        for exercise_item in study_activity.exercise_items:
+            assert exercise_item.id is not None
+            graded_result = results_map[exercise_item.id]
+
+            exercise_item.sqlmodel_update(graded_result.model_dump(exclude={"id"}))
+            session.add(exercise_item)
 
     study_activity_output_complete = StudyActivityOutputComplete.model_validate(
-        study_activity_refetch, context={"show_answers": True}
+        study_activity, context={"show_answers": True}
     )
+
+    await session.commit()
 
     return study_activity_output_complete
 

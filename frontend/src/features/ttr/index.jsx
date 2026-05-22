@@ -5,9 +5,9 @@ import { TTRCard } from './components/TTRCard';
 import { MagicCursor } from './components/MagicCursor';
 import { TTRActionModal } from './components/TTRActionModal'; // <-- Nhúng Modal vào đây
 
-export const TTRFeature = ({ activityId, isNew, onClose }) => {
+export const TTRFeature = ({ activityId, isNew, initialMode, onClose }) => {
   // Nếu là bài mới thì vô làm luôn ('play'). Nếu bài cũ thì đợi chọn chế độ (null)
-  const [mode, setMode] = useState(initialMode || null);
+  const [mode, setMode] = useState(isNew ? initialMode : null);
 
   // NẾU CHƯA CHỌN CHẾ ĐỘ -> HIỆN BẢNG MENU HỎI
   if (!mode) {

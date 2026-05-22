@@ -23,13 +23,13 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
       setContent(''); 
       setSelectedPrompts([]); 
       setErrorMsg(''); 
-      setSubject('MATHS'); // [MỚI] Reset về Toán
+      setSubject('MATHS');
     } 
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
     if (!content.trim() && selectedPrompts.length === 0) {
       setErrorMsg('❌ Bé ơi, nhập nội dung hoặc chọn gợi ý nhé!');
@@ -38,23 +38,42 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
 
     const finalContent = [content.trim(), ...selectedPrompts].filter(Boolean).join('\n\n');
     
-    let blankRule = "1 đến 2";
-    if (difficulty === 'medium') blankRule = "3 đến 4";
-    if (difficulty === 'hard') blankRule = "5 đến 6"; 
+    // Cấu hình linh hoạt mọi độ khó
+    let minBlank = 1; let maxBlank = 2;
+    if (difficulty === 'medium') { minBlank = 3; maxBlank = 4; }
+    if (difficulty === 'hard') { minBlank = 5; maxBlank = 6; }
 
-    const finalPrompt = `
-      Hãy tạo một bài tập điền từ vào chỗ trống (Gap Fill). 
-      Nội dung/Chủ đề: ${finalContent}. 
-      Yêu cầu:
-      - Số lượng: Tạo chính xác ${questionCount} câu hỏi.
-      - Độ khó: Mỗi câu hỏi phải đục từ ${blankRule} chỗ trống cần điền.
-      - QUY ĐỊNH QUAN TRỌNG: Chỉ sử dụng cụm từ [BLANK] để đại diện cho các chỗ trống. Tuyệt đối không sử dụng $!BLANK!$ hay bất kỳ ký hiệu nào khác.
+    const isEnglish = subject === 'ENGLISH';
+
+    const finalPrompt = isEnglish ? `
+      Task: Create exactly ${questionCount} Gap Fill sentences about "${finalContent}".
+
+      STRICT RULES (SYSTEM WILL CRASH IF YOU DISOBEY):
+      1. Each sentence MUST contain ${minBlank} to ${maxBlank} "[BLANK]" placeholders.
+      2. KEEP the exact string "[BLANK]". DO NOT fill in the answers. DO NOT use underscores.
+      3. DO NOT number the sentences (no 1., 2.). 
+      4. DO NOT write any introduction or greetings.
+      5. Output one sentence per line.
+
+      Correct Example format:
+      The [BLANK] is running across the [BLANK].
+      I want to pet a [BLANK] because it is very cute.
+          ` : `
+      Nhiệm vụ: Tạo đúng ${questionCount} câu hỏi điền từ (Gap Fill) chủ đề "${finalContent}".
+
+      QUY ĐỊNH BẮT BUỘC (HỆ THỐNG SẼ LỖI NẾU LÀM SAI):
+      1. Mỗi câu PHẢI chứa từ ${minBlank} đến ${maxBlank} chữ "[BLANK]".
+      2. GIỮ NGUYÊN chữ "[BLANK]" trong câu. TUYỆT ĐỐI KHÔNG điền đáp án.
+      3. KHÔNG đánh số thứ tự (không dùng 1. 2.). KHÔNG có câu chào hỏi hay mở bài.
+      4. Mỗi câu nằm trên 1 dòng.
+
+      Ví dụ đúng định dạng:
+      Con [BLANK] là loài động vật sống ở [BLANK].
+      Bầu trời màu [BLANK] và có những đám mây [BLANK].
     `;
 
     console.log("Subject đang gửi đi:", subject);
-    
-    // [MỚI] Truyền thêm subjectType ra ngoài
-    onSubmit({ prompt: finalPrompt, gameMode: mode, subjectType: subject });
+    onSubmit({ prompt: finalPrompt.trim(), gameMode: mode, subjectType: subject });
   };
 
   const togglePrompt = (p) => {
