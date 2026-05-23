@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 1. Khởi tạo một "Trạm kiểm soát" riêng cho dự án
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:8000', // Khai báo URL gốc ở đây 1 lần duy nhất
+    baseURL: '/api', // Khai báo URL gốc ở đây 1 lần duy nhất
     headers: {
         'Content-Type': 'application/json',
     },
