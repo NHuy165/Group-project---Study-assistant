@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme/ThemeWrapper";
 import { getDropdownClasses } from "../utils/dropdownColor";
 
+import { ChartFallback } from "./ChartFallback";
 
 export const LineScoreWidget = () => {
     const [filterValue, setFilterValue] = useState("30 ngày"); 
@@ -59,7 +60,23 @@ export const LineScoreWidget = () => {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </ChartHeader>
-            <LineChartComponent data={trendData} />
+            {/* <LineChartComponent data={trendData} /> */}
+            <div className="flex-1 w-full h-full flex items-center justify-center p-4 relative">
+                {/* 1. Trạng thái Loading */}
+                {isLoading && (
+                    <div className="text-slate-400 text-sm animate-pulse">Đang tải dữ liệu...</div>
+                )}
+                
+                {/* 2. Trạng thái Lỗi / Trống */}
+                {!isLoading && error && (
+                    <ChartFallback error={error} />
+                )}
+
+                {/* 3. Trạng thái Thành công (Render Biểu đồ) */}
+                {!isLoading && !error && trendData && (
+                    <LineChartComponent data={trendData} />
+                )}
+            </div>
         </div>
     )
 }

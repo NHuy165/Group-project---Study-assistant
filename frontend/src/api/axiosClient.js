@@ -41,7 +41,13 @@ axiosClient.interceptors.response.use(
             // 2. Đá người dùng văng ra màn hình Đăng nhập
             // Vì bạn dùng HashRouter nên URL bắt đầu bằng dấu #
             window.location.href = '#/login'; 
+
+            //Trả về một Promise lửng lơ để "nuốt" luôn cái lỗi,
+            // không cho nó chạy lọt xuống khối catch của useFetchChart nữa.
+            return new Promise(() => {});
         }
+
+        // Với các mã lỗi khác (400, 404, 500...), vẫn ném tiếp xuống cho Component tự xử lý
         return Promise.reject(error);
     }
 );

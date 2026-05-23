@@ -17,6 +17,8 @@ import { useRadarChart } from "../hooks/useRadarChart";
 import { useTheme } from "@/components/theme/ThemeWrapper";
 import { getDropdownClasses } from "../utils/dropdownColor";
 
+import { ChartFallback } from "./ChartFallback";
+
 export const RadarScoreWidget = () => {
     const [filterValue, setFilterValue] = useState("7 ngày");
     const { data: scoreData, isLoading, error } = useRadarChart(filterValue);
@@ -29,7 +31,7 @@ export const RadarScoreWidget = () => {
 
     return (
         <div className="w-full h-full flex flex-col">
-            <ChartHeader title="Tỉ lệ đạt điểm tối đa các môn" >
+            <ChartHeader title="Thế mạnh của học sinh" >
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         {/* 4a. Gắn class cho Nút bấm */}
@@ -60,7 +62,23 @@ export const RadarScoreWidget = () => {
                 </DropdownMenu>
             </ChartHeader>
 
-            <RadarChartComponent data={scoreData} />
+            {/* <RadarChartComponent data={scoreData} /> */}
+            <div className="flex-1 w-full h-full flex items-center justify-center p-4 relative">
+                {/* 1. Trạng thái Loading */}
+                {isLoading && (
+                    <div className="text-slate-400 text-sm animate-pulse">Đang tải dữ liệu...</div>
+                )}
+                
+                {/* 2. Trạng thái Lỗi / Trống */}
+                {!isLoading && error && (
+                    <ChartFallback error={error} />
+                )}
+
+                {/* 3. Trạng thái Thành công (Render Biểu đồ) */}
+                {!isLoading && !error && scoreData && (
+                    <RadarChartComponent data={scoreData} />
+                )}
+            </div>
         </div>
     )
 }
