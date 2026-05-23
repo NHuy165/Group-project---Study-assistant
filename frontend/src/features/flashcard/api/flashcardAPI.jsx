@@ -55,108 +55,72 @@ export const createFlashcard = async (interactionId, promptData) => {
 };
 
 export const readFlashcard = async (flashcardId) => {
-    try {
-        const response = await axiosClient.get(`${PATH}/${flashcardId}`);
-        return transformBackendFlashcards(response.data);
-    } catch (error) {
-        console.error("Error reading flashcard:", error);
-        throw error;
-    }
+    const response = await axiosClient.get(`${PATH}/${flashcardId}`);
+    return transformBackendFlashcards(response.data);
 };
 
 export const readAllFlashcards = async (interactionId) => {
-    try {
-        const response = await axiosClient.get(`${PATH}/${interactionId}/`);
-        const activities = Array.isArray(response.data) ? response.data : [];
-        
-        // Filter chỉ lấy flashcards format
-        const flashcardActivities = activities.filter((activity) => (
-            activity.activity_type === "REVIEW" &&
-            activity.activity_format === "FLASHCARDS"
-        ));
+    const response = await axiosClient.get(`${PATH}/${interactionId}/`);
+    const activities = Array.isArray(response.data) ? response.data : [];
+    
+    // Filter chỉ lấy flashcards format
+    const flashcardActivities = activities.filter((activity) => (
+        activity.activity_type === "REVIEW" &&
+        activity.activity_format === "FLASHCARDS"
+    ));
 
-        return flashcardActivities;
-    } catch (error) {
-        console.warn('Error reading all flashcards:', error);
-        throw error;
-    }
+    return flashcardActivities;
 };
 
 export const deleteFlashcard = async (flashcardId) => {
-    try {
-        const response = await axiosClient.delete(`${PATH}/${flashcardId}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error deleting flashcard:", error);
-        throw error;
-    }
+    const response = await axiosClient.delete(`${PATH}/${flashcardId}`);
+    return response.data;
 };
 
 export const createEmptyFlashcard = async (interactionId, formData) => {
-    try {
+    const payload = {
+        subject_type: formData.subject_type,
+        name: formData.name,
+        description: formData.description,
+    };
 
-        const payload = {
-            subject_type: formData.subject_type,
-            name: formData.name,
-            description: formData.description,
-        };
+    const response = await axiosClient.post(
+            `${PATH}/${interactionId}/flashcards/create`,
+            payload
+        );
 
-        const response = await axiosClient.post(
-                `${PATH}/${interactionId}/flashcards/create`,
-                payload
-            );
-
-        return response.data;
-    } catch (error) {
-        console.error("Error create empty flashcard:", error);
-        throw error;
-    }
+    return response.data;
 }
 
 export const addCard = async (flashcardId, formData) => {
-    try {
-        const payload = [{
-            front: formData.front,
-            back: formData.back,
-        }];
+    const payload = [{
+        front: formData.front,
+        back: formData.back,
+    }];
 
-        const response = await axiosClient.post(
-                `${PATH}/${flashcardId}/add-cards`,
-                payload
-            );
+    const response = await axiosClient.post(
+            `${PATH}/${flashcardId}/add-cards`,
+            payload
+        );
 
-        return response.data;
-    } catch (error) {
-        console.error("Error add card:", error);
-        throw error;
-    } 
+    return response.data;
 }
 
 export const updateFlashcard = async (cardId, formData) => {
-    try {
-        const payload = {
-            front: formData.front,
-            back: formData.back,
-        };
+    const payload = {
+        front: formData.front,
+        back: formData.back,
+    };
 
-        const response = await axiosClient.patch(
-                `${PATH}/flashcards/${cardId}`,
-                payload
-            );
+    const response = await axiosClient.patch(
+            `${PATH}/flashcards/${cardId}`,
+            payload
+        );
 
-        return response.data;
-    } catch (error) {
-        console.error("Error update card:", error);
-        throw error;
-    }
+    return response.data;
 }
 
 export const deleteCard = async (cardId) => {
-    try {
-        const response = await axiosClient.delete(`${PATH}/flashcards/${cardId}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error deleting card:", error);
-        throw error;
-    }
+    const response = await axiosClient.delete(`${PATH}/flashcards/${cardId}`);
+    return response.data;
 }

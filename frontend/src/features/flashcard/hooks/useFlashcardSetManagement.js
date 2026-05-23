@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { readAllFlashcards, createFlashcard, deleteFlashcard, createEmptyFlashcard } from '../api/flashcardAPI';
+import { resolveFlashcardError } from "../utils/flashcardErrorHandler";
 
 /**
  * Hook quản lý logic bộ flashcard: load, tạo, xóa
@@ -26,9 +27,13 @@ const useFlashcardSetManagement = (interactionId) => {
             const response = await readAllFlashcards(interactionId);
             const data = Array.isArray(response) ? response : [];
             setFlashcardSets(data);
-        } catch (err) {
-            console.error("Lỗi tải flashcard:", err);
-            setError("Không thể tải flashcard");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "readSets",
+                fallbackMessage: "Chưa tải được các bộ thẻ flashcard. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardSetManagement.loadFlashcardSets",
+            });
+            setError(userMessage);
             setFlashcardSets([]);
         } finally {
             setIsLoading(false);
@@ -64,9 +69,13 @@ const useFlashcardSetManagement = (interactionId) => {
             setPrompt('');
             return newFlashcardSet;
 
-        } catch (err) {
-            console.error("Lỗi tạo flashcard:", err);
-            setError("Lỗi tạo flashcard. Vui lòng thử lại");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "create",
+                fallbackMessage: "Chưa tạo được bộ thẻ flashcard mới. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardSetManagement.createNewFlashcardSet",
+            });
+            setError(userMessage);
         } finally {
             setIsCreatingWithAI(false);
         }
@@ -110,9 +119,13 @@ const useFlashcardSetManagement = (interactionId) => {
             setPrompt('');
             return newFlashcardSet;
 
-        } catch (err) {
-            console.error("Lỗi tạo flashcard:", err);
-            setError("Lỗi tạo flashcard. Vui lòng thử lại");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "createEmpty",
+                fallbackMessage: "Chưa tạo được bộ thẻ flashcard trống. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardSetManagement.createEmptyFlashcardSet",
+            });
+            setError(userMessage);
         } finally {
             setIsLoading(false);
         }
@@ -131,9 +144,13 @@ const useFlashcardSetManagement = (interactionId) => {
             // Xóa từ local state
             setFlashcardSets(prev => prev.filter(set => set.id !== study_activity_id))
             setError('');
-        } catch (err) {
-            console.error("Lỗi xóa flashcard:", err);
-            setError("Lỗi xóa bộ flashcard. Vui lòng thử lại");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "delete",
+                fallbackMessage: "Chưa xóa được bộ thẻ flashcard này. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardSetManagement.removeFlashcardSet",
+            });
+            setError(userMessage);
         } finally {
             setIsLoading(false);
         }
