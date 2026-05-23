@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import (
     CORSMiddleware,  # Tuấn sửa, thêm CORS do khác địa port giữa frontend và backend
 )
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -127,3 +128,8 @@ app.include_router(
 DIST_PATH = Path(__file__).resolve().parent / "dist"
 
 app.mount("/", StaticFiles(directory=DIST_PATH, html=True), name="static")
+
+
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    return FileResponse(DIST_PATH / "index.html")
