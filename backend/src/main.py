@@ -125,7 +125,7 @@ app.include_router(
     tags=["study-progress"],
 )
 
-DIST_PATH = Path(__file__).resolve().parent / "dist"
+DIST_PATH = Path(__file__).resolve().parent.parent / "dist"
 
 app.mount("/", StaticFiles(directory=DIST_PATH, html=True), name="static")
 
