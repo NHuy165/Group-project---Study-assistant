@@ -142,7 +142,7 @@ export const InteractionPage = () => {
     createTTRActivity(interactionId, payload)
       .then(newActivity => {
         setTtrTasks(prev => prev.map(task => 
-          task.id === tempId ? { ...task, id: newActivity.id, name: newActivity.name, status: 'ready', isNew: true } : task
+          task.id === tempId ? { ...task, id: newActivity.id, name: newActivity.name, status: 'ready', isNew: true, gameMode: gameMode } : task
         ));
       })
       .catch(error => {
