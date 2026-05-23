@@ -1,5 +1,14 @@
 import axiosClient from '../../../api/axiosClient';
 
+/**
+ * Parameter: 
+ * - interactionId: ID của interaction (ví dụ: bài học, chủ đề, v.v.) mà flashcard thuộc về
+ * - flashcardId: ID của flashcard Set
+ * - cardId: ID của từng card trong flashcard set
+ * - promptData: Dữ liệu đầu vào để tạo flashcard, có thể là string hoặc object chứa prompt và subject_type
+ * - formData: Dữ liệu từ form để tạo hoặc cập nhật flashcard, bao gồm front, back, name, description, subject_type
+ */
+
 const PATH = '/study-activity';
 
 const FRONT_TYPE = 'FLASHCARDS_FRONT';
@@ -28,122 +37,90 @@ export const transformBackendFlashcards = (studyActivityComplete) => {
 
 export const createFlashcard = async (interactionId, promptData) => {
     const promptText = typeof promptData === 'object' ? promptData.prompt : promptData;
+    const subjectType = typeof promptData === 'object' ? promptData.subject_type : undefined;
 
     const payload = {
         prompt: promptText,
         activity_type: "REVIEW",
         activity_format: "FLASHCARDS",
-        subject_type: 'ENGLISH',
+        subject_type: subjectType,
     };
 
-    // const response = await axiosClient.post(`${PATH}/${interactionId}/create`, payload);
     const response = await axiosClient.post(
             `${PATH}/${interactionId}/create`,
             payload
         )
-    // return transformBackendFlashcards(response.data);
+
     return response.data;
 };
 
-export const readFlashcard = async (id) => {
-    try {
-        const response = await axiosClient.get(`${PATH}/${id}`);
-        return transformBackendFlashcards(response.data);
-    } catch (error) {
-        console.error("Error reading flashcard:", error);
-        return []; 
-    }
+export const readFlashcard = async (flashcardId) => {
+    const response = await axiosClient.get(`${PATH}/${flashcardId}`);
+    return transformBackendFlashcards(response.data);
 };
 
 export const readAllFlashcards = async (interactionId) => {
-    try {
-        const response = await axiosClient.get(`${PATH}/${interactionId}/`);
-        const activities = Array.isArray(response.data) ? response.data : [];
-        
-        // Filter chỉ lấy flashcards format
-        const flashcardActivities = activities.filter((activity) => (
-            activity.activity_type === "REVIEW" &&
-            activity.activity_format === "FLASHCARDS"
-        ));
+    const response = await axiosClient.get(`${PATH}/${interactionId}/`);
+    const activities = Array.isArray(response.data) ? response.data : [];
+    
+    // Filter chỉ lấy flashcards format
+    const flashcardActivities = activities.filter((activity) => (
+        activity.activity_type === "REVIEW" &&
+        activity.activity_format === "FLASHCARDS"
+    ));
 
-        // // Lấy chi tiết từng activity
-        // const completeActivities = await Promise.all(
-        //     flashcardActivities.map((activity) => readFlashcard(activity.id)),
-        // );
-
-        // return completeActivities.flat();
-        return flashcardActivities;
-    } catch (error) {
-        console.warn('Error reading all flashcards:', error);
-        return [];
-    }
+    return flashcardActivities;
 };
 
-export const deleteFlashcard = async (id) => {
-    try {
-        const response = await axiosClient.delete(`${PATH}/${id}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error deleting flashcard:", error);
-        throw error;
-    }
+export const deleteFlashcard = async (flashcardId) => {
+    const response = await axiosClient.delete(`${PATH}/${flashcardId}`);
+    return response.data;
 };
 
 export const createEmptyFlashcard = async (interactionId, formData) => {
-    try {
+    const payload = {
+        subject_type: formData.subject_type,
+        name: formData.name,
+        description: formData.description,
+    };
 
-        const payload = {
-            subject_type: formData.subject_type,
-            name: formData.name,
-            description: formData.description,
-        };
+    const response = await axiosClient.post(
+            `${PATH}/${interactionId}/flashcards/create`,
+            payload
+        );
 
-        const response = await axiosClient.post(
-                `${PATH}/${interactionId}/flashcards/create`,
-                payload
-            );
-
-        return response.data;
-    } catch (error) {
-        console.error("Error create empty flashcard:", error);
-        throw error;
-    }
+    return response.data;
 }
 
 export const addCard = async (flashcardId, formData) => {
-    try {
-        const payload = [{
-            front: formData.front,
-            back: formData.back,
-        }];
+    const payload = [{
+        front: formData.front,
+        back: formData.back,
+    }];
 
-        const response = await axiosClient.post(
-                `${PATH}/${flashcardId}/add-cards`,
-                payload
-            );
+    const response = await axiosClient.post(
+            `${PATH}/${flashcardId}/add-cards`,
+            payload
+        );
 
-        return response.data;
-    } catch (error) {
-        console.error("Error add card:", error);
-        throw error;
-    } 
+    return response.data;
 }
 
-export const updateFlashcard = async (flashcardId, formData) => {
-    try {
-        const payload = {
-            front: formData.front,
-            back: formData.back,
-        };
+export const updateFlashcard = async (cardId, formData) => {
+    const payload = {
+        front: formData.front,
+        back: formData.back,
+    };
 
-        const response = await axiosClient.patch(
-                `${PATH}/flashcards/${flashcardId}`,
-                payload
-            );
+    const response = await axiosClient.patch(
+            `${PATH}/flashcards/${cardId}`,
+            payload
+        );
 
-        return response.data;
-    } catch (error) {
-        console.error("Error update card:", error);
-        throw error;
-    }
+    return response.data;
+}
+
+export const deleteCard = async (cardId) => {
+    const response = await axiosClient.delete(`${PATH}/flashcards/${cardId}`);
+    return response.data;
 }

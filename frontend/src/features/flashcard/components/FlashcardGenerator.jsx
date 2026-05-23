@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Cards, MagicWand, Sparkle, WarningCircle } from '@phosphor-icons/react';
+import { useTheme } from '../../../components/theme/ThemeWrapper';
+import { SUBJECTS, SUGGESTED_PROMPTS } from '../constants';
 
 const FlashcardGenerator = ({
     isLoading,
+    isCreatingWithAI,
     error,
     prompt,
     setPrompt,
     onCreateFlashcardSet,
     onCreateEmptyFlashcardSet,
 }) => {
+    const { isNight } = useTheme();
+    const [createMode, setCreateMode] = useState('ai');
+    const [subject, setSubject] = useState('VIETNAMESE');
+    const [selectedSamples, setSelectedSamples] = useState([]);
     const [emptySetForm, setEmptySetForm] = useState({
         name: '',
-        subject_type: 'ENGLISH',
         description: '',
     });
+
+    const subjectLabel = useMemo(
+        () => SUBJECTS.find((item) => item.id === subject)?.label,
+        [subject],
+    );
+
+    const finalPrompt = useMemo(() => {
+        const basePrompt = [prompt.trim(), ...selectedSamples].filter(Boolean).join('. ');
+        if (!basePrompt) return '';
+
+        return `Môn học: ${subjectLabel}. Nội dung tạo flashcard: ${basePrompt}`;
+    }, [prompt, selectedSamples, subjectLabel]);
+
+    const canCreateWithAi = finalPrompt.trim().length > 0;
+    const canCreateEmptySet = (
+        emptySetForm.name.trim() &&
+        emptySetForm.description.trim() &&
+        subject
+    );
+    const isFormValid = createMode === 'ai' ? canCreateWithAi : canCreateEmptySet;
+
+    const isSubmitting = createMode === 'ai' ? isCreatingWithAI : isLoading;
 
     const updateEmptySetForm = (field, value) => {
         setEmptySetForm((prev) => ({
@@ -21,115 +50,229 @@ const FlashcardGenerator = ({
         }));
     };
 
-    const handleCreateEmptySet = async () => {
-        const createdSet = await onCreateEmptyFlashcardSet(emptySetForm);
+    const toggleSample = (sample) => {
+        setSelectedSamples((prev) => (
+            prev.includes(sample) ? prev.filter((item) => item !== sample) : [...prev, sample]
+        ));
+    };
+
+    const handleSubmit = async () => {
+        if (!isFormValid || isSubmitting) return;
+
+        if (createMode === 'ai') {
+            const createdSet = await onCreateFlashcardSet({
+                prompt: finalPrompt,
+                subject_type: subject,
+            });
+            if (createdSet) {
+                setPrompt('');
+                setSelectedSamples([]);
+            }
+            return;
+        }
+
+        const createdSet = await onCreateEmptyFlashcardSet({
+            name: emptySetForm.name,
+            description: emptySetForm.description,
+            subject_type: subject,
+        });
 
         if (createdSet) {
             setEmptySetForm({
                 name: '',
-                subject_type: 'ENGLISH',
                 description: '',
             });
         }
     };
 
-    const canCreateEmptySet = (
-        emptySetForm.name.trim() &&
-        emptySetForm.subject_type.trim() &&
-        emptySetForm.description.trim()
-    );
-
     return (
-        <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-2">
-            <section className="rounded-lg border border-dashed border-indigo-300 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 text-lg font-bold text-indigo-600">
-                    Tạo bộ Flashcard với AI
-                </h2>
+        <div className={`relative w-full rounded-[2.5rem] border p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all ${
+            isNight
+                ? 'border-white/10 bg-[#1e293b]/90 text-gray-100'
+                : 'border-white/40 bg-white/90 text-gray-800'
+        }`}>
+            <header className="mb-6 flex items-center gap-4 pr-12">
+                <div className={`rounded-2xl p-4 shadow-sm ${isNight ? 'bg-gray-800/80' : 'bg-gray-100'}`}>
+                    <Cards size={32} weight="fill" className="text-indigo-500" />
+                </div>
+                <div>
+                    <h2 className={`text-3xl font-black tracking-tight ${isNight ? 'text-blue-400' : 'text-blue-600'}`}>
+                        Cấu hình Flashcard
+                    </h2>
+                    <p className="text-sm font-bold opacity-60">
+                        Cú Mèo sẽ dựa vào đây để tạo bộ thẻ ghi nhớ cho bé
+                    </p>
+                </div>
+            </header>
 
-                {error && (
-                    <div className="mb-3 rounded border border-red-300 bg-red-100 p-3 text-sm text-red-700">
-                        {error}
+            <div className="mb-6 flex gap-2">
+                {[
+                    { id: 'ai', label: 'Tạo bằng AI' },
+                    { id: 'empty', label: 'Tạo bộ trống' },
+                ].map((mode) => (
+                    <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setCreateMode(mode.id)}
+                        className={`rounded-xl border-2 px-5 py-2 text-sm font-black transition-all ${
+                            createMode === mode.id
+                                ? 'border-purple-500 bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                                : (isNight ? 'border-gray-700 bg-gray-800/50 text-gray-400 hover:bg-gray-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100')
+                        }`}
+                    >
+                        {mode.label}
+                    </button>
+                ))}
+            </div>
+
+            {isCreatingWithAI && (
+                <div className={`mb-5 flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold ${
+                    isNight
+                        ? 'border-indigo-500/30 bg-indigo-900/20 text-indigo-300'
+                        : 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                }`}>
+                    <Sparkle size={18} className="animate-spin shrink-0" />
+                    AI đang tạo bộ thẻ... Bé có thể mở bộ flashcard cũ trong lúc chờ!
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-5 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm font-bold text-red-700">
+                    {error}
+                </div>
+            )}
+
+            <div className="mb-8">
+                {createMode === 'ai' ? (
+                    <>
+                        <textarea
+                            className={`h-44 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.2rem] leading-relaxed outline-none transition-all custom-scrollbar ${
+                                isNight
+                                    ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400'
+                                    : 'border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:border-blue-500'
+                            }`}
+                            placeholder="Nhập yêu cầu của bé hoặc dán văn bản vào đây..."
+                            value={prompt}
+                            onChange={(event) => setPrompt(event.target.value)}
+                            disabled={isCreatingWithAI}
+                        />
+
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {SUGGESTED_PROMPTS.map((sample) => {
+                                const isSelected = selectedSamples.includes(sample);
+
+                                return (
+                                    <button
+                                        key={sample}
+                                        type="button"
+                                        onClick={() => toggleSample(sample)}
+                                        className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2 text-sm font-bold transition-all ${
+                                            isSelected
+                                                ? 'border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-500/30 -translate-y-1'
+                                                : (isNight ? 'border-gray-700 bg-gray-800/50 text-gray-400 hover:bg-gray-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100')
+                                        }`}
+                                    >
+                                        {isSelected && <Sparkle size={14} weight="fill" className="animate-pulse" />}
+                                        {sample}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </>
+                ) : (
+                    <div className="grid gap-4">
+                        <input
+                            className={`w-full rounded-[1.5rem] border-2 px-5 py-4 text-base font-bold outline-none transition ${
+                                isNight
+                                    ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400'
+                                    : 'border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:border-blue-500'
+                            }`}
+                            value={emptySetForm.name}
+                            onChange={(event) => updateEmptySetForm('name', event.target.value)}
+                            placeholder="Tên bộ thẻ, ví dụ: Unit 4 vocabulary"
+                            disabled={isSubmitting}
+                        />
+                        <textarea
+                            className={`h-36 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.05rem] leading-relaxed outline-none transition-all custom-scrollbar ${
+                                isNight
+                                    ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400'
+                                    : 'border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:border-blue-500'
+                            }`}
+                            value={emptySetForm.description}
+                            onChange={(event) => updateEmptySetForm('description', event.target.value)}
+                            placeholder="Mục tiêu hoặc mô tả ngắn cho bộ flashcard..."
+                            disabled={isSubmitting}
+                        />
                     </div>
                 )}
+            </div>
 
-                <textarea
-                    className="min-h-32 w-full resize-none rounded-lg border border-slate-200 p-3 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                    placeholder="Nhập nội dung hoặc chủ đề, ví dụ: 10 từ vựng về nấu ăn..."
-                    rows="5"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    disabled={isLoading}
-                />
+            <div className="mb-10 flex flex-col gap-6 md:flex-row">
+                <div className={`flex-1 rounded-3xl border-2 p-5 ${isNight ? 'border-gray-700 bg-gray-900/50' : 'border-gray-100 bg-gray-50'}`}>
+                    <h4 className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-widest opacity-70">
+                        📚 Chọn môn học:
+                    </h4>
+                    <div className="flex gap-2">
+                        {SUBJECTS.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => setSubject(item.id)}
+                                className={`flex-1 rounded-xl border-2 py-3 text-xs font-black transition-all ${
+                                    subject === item.id
+                                        ? 'border-purple-500 bg-purple-500 text-white shadow-lg'
+                                        : (isNight ? 'border-gray-700 bg-gray-800 text-gray-500 hover:bg-gray-700' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50')
+                                }`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-                <button
-                    type="button"
-                    onClick={() => onCreateFlashcardSet(prompt)}
-                    disabled={isLoading || !prompt.trim()}
-                    className="mt-3 w-full rounded-lg bg-indigo-600 py-2.5 font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                    {isLoading ? 'Đang tạo...' : 'Tạo bằng AI'}
-                </button>
-            </section>
+                <div className={`flex flex-1 flex-col items-center justify-center rounded-3xl border-2 p-5 text-center ${isNight ? 'border-gray-700 bg-gray-900/50' : 'border-gray-100 bg-gray-50'}`}>
+                    <p className="text-sm font-bold italic opacity-50">
+                        {createMode === 'ai'
+                            ? 'Bé sẽ dùng bộ flashcard này để ôn tập và ghi nhớ kiến thức'
+                            : 'Bộ trống sẽ mở màn hình chỉnh sửa để bé thêm thẻ thủ công'}
+                    </p>
+                </div>
+            </div>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 text-lg font-bold text-slate-800">
-                    Tạo bộ Flashcard trống
-                </h2>
-
-                <div className="space-y-3">
-                    <label className="block">
-                        <span className="mb-1 block text-sm font-semibold text-slate-600">
-                            Tên bộ thẻ
+            <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                    {!isFormValid && (
+                        <span className="flex animate-pulse items-center gap-1 text-xs font-bold text-red-500">
+                            <WarningCircle size={16} />
+                            {createMode === 'ai'
+                                ? 'Bé chưa nhập nội dung bài học!'
+                                : 'Bé chưa nhập tên và mô tả bộ thẻ!'}
                         </span>
-                        <input
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            value={emptySetForm.name}
-                            onChange={(e) => updateEmptySetForm('name', e.target.value)}
-                            placeholder="Ví dụ: Unit 4 vocabulary"
-                            disabled={isLoading}
-                        />
-                    </label>
-
-                    <label className="block">
-                        <span className="mb-1 block text-sm font-semibold text-slate-600">
-                            Môn học
-                        </span>
-                        <select
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            value={emptySetForm.subject_type}
-                            onChange={(e) => updateEmptySetForm('subject_type', e.target.value)}
-                            disabled={isLoading}
-                        >
-                            <option value="ENGLISH">Tiếng Anh</option>
-                            <option value="MATHS">Toán</option>
-                            <option value="VIETNAMESE">Tiếng Việt</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </label>
-
-                    <label className="block">
-                        <span className="mb-1 block text-sm font-semibold text-slate-600">
-                            Mô tả
-                        </span>
-                        <textarea
-                            className="min-h-24 w-full resize-none rounded-lg border border-slate-200 p-3 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            value={emptySetForm.description}
-                            onChange={(e) => updateEmptySetForm('description', e.target.value)}
-                            placeholder="Mục tiêu hoặc nội dung chính của bộ thẻ"
-                            disabled={isLoading}
-                        />
-                    </label>
+                    )}
                 </div>
 
                 <button
                     type="button"
-                    onClick={handleCreateEmptySet}
-                    disabled={isLoading || !canCreateEmptySet}
-                    className="mt-3 w-full rounded-lg border border-indigo-200 bg-indigo-50 py-2.5 font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                    disabled={isSubmitting || !isFormValid}
+                    onClick={handleSubmit}
+                    className={`group flex items-center gap-3 rounded-2xl px-10 py-4 font-black text-white shadow-xl transition-all active:scale-95 ${
+                        !isFormValid
+                            ? 'cursor-not-allowed bg-gray-400'
+                            : 'bg-gradient-to-r from-purple-500 to-indigo-600 shadow-purple-500/20 hover:-translate-y-1 hover:from-purple-600 hover:to-indigo-700'
+                    }`}
                 >
-                    {isLoading ? 'Đang tạo...' : 'Tạo bộ trống'}
+                    {isSubmitting ? (
+                        <Sparkle size={24} className="animate-spin" />
+                    ) : (
+                        <MagicWand size={24} weight="fill" className="transition-transform group-hover:rotate-12" />
+                    )}
+                    {isSubmitting
+                        ? 'ĐANG TẠO BỘ THẺ...'
+                        : createMode === 'ai'
+                            ? 'BẮT ĐẦU TẠO BỘ THẺ'
+                            : 'TẠO BỘ TRỐNG'}
                 </button>
-            </section>
+            </div>
         </div>
     );
 };

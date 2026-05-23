@@ -19,21 +19,29 @@ const useFlashcardNavigation = (cards) => {
         setIsFlipped((prev) => !prev);
     }, []);
 
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
     // Chuyển sang thẻ tiếp theo
-    const nextCard = useCallback(() => {
+    const nextCard = useCallback(async () => {
         if (currentIndex < cardsList.length - 1) {
-            setIsFlipped(false);
+            if (isFlipped) {
+                setIsFlipped(false);
+                await delay(900);
+            }
             setCurrentIndex((prev) => prev + 1);
         }
-    }, [currentIndex, cardsList.length]);
+    }, [currentIndex, cardsList.length, isFlipped, setIsFlipped]);
 
     // Quay lại thẻ trước đó
-    const prevCard = useCallback(() => {
+    const prevCard = useCallback(async () => {
         if (currentIndex > 0) {
-            setIsFlipped(false);
+            if (isFlipped) {
+                setIsFlipped(false);
+                await delay(900);
+            }
             setCurrentIndex((prev) => prev - 1);
         }
-    }, [currentIndex]);
+    }, [currentIndex, isFlipped, setIsFlipped]);
 
     // Reset về thẻ đầu tiên
     const resetDeck = useCallback(() => {

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { readFlashcard, addCard, updateFlashcard } from '../api/flashcardAPI';
+import { readFlashcard, addCard, updateFlashcard, deleteCard } from '../api/flashcardAPI';
+import { resolveFlashcardError } from "../utils/flashcardErrorHandler";
 
 /**
  * Hook quản lý logic flashcard: load, tạo, xóa
@@ -23,9 +24,13 @@ const useFlashcardManagement = (study_activity_id) => {
             const response = await readFlashcard(study_activity_id);
             const data = Array.isArray(response) ? response : [];
             setCardsList(data);
-        } catch (err) {
-            console.error("Lỗi tải flashcard:", err);
-            setError("Không thể tải flashcard");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "readCards",
+                fallbackMessage: "Không tải được bộ thẻ flashcard này. Bé thử lại sau nhé.",
+                scope: "useFlashcardManagement.loadFlashcards",
+            });
+            setError(userMessage);
             setCardsList([]);
         } finally {
             setIsLoading(false);
@@ -40,7 +45,7 @@ const useFlashcardManagement = (study_activity_id) => {
         const backText = typeof back === 'string' ? back : back?.content || '';
 
         if (!frontText.trim() || !backText.trim() || !study_activity_id ) {
-            setError('Vui lòng nhập nội dung');
+            setError('Vui lòng nhập nội dung đầy đủ');
             return null;
         }
 
@@ -56,9 +61,13 @@ const useFlashcardManagement = (study_activity_id) => {
             await loadFlashcards();
             return response;
             
-        } catch (err) {
-            console.error("Lỗi tạo flashcard:", err);
-            setError("Lỗi tạo flashcard. Vui lòng thử lại");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "addCard",
+                fallbackMessage: "Chưa thêm được thẻ mới. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardManagement.createNewFlashcard",
+            });
+            setError(userMessage);
             return null
         } finally {
             setIsLoading(false);
@@ -89,9 +98,13 @@ const useFlashcardManagement = (study_activity_id) => {
             await loadFlashcards();
             return response;
             
-        } catch (err) {
-            console.error("Lỗi cập nhật flashcard:", err);
-            setError("Lỗi cập nhật flashcard. Vui lòng thử lại");
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "updateCard",
+                fallbackMessage: "Chưa chỉnh sửa được thẻ này. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardManagement.updateCard",
+            });
+            setError(userMessage);
             return null
         } finally {
             setIsLoading(false);
@@ -100,16 +113,25 @@ const useFlashcardManagement = (study_activity_id) => {
     /**
      * Xóa flashcard
      */
-    const removeFlashcard = useCallback(async (flashcardId) => {
+    const deleteFlashcard = useCallback(async (flashcardId) => {
+        setIsLoading(true);
+        setError('');
         try {
-            // Xóa từ local state
-            setCardsList(prev => prev.filter(card => card.id !== flashcardId));
+            const response = await deleteCard(flashcardId);
+            await loadFlashcards();
             setError('');
-        } catch (err) {
-            console.error("Lỗi xóa flashcard:", err);
-            setError("Lỗi xóa flashcard");
+            return response
+        } catch (error) {
+            const { userMessage } = resolveFlashcardError(error, {
+                action: "deleteCard",
+                fallbackMessage: "Chưa xóa được thẻ flashcard này. Bé vui lòng thử lại sau nhé.",
+                scope: "useFlashcardManagement.deleteFlashcard",
+            });
+            setError(userMessage);
+        } finally {
+            setIsLoading(false);
         }
-    }, []);
+    }, [loadFlashcards]);
 
     /**
      * Tự động tải flashcards khi interactionId thay đổi
@@ -132,7 +154,7 @@ const useFlashcardManagement = (study_activity_id) => {
         loadFlashcards,
         createNewFlashcard,
         updateCard,
-        removeFlashcard,
+        deleteFlashcard,
     };
 };
 

@@ -84,7 +84,7 @@ export const ThemeWrapper = ({ children, showToggle = true }) => {
 
         {/* ── TẦNG UI: Nút chuyển đổi ── */}
         {showToggle && (
-          <div className="absolute left-1/2 top-10 z-50" style={{ transform: "translateX(-50%)" }}>
+          <div className="absolute left-1/2 top-10 z-[100001]" style={{ transform: "translateX(-50%)" }}>
             <DayNightToggle isNight={isNight} onToggle={toggleMode} />
           </div>
         )}
