@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ChartHeader } from "./ChartHeader";
 import { CompletionDonut } from "./CompletionDonut";
 
+import { PieChartComponent } from "./PieChart";
+
 import { CaretDownIcon } from '@phosphor-icons/react';
 import {
   DropdownMenu,
