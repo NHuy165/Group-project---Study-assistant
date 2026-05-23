@@ -21,7 +21,7 @@ export const useInteractions = () => {
 
     // 2. STATE FORM & EDITING
     const [formData, setFormData] = useState({ name: '', description: '' });
-    const [editingId, setEditingId] = useState(null);
+    const [editingId, setEditingId] = useState(null); // null means the user is creating new a one
 
     // 3. UI HANDLERS
     const handleFormChange = (e) => {
