@@ -1,98 +1,110 @@
 import React from "react";
+import { useTheme } from "../../../components/theme/ThemeWrapper";
+import { SmartContent } from "../../../components/SmartContent";
 
 const QuestionCard = ({
   question,
-  onSelectOption,
   selectedOption,
+  onSelectOption,
   isSubmitted,
 }) => {
-  if (!question) {
-    return <div className="text-center text-gray-500">Không có câu hỏi</div>;
-  }
+  const { isNight } = useTheme();
+  if (!question) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      {/* Question */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">
-          {question.question}
-        </h2>
-        <div className="text-sm text-gray-500">
-          Điểm tối đa: <span className="font-medium">{question.maxScore}</span>
-        </div>
-      </div>
+    <>
+      {/* Định nghĩa Animation nội bộ để giao diện mượt mà không cần sửa config */}
+      <style>
+        {`
+          @keyframes slideFadeIn {
+            0% { opacity: 0; transform: translateX(20px); }
+            100% { opacity: 1; transform: translateX(0); }
+          }
+          .animate-slide-fade {
+            animation: slideFadeIn 0.35s ease-out forwards;
+          }
+        `}
+      </style>
 
-      {/* Options */}
-      <div className="space-y-3">
-        {question.options &&
-          question.options.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => !isSubmitted && onSelectOption(option.id)}
-              disabled={isSubmitted}
-              className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                selectedOption === String(option.id)
-                  ? "border-indigo-600 bg-indigo-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              } ${isSubmitted ? "cursor-not-allowed opacity-75" : "cursor-pointer"} ${
-                isSubmitted && option.isCorrect
-                  ? "border-green-500 bg-green-50"
-                  : isSubmitted &&
-                      selectedOption === String(option.id) &&
-                      !option.isCorrect
-                    ? "border-red-500 bg-red-50"
-                    : ""
+      {/* ĐIỂM QUYẾT ĐỊNH: Thuộc tính key={question.id} giúp React render lại animation mỗi khi đổi câu hỏi */}
+      <div
+        key={question.id}
+        className={`animate-slide-fade rounded-3xl border p-5.5 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${
+          isNight
+            ? "border-[#7d95e2]/40 bg-[#111a38]/90"
+            : "border-[#7adfd9]/45 bg-gradient-to-br from-white via-[#fff3e6] to-[#e0f2fe] ring-1 ring-[#9be7e2]/40"
+        }`}
+      >
+        <div className="mb-4 flex items-start justify-between gap-4">
+          
+          {/* ĐÃ SỬA: Đổi thẻ <p> thành <div> và bọc SmartContent cho CÂU HỎI */}
+          <div
+            className={`text-xl font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
+          >
+            <SmartContent>{question.text}</SmartContent>
+          </div>
+
+          {/* Hiển thị điểm của câu hỏi nếu đã nộp bài */}
+          {isSubmitted && question.userScore !== undefined && (
+            <span
+              className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-sm font-bold ${
+                question.userScore > 0
+                  ? "border-green-300 bg-green-100 text-green-700"
+                  : "border-red-300 bg-red-100 text-red-700"
               }`}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-5 h-5 rounded-full border-2 mt-0.5 flex-shrink-0 ${
-                    selectedOption === String(option.id)
-                      ? "border-indigo-600 bg-indigo-600"
-                      : "border-gray-300"
-                  }`}
-                />
-                <span className="text-gray-800">{option.content}</span>
-
-                {/* Show correctness after submission */}
-                {isSubmitted && (
-                  <span className="ml-auto flex-shrink-0">
-                    {option.isCorrect && (
-                      <span className="text-green-600 font-semibold">
-                        ✓ Đúng
-                      </span>
-                    )}
-                    {!option.isCorrect &&
-                      selectedOption === String(option.id) && (
-                        <span className="text-red-600 font-semibold">
-                          ✗ Sai
-                        </span>
-                      )}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
-      </div>
-
-      {/* Answer feedback after submission */}
-      {isSubmitted && question.attempt && (
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <span className="font-semibold">Câu trả lời của bạn:</span>{" "}
-            {question.attempt}
-            {question.userScore !== undefined && (
-              <span className="ml-2">
-                | Điểm:{" "}
-                <span className="font-semibold">
-                  {question.userScore}/{question.maxScore}
-                </span>
-              </span>
-            )}
-          </p>
+              {question.userScore} / {question.maxScore} pts
+            </span>
+          )}
         </div>
-      )}
-    </div>
+
+        <div className="mt-4 grid gap-2">
+          {question.options.map((option) => {
+            const isSelected = selectedOption === option.id;
+            const showCorrect = isSubmitted && option.isCorrect;
+            const showWrong =
+              isSubmitted && isSelected && option.isCorrect === false;
+
+            const defaultClass = isNight
+              ? "border-[#7d95e2]/40 bg-[#1a254f]/70 text-slate-100 hover:bg-[#1a254f]"
+              : "border-[#9adfd8]/50 bg-white/90 text-gray-700 hover:border-[#4ecdc4]/60 hover:bg-[#eafffb]";
+
+            const selectedClass = isNight
+              ? "border-[#4ecdc4] bg-[#183a63] text-slate-100"
+              : "border-[#4ecdc4] bg-gradient-to-r from-[#d7fff8] to-[#b8f5ea] text-[#0f3f4f] shadow-[0_10px_20px_rgba(78,205,196,0.25)]";
+
+            let stateClass = isSelected ? selectedClass : defaultClass;
+
+            // Backend trả về isCorrect nên UI tô màu tương ứng
+            if (showCorrect) {
+              stateClass = isNight
+                ? "border-emerald-400 bg-emerald-500/25 text-emerald-50 shadow-[0_12px_22px_rgba(16,185,129,0.35)]"
+                : "border-green-500 bg-green-100 text-green-900";
+            } else if (showWrong) {
+              stateClass = isNight
+                ? "border-rose-400 bg-rose-500/25 text-rose-50 shadow-[0_12px_22px_rgba(244,63,94,0.35)]"
+                : "border-red-500 bg-red-100 text-red-900";
+            }
+
+            return (
+              <button
+                key={option.id}
+                onClick={() => !isSubmitted && onSelectOption(option.id)}
+                disabled={isSubmitted}
+                className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 text-left font-medium transition-all duration-200 ${stateClass} ${
+                  isSubmitted
+                    ? "cursor-default"
+                    : "cursor-pointer hover:shadow-md"
+                }`}
+              >
+                {/* ĐÃ SỬA: Dùng SmartContent với inline={true} cho ĐÁP ÁN */}
+                <SmartContent inline={true}>{option.content}</SmartContent>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 };
 

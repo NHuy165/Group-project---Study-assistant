@@ -21,7 +21,7 @@ export const useInteractions = () => {
 
     // 2. STATE FORM & EDITING
     const [formData, setFormData] = useState({ name: '', description: '' });
-    const [editingId, setEditingId] = useState(null);
+    const [editingId, setEditingId] = useState(null); // null means the user is creating new a one
 
     // 3. UI HANDLERS
     const handleFormChange = (e) => {
@@ -57,7 +57,7 @@ export const useInteractions = () => {
 
     // 5. CRUD OPERATIONS
     const readInteractions = useCallback(() => {
-        return executeRequest(api.readInteractions, (data) => {
+        return executeRequest(api.readInteractions, (data) => { // để ý truyền vô ko có dấu ngoặc
             setInteractions(data);
             if (data.length > 0 && !activeInteractionId) {
                 setActiveInteractionId(data[0].id);
@@ -70,7 +70,7 @@ export const useInteractions = () => {
     }, [readInteractions]);
 
     const createInteraction = (input) => {
-        return executeRequest(() => api.createInteraction(input), (newInteraction) => {
+        return executeRequest(() => api.createInteraction(input), (newInteraction) => { // truyền thẳng ở đây thì phải thêm cú pháp () => 
             setInteractions((prev) => [...prev, newInteraction]);
             cancelEditClick(); // Reset form sau khi tạo thành công
         });

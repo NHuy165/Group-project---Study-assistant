@@ -1,5 +1,5 @@
 // src/components/ThemeWrapper.jsx
-import React, { useState, createContext, useContext } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import backgroundDay from "../../assets/background/background_day.png";
 import backgroundNight from "../../assets/background/background_night.png";
 
@@ -16,7 +16,17 @@ export const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeWrapper = ({ children, showToggle = true }) => {
-  const [isNight, setIsNight] = useState(false);
+  // ĐỌC THEME TỪ BỘ NHỚ LÚC MỚI VÀO TRANG (Chống nhấp nháy chuyển màu)
+  const [isNight, setIsNight] = useState(() => {
+    const savedTheme = localStorage.getItem("eduspark_theme");
+    return savedTheme === "dark"; // Nếu đã lưu dark thì trả về true, chưa có mặc định là false (Sáng)
+  });
+
+  // LƯU LẠI THEME MỖI KHI NGƯỜI DÙNG BẤM NÚT ĐỔI
+  useEffect(() => {
+    localStorage.setItem("eduspark_theme", isNight ? "dark" : "light");
+  }, [isNight]);
+
   const toggleMode = () => setIsNight(p => !p);
 
   const { 

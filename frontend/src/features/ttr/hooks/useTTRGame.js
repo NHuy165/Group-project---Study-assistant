@@ -20,7 +20,13 @@ const mapBackendDataToGameFormat = (backendData) => {
     const blanks = correctWords.map((word, i) => ({ id: `q${index}-b${i}`, correctWord: word }));
 
     const allOptions = [...correctWords, ...distractors];
-    const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
+    
+    // CẢI TIẾN: Tạo Object có ID duy nhất cho từng từ để phân biệt các từ trùng lặp
+    const optionObjects = allOptions.map((word, i) => ({
+      id: `opt-${index}-${i}`,
+      text: word
+    }));
+    const shuffledOptions = optionObjects.sort(() => Math.random() - 0.5);
 
     return { id: `q${index}`, textChunks, blanks, options: shuffledOptions };
   });
@@ -47,9 +53,6 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
   const [isReviewMode, setIsReviewMode] = useState(initialMode === 'review');
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // ==========================================
-  // GỌI NÃO BỘ QUẢN LÝ CHẾ ĐỘ CHƠI TẠI ĐÂY
-  // ==========================================
   const modeManager = useTTRModeManager(initialMode, questions.length, streak, isCompleted, checkStatus);
 
   useEffect(() => {
@@ -57,26 +60,24 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
       if (!studyActivityId) return;
       try {
         setIsLoading(true);
-
-        // Dòng này để gọi API thật
         const beData = await fetchStudyActivity(studyActivityId);
         const formattedQuestions = mapBackendDataToGameFormat(beData);
         setQuestions(formattedQuestions);
         setIsLoading(false);
-
-
-        // Tránh mất thời gian test với API thật, tạm thời dùng mock data với delay giả lập với thời gian là 
-        // setTimeout(() => {
-        //   const beData = MOCK_BACKEND_DATA;
-        //   const formattedQuestions = mapBackendDataToGameFormat(beData);
-        //   setQuestions(formattedQuestions);
-        //   setIsLoading(false);
-        // }, 100);
-
-        
       } 
       catch (err) {
-        setError("Không thể tải dữ liệu bài tập. Vui lòng thử lại!");
+        console.error("Lỗi tải game:", err);
+        let errorMsg = "Không thể tải dữ liệu bài tập. Vui lòng thử lại!";
+        
+        if (err.status === 401) {
+          errorMsg = "Bạn cần đăng nhập lại để chơi bài tập này.";
+        } else if (err.status === 404 || err.type === 'NOT_FOUND') {
+          errorMsg = "Bài tập này không tồn tại hoặc đã bị xóa ở nơi khác.";
+        } else if (err.status === 500) {
+          errorMsg = "Lỗi máy chủ nội bộ. Không thể lấy dữ liệu bài tập.";
+        }
+
+        setError(errorMsg);
         setIsLoading(false);
       }
     };
@@ -104,8 +105,17 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     if (isReviewMode && currentQuestion) {
       const autoFilled = {};
       const rights = [];
+      const assignedOptionIds = new Set();
+      
       currentQuestion.blanks.forEach(b => {
-        autoFilled[b.id] = b.correctWord;
+        // Tìm option trùng chữ chưa được gán cho ô nào trước đó để kích hoạt mờ nút dưới UI công bằng
+        const foundOption = currentQuestion.options.find(o => o.text === b.correctWord && !assignedOptionIds.has(o.id));
+        if (foundOption) {
+          autoFilled[b.id] = foundOption.id;
+          assignedOptionIds.add(foundOption.id);
+        } else {
+          autoFilled[b.id] = b.correctWord;
+        }
         rights.push(b.id);
       });
       setFilledBlanks(autoFilled);
@@ -121,13 +131,13 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     }
   }, [currentIndex, currentQuestion, isReviewMode]);
 
-
   const handleUse5050 = useCallback(() => {
     if (power5050 <= 0 || checkStatus === 'success' || !currentQuestion) return;
     const correctWords = currentQuestion.blanks.map(b => b.correctWord);
-    const wrongOptions = currentQuestion.options.filter(opt => !correctWords.includes(opt) && !eliminatedOptions.includes(opt));
+    // Lọc theo thuộc tính .text của option object
+    const wrongOptions = currentQuestion.options.filter(opt => !correctWords.includes(opt.text) && !eliminatedOptions.includes(opt.id));
     const numToRemove = Math.max(1, Math.floor(wrongOptions.length / 2));
-    const removed = [...wrongOptions].sort(() => 0.5 - Math.random()).slice(0, numToRemove);
+    const removed = [...wrongOptions].sort(() => 0.5 - Math.random()).slice(0, numToRemove).map(o => o.id);
     setEliminatedOptions(prev => [...prev, ...removed]);
     setPower5050(prev => prev - 1); 
   }, [power5050, checkStatus, currentQuestion, eliminatedOptions]);
@@ -136,28 +146,34 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     if (powerMagic <= 0 || checkStatus === 'success' || !currentQuestion) return;
     const targetBlank = currentQuestion.blanks.find(b => !confirmedBlanks.includes(b.id));
     if (targetBlank) {
-      setFilledBlanks(prev => ({ ...prev, [targetBlank.id]: targetBlank.correctWord }));
+      const usedOptionIds = Object.values(filledBlanks);
+      const foundOption = currentQuestion.options.find(o => o.text === targetBlank.correctWord && !usedOptionIds.includes(o.id));
+      const optionId = foundOption ? foundOption.id : targetBlank.correctWord;
+
+      setFilledBlanks(prev => ({ ...prev, [targetBlank.id]: optionId }));
       setConfirmedBlanks(prev => [...prev, targetBlank.id]);
       setPowerMagic(prev => prev - 1); 
       const nextEmpty = currentQuestion.blanks.find(b => b.id !== targetBlank.id && !confirmedBlanks.includes(b.id));
       setActiveBlankId(nextEmpty ? nextEmpty.id : null);
     }
-  }, [powerMagic, checkStatus, currentQuestion, confirmedBlanks]);
+  }, [powerMagic, checkStatus, currentQuestion, confirmedBlanks, filledBlanks]);
 
-  const handleSelectWord = useCallback((word) => {
+  // Nhận optionId thay vì chữ văn bản thuần
+  const handleSelectWord = useCallback((optionId) => {
     if (!activeBlankId || checkStatus === 'success' || !currentQuestion) return;
     setFilledBlanks(prev => {
-      const newFilled = { ...prev, [activeBlankId]: word };
+      const newFilled = { ...prev, [activeBlankId]: optionId };
       const nextEmpty = currentQuestion.blanks.find(b => b.id !== activeBlankId && !newFilled[b.id] && !confirmedBlanks.includes(b.id));
       setActiveBlankId(nextEmpty ? nextEmpty.id : null);
       return newFilled;
     });
   }, [activeBlankId, checkStatus, currentQuestion, confirmedBlanks]);
 
-  const handleDropWord = useCallback((word, targetBlankId) => {
+  // Nhận optionId từ sự kiện Drag Drop
+  const handleDropWord = useCallback((optionId, targetBlankId) => {
     if (checkStatus === 'success' || confirmedBlanks.includes(targetBlankId) || !currentQuestion) return;
     setFilledBlanks(prev => {
-      const newFilled = { ...prev, [targetBlankId]: word };
+      const newFilled = { ...prev, [targetBlankId]: optionId };
       const nextEmpty = currentQuestion.blanks.find(b => !newFilled[b.id] && !confirmedBlanks.includes(b.id));
       setActiveBlankId(nextEmpty ? nextEmpty.id : null);
       return newFilled;
@@ -174,11 +190,15 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     setActiveBlankId(blankId); 
   }, [filledBlanks, checkStatus, confirmedBlanks]);
 
-
   const handleCheckAnswer = () => {
     let wrongs = [], rights = [], newlyCorrectCount = 0;
     currentQuestion.blanks.forEach(b => {
-      if (filledBlanks[b.id] !== b.correctWord) wrongs.push(b.id);
+      const assigned = filledBlanks[b.id];
+      const assignedOption = currentQuestion.options.find(o => o.id === assigned);
+      // Lấy text thực tế ra để so với đáp án đúng của BE
+      const assignedText = assignedOption ? assignedOption.text : assigned;
+
+      if (assignedText !== b.correctWord) wrongs.push(b.id);
       else {
         rights.push(b.id);
         if (!confirmedBlanks.includes(b.id)) newlyCorrectCount++; 
@@ -188,7 +208,6 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
     const isFullCorrect = wrongs.length === 0;
     const isAnyWrong = wrongs.length > 0;
 
-    // GỌI LOGIC CỘNG/TRỪ THỜI GIAN (Speed Mode)
     modeManager.processAnswerTime(isFullCorrect, isAnyWrong, newlyCorrectCount);
 
     if (isFullCorrect) {
@@ -197,20 +216,17 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
       setStreak(prev => prev + 1);
       setActiveBlankId(null);
     } else {
-      // GỌI LOGIC MẤT MẠNG/MẤT KHIÊN (Survival Mode)
       const isFatal = modeManager.processSurvivalDamage();
-      if (isFatal) return; // Nếu vỡ mạng cuối -> Dừng mọi thứ, Game Over ngay!
+      if (isFatal) return;
 
       setCheckStatus('wrong');
       setWrongBlanks(wrongs);
       setConfirmedBlanks(prev => [...new Set([...prev, ...rights])]); 
       
-      // Mất chuỗi hoặc khiên tùy theo chế độ
       if (initialMode === 'survival') {
-        setStreak(0); // SINH TỒN: Chỉ cần sai là mất sạch chuỗi (để Sương mù ập về)
-        if (shieldActive) setShieldActive(false); // Phá luôn khiên thường nếu có
+        setStreak(0);
+        if (shieldActive) setShieldActive(false);
       } else {
-        // TỐC ĐỘ / CƠ BẢN: Có khiên thì giữ được chuỗi
         if (shieldActive) {
           setShieldActive(false); 
         } else {
@@ -233,9 +249,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
 
   const handleNextQuestion = useCallback(() => {
     if (checkStatus !== 'success') return;
-
     setCheckStatus('idle'); 
-
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex(prev => prev + 1);
     } else { 

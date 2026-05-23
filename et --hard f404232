@@ -1,0 +1,66 @@
+[33mf404232[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeatures/homepage[m[33m)[m HEAD@{0}: commit: feat(fe): Cập nhật các mã lỗi của TTR
+[33ma6e927e[m HEAD@{1}: reset: moving to HEAD
+[33ma6e927e[m HEAD@{2}: reset: moving to HEAD
+[33ma6e927e[m HEAD@{3}: commit: style(fe): Sửa các lỗi giao diện ở homepage và login
+[33mff1f8c5[m[33m ([m[1;31morigin/epic-main[m[33m)[m HEAD@{4}: commit: feat(fe): Sửa TTR: Thêm UI chọn môn học và sửa logic truyền vào BE
+[33m6429b4f[m HEAD@{5}: commit (amend): style(fe): Cập nhật giao diện login mới
+[33m5992e4f[m HEAD@{6}: commit: style(fe): Cập nhật giao diện homepage mới
+[33m98098d9[m HEAD@{7}: commit: feat(fe); Cố định themeWrapper đổi trang không reset
+[33m9f36c48[m HEAD@{8}: commit: feat(fe): Sửa Giao diện HomePage và sửa lỗi nhẹ ở ttr
+[33ma8734ba[m HEAD@{9}: commit: Khôi phục lại BE cũ
+[33mb09f183[m[33m ([m[1;31morigin/epic/ttr[m[33m, [m[1;32mepic/ttr[m[33m)[m HEAD@{10}: reset: moving to HEAD
+[33mb09f183[m[33m ([m[1;31morigin/epic/ttr[m[33m, [m[1;32mepic/ttr[m[33m)[m HEAD@{11}: checkout: moving from epic/ttr to features/homepage
+[33mb09f183[m[33m ([m[1;31morigin/epic/ttr[m[33m, [m[1;32mepic/ttr[m[33m)[m HEAD@{12}: checkout: moving from test to epic/ttr
+[33me2b58af[m[33m ([m[1;32mtest[m[33m)[m HEAD@{13}: commit (merge): Fix conflicts: accept all incoming changes from epic/quiz
+[33mb09f183[m[33m ([m[1;31morigin/epic/ttr[m[33m, [m[1;32mepic/ttr[m[33m)[m HEAD@{14}: checkout: moving from epic/ttr to test
+[33mb09f183[m[33m ([m[1;31morigin/epic/ttr[m[33m, [m[1;32mepic/ttr[m[33m)[m HEAD@{15}: commit: feat(fe): Hoan thien tinh nang ttr, hoan thien cach format ki tu latex toan hoc, chuan bi update UI open_ended
+[33m8bd45aa[m[33m ([m[1;32mtest-merge-ttr-open_ended[m[33m)[m HEAD@{16}: pull origin epic/ttr: Fast-forward
+[33m995ad72[m HEAD@{17}: checkout: moving from test-merge-ttr-open_ended to epic/ttr
+[33m8bd45aa[m[33m ([m[1;32mtest-merge-ttr-open_ended[m[33m)[m HEAD@{18}: commit (merge): feat, style(fe): merge chung open-ended và cập nhật vài hiệu ứng nhỏ của ttr
+[33m995ad72[m HEAD@{19}: checkout: moving from epic/ttr to test-merge-ttr-open_ended
+[33m995ad72[m HEAD@{20}: checkout: moving from epic/ttr to epic/ttr
+[33m995ad72[m HEAD@{21}: commit: Merge backend folder from backend-main
+[33m351492c[m[33m ([m[1;32mbackend-main[m[33m)[m HEAD@{22}: checkout: moving from epic/ttr to epic/ttr
+[33m351492c[m[33m ([m[1;32mbackend-main[m[33m)[m HEAD@{23}: merge backend-main: Fast-forward
+[33m5a1bc1c[m HEAD@{24}: checkout: moving from backend-main to epic/ttr
+[33m351492c[m[33m ([m[1;32mbackend-main[m[33m)[m HEAD@{25}: commit: chore(BE): thay doi model thanh model nhe hon
+[33m92dc502[m HEAD@{26}: commit: feat(fe, be): Cập nhật phần tính năng TTR, sử dụng model ollama nhẹ hơn (chỉ tinh chỉnh trong .yaml trong BE)
+[33m7b3344b[m HEAD@{27}: pull origin backend-main: Fast-forward
+[33m5a1bc1c[m HEAD@{28}: checkout: moving from epic/ttr to backend-main
+[33m5a1bc1c[m HEAD@{29}: checkout: moving from ui-tailwind-port to epic/ttr
+[33m5a1bc1c[m HEAD@{30}: checkout: moving from frontend-new-backend-old to ui-tailwind-port
+[33m90e0bbd[m HEAD@{31}: commit: feat(fe): Tao tinh nang ttr
+[33m7b3344b[m HEAD@{32}: pull origin backend-main: Fast-forward
+[33m69ef801[m[33m ([m[1;31morigin/frontend-new-backend-old[m[33m)[m HEAD@{33}: pull origin frontend-new-backend-old: Fast-forward
+[33m9428484[m HEAD@{34}: commit (merge): Fix conflicts by prioritizing backend-main changes
+[33m5a1bc1c[m HEAD@{35}: checkout: moving from frontend-new-backend-old to frontend-new-backend-old
+[33m5a1bc1c[m HEAD@{36}: checkout: moving from ui-tailwind-port to frontend-new-backend-old
+[33m5a1bc1c[m HEAD@{37}: commit: Khoi phuc Backend truoc 25/4
+[33m9b09e3d[m[33m ([m[1;31morigin/ui-tailwind-port[m[33m)[m HEAD@{38}: commit: style(fe): them hieu ung giao dien thien nhien va khung canh sang/toi
+[33m986fc37[m HEAD@{39}: commit: style(fe): Cap nhat giao dien Upload File
+[33m7587081[m HEAD@{40}: commit (merge): feat(fe): Hoan thien tinh nang chat va upload file
+[33m57fd393[m HEAD@{41}: reset: moving to HEAD
+[33m57fd393[m HEAD@{42}: pull origin backend-main: updating HEAD
+[33m57fd393[m HEAD@{43}: commit (amend): Cap nhat tinh nang chat va file
+[33m89c4a49[m HEAD@{44}: commit: Cap nhat tinh nang chat va file
+[33m4c78ca7[m HEAD@{45}: commit: Update File & Chat
+[33mf88faab[m[33m ([m[1;31morigin/need-fix-logic-ui[m[33m)[m HEAD@{46}: reset: moving to HEAD
+[33mf88faab[m[33m ([m[1;31morigin/need-fix-logic-ui[m[33m)[m HEAD@{47}: commit: feat(FE): Update UI, tuy nhien con loi ve logic backend
+[33mf6c6bdd[m HEAD@{48}: pull origin frontend-logic: Fast-forward
+[33m2d8e7b2[m HEAD@{49}: pull origin ui-tailwind-port: Fast-forward
+[33m7a50533[m HEAD@{50}: commit: refactor(FE): Cập nhật clean code
+[33m77f53bc[m HEAD@{51}: commit: feat(FE): Cập nhật Giao diện Khung Chat
+[33m8e16aa9[m HEAD@{52}: commit: feat(FE): C?p nh?t giao di?n khi g?i tin nh?n t?ng khung chat
+[33m736c905[m HEAD@{53}: pull origin ui-tailwind-port: Merge made by the 'ort' strategy.
+[33m851a7e9[m HEAD@{54}: commit: feat(FE): Cập nhật hàm rename tên file
+[33m386af94[m HEAD@{55}: commit: feat(FE): Chuyển Homepage cũ thành InteractionPage
+[33m890228a[m HEAD@{56}: pull origin ui-tailwind-port: Fast-forward
+[33mf1646e7[m HEAD@{57}: pull origin ui-tailwind-port: Fast-forward
+[33m5ef9612[m HEAD@{58}: commit: feat(FE): Thêm tính năng upload file
+[33m93e69de[m HEAD@{59}: pull origin ui-tailwind-port: Fast-forward
+[33m96649b8[m HEAD@{60}: reset: moving to HEAD
+[33m96649b8[m HEAD@{61}: pull origin ui-tailwind-port: Merge made by the 'ort' strategy.
+[33m070a531[m HEAD@{62}: commit: feat(FE): triển khai giao diện Dashboard
+[33m059604a[m HEAD@{63}: pull origin ui-tailwind-port: Fast-forward
+[33mead00ac[m HEAD@{64}: reset: moving to HEAD
+[33mead00ac[m HEAD@{65}: clone: from https://github.com/NHuy165/Group-project---Study-assistant.git

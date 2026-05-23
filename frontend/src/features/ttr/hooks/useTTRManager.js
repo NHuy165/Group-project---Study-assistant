@@ -8,7 +8,6 @@ export const useTTRManager = (interactionId) => {
   const [actionModal, setActionModal] = useState({ isOpen: false, activityId: null });
   const [gameConfig, setGameConfig] = useState({ activityId: null, initialMode: 'play', gameMode: 'normal' });
 
-  // 1. Tự động load dữ liệu
   useEffect(() => {
     const loadTTR = async () => {
       try {
@@ -31,15 +30,25 @@ export const useTTRManager = (interactionId) => {
     if (interactionId) loadTTR();
   }, [interactionId]);
 
-  // 2. Tạo bài chạy ngầm
-  const handleCreateTTRBackground = ({ prompt: finalPrompt, gameMode }) => {
+  // [MỚI] Nhận thêm subjectType
+  const handleCreateTTRBackground = (data) => {
+    // 1. Hút dữ liệu an toàn tuyệt đối từ Component cha truyền vào
+    const finalPrompt = data.prompt;
+    const gameMode = data.gameMode || 'normal';
+    const finalSubject = data.subjectType || data.subject_type || "MATHS";
+
     const tempId = Date.now();
     const newTask = { id: tempId, name: "AI đang tạo bài...", status: 'loading' };
     setTtrTasks(prev => [newTask, ...prev]);
     setIsSetupOpen(false);
 
-    const promptName = finalPrompt.split("Nội dung/Chủ đề:")[1]?.substring(0, 25) || "Bài tập AI";
-    const payload = { name: promptName + "...", description: "Tự động tạo", prompt: finalPrompt };
+    // 2. Gom đúng 2 trường cần thiết đưa xuống ttrApi
+    const payload = { 
+      prompt: finalPrompt,
+      subject_type: finalSubject 
+    };
+
+    console.log("🔥 Payload cuối cùng trước khi gọi API:", payload);
 
     createTTRActivity(interactionId, payload)
       .then(newActivity => {
@@ -50,16 +59,16 @@ export const useTTRManager = (interactionId) => {
       .catch(error => {
         setTtrTasks(prev => prev.filter(task => task.id !== tempId));
         console.error("Lỗi tạo bài: ", error);
+        alert(`❌ LỖI TẠO BÀI:\nHệ thống không thể xử lý. Hãy chắc chắn bạn đã chọn Độ Khó là DỄ!`);
       });
   };
 
-  // 3. Xử lý click mở bài
   const handlePlayTask = (id) => {
     const task = ttrTasks.find(t => t.id === id);
     if (!task) return;
 
     if (task.isNew) {
-      setGameConfig({ activityId: id, initialMode: 'play', gameMode: task.gameMode || 'normal' });
+      setGameConfig({ activityId: id, initialMode: task.gameMode || 'normal' });
       setIsTTROpen(true);
       setTtrTasks(prev => prev.map(t => t.id === id ? { ...t, isNew: false } : t));
     } else {
@@ -67,7 +76,6 @@ export const useTTRManager = (interactionId) => {
     }
   };
 
-  // 4. Bắt đầu từ Menu Hỏi
   const handleStartFromMenu = (mode) => {
     setGameConfig({ activityId: actionModal.activityId, initialMode: mode, gameMode: 'normal' });
     setActionModal({ isOpen: false, activityId: null });

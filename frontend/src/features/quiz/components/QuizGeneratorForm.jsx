@@ -1,75 +1,73 @@
 import React, { useState } from "react";
+import { MagicWand, Trash } from "@phosphor-icons/react";
+import { useTheme } from "../../../components/theme/ThemeWrapper";
 
-const QuizGeneratorForm = ({ isLoading, error, onCreateQuiz }) => {
-  const [subject, setSubject] = useState("ENGLISH");
-  const [context, setContext] = useState("");
+const SUBJECTS = [
+  { id: "VIETNAMESE", label: "Tiếng Việt" },
+  { id: "MATHS", label: "Toán" },
+  { id: "ENGLISH", label: "Tiếng Anh" },
+];
 
-  const subjects = [
-    { value: "ENGLISH", label: "📚 Tiếng Anh" },
-    { value: "VIETNAMESE", label: "🇻🇳 Tiếng Việt" },
-    { value: "MATHS", label: "🔢 Toán" },
-  ];
+const QuizGeneratorForm = ({
+  isLoading = false,
+  error = null,
+  prompt = "",
+  setPrompt = () => {},
+  onCreateQuiz = () => {},
+}) => {
+  const { isNight } = useTheme();
+  const [subject, setSubject] = useState(SUBJECTS[0].id);
 
-  const handleCreateQuiz = () => {
-    if (!subject) {
-      return;
-    }
-    onCreateQuiz({ subject, context });
+  const handleSubmit = () => {
+    if (!prompt || prompt.trim().length === 0) return;
+    onCreateQuiz({ subjectType: subject, prompt: prompt.trim() });
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-dashed border-indigo-300 shadow-sm">
-      <h2 className="text-lg font-bold mb-4 text-indigo-600">
-        ✨ Tạo Quiz với AI
-      </h2>
+    <div
+      className={`w-full p-4 rounded-2xl border ${isNight ? "bg-gray-800/70 border-gray-700 text-gray-100" : "bg-white/90 border-gray-200 text-gray-800"}`}
+    >
+      <h3 className="text-lg font-black mb-3">Tạo Quiz</h3>
+
+      <textarea
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Nhập đề bài hoặc dán nội dung để tạo câu hỏi..."
+        className={`w-full h-32 p-3 rounded-xl resize-none outline-none border-2 ${isNight ? "bg-gray-900 border-gray-700" : "bg-white border-gray-100"}`}
+      />
+
+      <div className="mt-3 flex gap-2">
+        {SUBJECTS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setSubject(s.id)}
+            className={`px-3 py-2 rounded-xl font-bold text-xs border-2 ${subject === s.id ? "bg-purple-500 text-white border-purple-400" : isNight ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-100 text-gray-600"}`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
       {error && (
-        <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
-          {error}
-        </div>
+        <div className="mt-3 text-red-500 font-semibold">{String(error)}</div>
       )}
 
-      {/* Subject Selection */}
-      <div className="mb-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Chọn môn học
-        </label>
-        <select
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          disabled={isLoading}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          onClick={() => setPrompt("")}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-red-500 border-2 border-red-200 hover:bg-red-50"
         >
-          {subjects.map((sub) => (
-            <option key={sub.value} value={sub.value}>
-              {sub.label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <Trash size={16} /> Xóa
+        </button>
 
-      {/* Optional Context */}
-      <div className="mb-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Chi tiết (tùy chọn)
-        </label>
-        <textarea
-          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-          placeholder="VD: Ngữ pháp câu điều kiện, từ vựng nâng cao..."
-          rows="3"
-          value={context}
-          onChange={(e) => setContext(e.target.value)}
-          disabled={isLoading}
-        />
+        <button
+          onClick={handleSubmit}
+          disabled={isLoading || !prompt || prompt.trim().length === 0}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-white ${isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600"}`}
+        >
+          <MagicWand size={18} /> {isLoading ? "Đang tạo..." : "Tạo Quiz"}
+        </button>
       </div>
-
-      <button
-        onClick={handleCreateQuiz}
-        disabled={isLoading || !subject}
-        className="mt-3 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-colors font-medium"
-      >
-        {isLoading ? "⏳ AI đang suy nghĩ..." : "🚀 Tạo quiz ngay"}
-      </button>
     </div>
   );
 };
