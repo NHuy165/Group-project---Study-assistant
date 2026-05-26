@@ -31,25 +31,30 @@ export const ToolsSidebar = ({
   onDeleteFlashcardSet,
 }) => {
   const { isNight } = useTheme();
-  const [quizDeleteTarget, setQuizDeleteTarget] = useState(null);
-  const [isQuizDeleteOpen, setIsQuizDeleteOpen] = useState(false);
+  
+  // STATE DUY NHẤT QUẢN LÝ XÓA CHO TẤT CẢ CÁC TÍNH NĂNG
+  const [deleteTarget, setDeleteTarget] = useState({
+    isOpen: false,
+    id: null,
+    type: "", // 'QUIZ', 'TTR', 'OPEN_ENDED', 'FLASHCARD'
+    name: ""
+  });
 
-  const handleQuizDeleteRequest = (quiz) => {
-    setQuizDeleteTarget(quiz);
-    setIsQuizDeleteOpen(true);
+  const openDeleteModal = (id, type, name) => {
+    setDeleteTarget({ isOpen: true, id, type, name });
   };
 
-  const handleQuizDeleteClose = () => {
-    setIsQuizDeleteOpen(false);
-    setQuizDeleteTarget(null);
+  const closeDeleteModal = () => {
+    setDeleteTarget({ isOpen: false, id: null, type: "", name: "" });
   };
 
-  const handleQuizDeleteConfirm = () => {
-    if (!quizDeleteTarget) return;
-    if (onDeleteActivity) {
-      onDeleteActivity(quizDeleteTarget.id);
-    }
-    handleQuizDeleteClose();
+  const confirmDelete = () => {
+    const { id, type } = deleteTarget;
+    if (type === "QUIZ" && onDeleteActivity) onDeleteActivity(id);
+    if (type === "TTR" && onRemoveTTRTask) onRemoveTTRTask(id);
+    if (type === "OPEN_ENDED" && onDeleteActivity) onDeleteActivity(id);
+    if (type === "FLASHCARD" && onDeleteFlashcardSet) onDeleteFlashcardSet(id);
+    closeDeleteModal();
   };
 
   const handleToolClick = (toolId) => {
@@ -162,24 +167,40 @@ export const ToolsSidebar = ({
               );
             }
 
-            // UI CHO TRẠNG THÁI LOADING / READY
+            // UI CHO TRẠNG THÁI LOADING / READY (Đã thêm nút Trash)
             return (
-              <div 
-                key={`ttr-${task.id}`} 
-                onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
-                className={`flex items-center rounded-2xl px-4 py-3 shadow-sm border transition-all ${
-                task.status === 'loading' 
-                  ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
-                  : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 cursor-pointer hover:scale-105' : 'bg-white border-purple-300 hover:bg-purple-50 cursor-pointer hover:scale-105')
-              }`}>
-                <span className="mr-3 text-sm flex-shrink-0">
-                  {task.status === 'loading' ? (
-                    <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  ) : '🧠'}
-                </span>
-                <span className={`text-sm font-semibold truncate ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-gray-200' : 'text-purple-700')}`}>
-                  {task.name}
-                </span>
+              <div key={`ttr-${task.id}`} className="group relative flex w-full items-center">
+                <button 
+                  onClick={() => task.status === 'ready' && onPlayTTR(task.id)}
+                  disabled={task.status === 'loading'}
+                  className={`flex cursor-pointer w-full items-center rounded-2xl px-4 py-3 shadow-sm border transition-all hover:scale-[1.02] active:scale-95 ${
+                  task.status === 'loading' 
+                    ? (isNight ? 'bg-gray-800/40 border-gray-700 opacity-60 cursor-wait' : 'bg-gray-100/50 border-gray-200 opacity-70 cursor-wait')
+                    : (isNight ? 'bg-gray-800/80 border-purple-500/50 hover:bg-gray-700 hover:border-purple-400 text-gray-300' : 'bg-white border-purple-300 hover:bg-purple-50 hover:border-purple-400 text-gray-700')
+                }`}>
+                  <span className="mr-3 text-sm flex-shrink-0">
+                    {task.status === 'loading' ? (
+                      <svg className="animate-spin h-4 w-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    ) : '🧠'}
+                  </span>
+                  <span className={`text-sm font-semibold truncate text-left w-3/4 ${task.status === 'loading' ? 'animate-pulse text-gray-500' : (isNight ? 'text-purple-100' : 'text-purple-700')}`}>
+                    {task.name}
+                  </span>
+                </button>
+                
+                {task.status === 'ready' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteModal(task.id, "TTR", task.name);
+                    }}
+                    className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
+                      isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
+                    }`}
+                  >
+                    <Trash size={18} weight="bold" />
+                  </button>
+                )}
               </div>
             );
           })}
@@ -203,7 +224,7 @@ export const ToolsSidebar = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleQuizDeleteRequest(quiz);
+                  openDeleteModal(quiz.id, "QUIZ", quiz.name || `Quiz #${quiz.id}`);
                 }}
                 className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
                   isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
@@ -235,7 +256,7 @@ export const ToolsSidebar = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDeleteFlashcardSet && onDeleteFlashcardSet(set.id);
+                  openDeleteModal(set.id, "FLASHCARD", set.name || `Flashcard #${set.id}`);
                 }}
                 className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
                   isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
@@ -265,9 +286,7 @@ export const ToolsSidebar = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm("Bé có chắc chắn muốn xóa bài tập này không?")) {
-                    onDeleteActivity(act.id);
-                  }
+                  openDeleteModal(act.id, "OPEN_ENDED", act.name || `Bài tập #${act.id}`);
                 }}
                 className={`absolute right-2 flex cursor-pointer h-8 w-8 items-center justify-center rounded-xl text-red-400 opacity-0 transition-all hover:text-red-600 group-hover:opacity-100 ${
                   isNight ? "hover:bg-gray-800/80" : "hover:bg-gray-200"
@@ -296,16 +315,13 @@ export const ToolsSidebar = ({
         </nav>
       </section>
 
+      {/* COMPONENT XÁC NHẬN XÓA TỔNG HỢP DUY NHẤT */}
       <ConfirmModal
-        isOpen={isQuizDeleteOpen}
-        onClose={handleQuizDeleteClose}
-        onConfirm={handleQuizDeleteConfirm}
-        title="Xác nhận xóa quiz"
-        message={
-          quizDeleteTarget?.name
-            ? `Bé có chắc chắn muốn xóa quiz "${quizDeleteTarget.name}" không?`
-            : "Bé có chắc chắn muốn xóa quiz này không?"
-        }
+        isOpen={deleteTarget.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+        title="Xác nhận xóa"
+        message={`Bé có chắc chắn muốn xóa "${deleteTarget.name}" không? Hành động này không thể hoàn tác.`}
         confirmText="Xóa"
         cancelText="Hủy"
         isDanger={true}

@@ -58,3 +58,18 @@ export const createTTRActivity = async (interactionId, payload) => {
   await handleApiError(response);
   return await response.json();
 };
+
+
+export const deleteTTRActivity = async (studyActivityId) => {
+  const response = await fetch(`${API_BASE_URL}/${studyActivityId}`, {
+    method: 'DELETE', // Phương thức xóa
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  });
+  
+  // Xóa thành công BE thường trả về 204 (No Content) hoặc 200
+  if (response.status === 204 || response.ok) {
+    return true; 
+  }
+  
+  await handleApiError(response);
+};

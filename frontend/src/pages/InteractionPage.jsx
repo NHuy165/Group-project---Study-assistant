@@ -27,6 +27,7 @@ import { TTRSetupModal } from "../features/ttr/components/TTRSetupModal";
 import {
   createTTRActivity,
   fetchActivitiesByInteraction,
+  deleteTTRActivity
 } from "../features/ttr/api/ttrApi";
 import { QuizPanel } from "../features/quiz/components";
 
@@ -233,6 +234,20 @@ export const InteractionPage = () => {
     setSelectedFlashcardSet(null);
   };
 
+  const handleDeleteTTR = async (activityId) => {
+    try {
+      // 1. Gọi xuống Backend để xóa
+      await deleteTTRActivity(activityId);
+      
+      // 2. Nếu BE xóa thành công, mới cập nhật lại mảng ở giao diện (Frontend)
+      setTtrTasks(prev => prev.filter(t => t.id !== activityId));
+      console.log("Đã xóa TTR thành công:", activityId);
+    } catch (error) {
+      console.error("Lỗi khi xóa TTR:", error);
+      alert("Không thể xóa bài tập lúc này, vui lòng thử lại sau.");
+    }
+  };
+
   // ==========================================
   // RENDER GIAO DIỆN
   // ==========================================
@@ -345,7 +360,7 @@ export const InteractionPage = () => {
         // Props TTR
         onOpenTTR={() => setIsSetupOpen(true)} 
         ttrTasks={ttrTasks} 
-        onRemoveTTRTask={(id) => setTtrTasks(prev => prev.filter(t => t.id !== id))}
+        onRemoveTTRTask={handleDeleteTTR}
         onPlayTTR={(id) => {
           const task = ttrTasks.find((t) => t.id === id);
           setCurrentActivityId(id);
