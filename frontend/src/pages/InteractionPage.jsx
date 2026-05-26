@@ -154,7 +154,6 @@ export const InteractionPage = () => {
     loadTTR();
   }, [interactionId]);
 
-// 1. Giữ lại các filter từ nhánh epic-main
   const openEndedActivities = (activities || []).filter(
     (item) =>
       getActivityType(item) === "EXERCISE" &&
@@ -167,9 +166,7 @@ export const InteractionPage = () => {
       getActivityFormat(item) === "MULTIPLE_CHOICE_QUESTIONS",
   );
 
-  // 2. Sử dụng logic cập nhật từ nhánh HEAD
   const handleCreateTTRBackground = (data) => {
-    // Hứng đầy đủ thông tin từ Modal gửi lên
     const { prompt: finalPrompt, gameMode, subjectType } = data;
 
     const tempId = Date.now();
@@ -181,13 +178,11 @@ export const InteractionPage = () => {
     setTtrTasks((prev) => [newTask, ...prev]);
     setIsSetupOpen(false);
 
-    // Gom đúng chuẩn Payload mà API yêu cầu
     const payload = { 
       prompt: finalPrompt,
       subject_type: subjectType 
     };
 
-    // Gọi API thật
     createTTRActivity(interactionId, payload)
       .then(newActivity => {
         setTtrTasks(prev => prev.map(task => 
@@ -197,7 +192,6 @@ export const InteractionPage = () => {
         ));
       })
       .catch(error => {
-        // PHÂN LOẠI LỖI ĐỂ HIỂN THỊ UI TỐT HƠN (Từ HEAD)
         let uiMessage = "Lỗi hệ thống. Vui lòng thử lại.";
         
         if (error.status_code === 401) {
@@ -212,7 +206,6 @@ export const InteractionPage = () => {
           uiMessage = "Lỗi từ Backend (500). Đã báo cáo hệ thống.";
         }
 
-        // Đưa lỗi vào UI thay vì xóa task
         setTtrTasks(prev => prev.map(task => 
           task.id === tempId 
             ? { ...task, status: 'error', errorMessage: uiMessage, rawError: error.exception_type } 
@@ -248,7 +241,7 @@ export const InteractionPage = () => {
       onNewChat={handleNewChatClick}
       modals={
         <>
-<AddSourceModal 
+          <AddSourceModal 
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             onAdd={uploadMultipleFiles} 
@@ -266,6 +259,18 @@ export const InteractionPage = () => {
               });
             }} 
           />
+
+          {/* FIX ĐỒNG BỘ: Đưa ToolSetupArea vào khu vực modals dưới dạng Lớp phủ (Modal Overlay) */}
+          {activeToolSetup && (
+            <ToolSetupArea
+              toolId={activeToolSetup}
+              isLoading={isCreatingNewActivity}
+              errorMessage={createToolError}
+              onClearError={clearCreateToolError}
+              onConfirm={handleConfirmCreate}
+              onCancel={() => setActiveToolSetup(null)}
+            />
+          )}
           
           {/* LỚP PHỦ GAME TTR */}
           {isTTROpen && currentActivityId && (
@@ -326,34 +331,21 @@ export const InteractionPage = () => {
         }}
       />
 
-      {/* 2. CỘT GIỮA */}
-      {activeToolSetup ? (
-        <ToolSetupArea
-          toolId={activeToolSetup}
-          isLoading={isCreatingNewActivity}
-          errorMessage={createToolError}
-          onClearError={clearCreateToolError}
-          onConfirm={handleConfirmCreate}
-          onCancel={() => setActiveToolSetup(null)}
-        />
-      ) : (
-        <ChatArea
-          messages={chatlog}
-          isLoading={isChatLoading}
-          promptText={promptText}
-          setPromptText={setPromptText}
-          onSend={() => askLLM()}
-        />
-      )}
+      {/* 2. CỘT GIỮA - LUÔN LUÔN RENDER CHAT AREA ĐỂ GIỮ FORM CHO BACKGROUND ĐẰNG SAU */}
+      <ChatArea
+        messages={chatlog}
+        isLoading={isChatLoading}
+        promptText={promptText}
+        setPromptText={setPromptText}
+        onSend={() => askLLM()}
+      />
 
-      {/* 3. CỘT PHẢI (Truyền toàn bộ Props của cả 2 tính năng vào) */}
+      {/* 3. CỘT PHẢI */}
       <ToolsSidebar
         // Props TTR
         onOpenTTR={() => setIsSetupOpen(true)} 
         ttrTasks={ttrTasks} 
-
         onRemoveTTRTask={(id) => setTtrTasks(prev => prev.filter(t => t.id !== id))}
-
         onPlayTTR={(id) => {
           const task = ttrTasks.find((t) => t.id === id);
           setCurrentActivityId(id);
@@ -382,7 +374,6 @@ export const InteractionPage = () => {
             openFlashcardCreate();
             return;
           }
-
           handleToolClick(toolId);
         }}
         onActivityClick={(id) => {
