@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
+
 // ==========================================
 // 1. IMPORTS HOOKS
 // ==========================================
@@ -57,6 +58,7 @@ export const InteractionPage = () => {
 
   // State Open Ended
   const [selectedActivityId, setSelectedActivityId] = useState(null);
+  const [testSidebarError, setTestSidebarError] = useState(null);
 
   // State Quiz
   const [currentQuizId, setCurrentQuizId] = useState(null);
@@ -404,6 +406,12 @@ export const InteractionPage = () => {
         onDeleteActivity={handleDeleteActivity}
         toolLoadingStates={toolLoadingStates}
         isCreatingNewActivity={isCreatingNewActivity}
+
+        toolError={createToolError || testSidebarError}
+        onClearToolError={() => {
+          clearCreateToolError();
+          setTestSidebarError(null);
+        }}
       />
 
       {/* 4. LỚP PHỦ BÀI TẬP OPEN ENDED */}
@@ -411,6 +419,51 @@ export const InteractionPage = () => {
         activityId={selectedActivityId}
         onClose={() => setSelectedActivityId(null)}
       />
+
+
+    {/* ======================================================== */}
+      {/* BẢNG ĐIỀU KHIỂN TEST LỖI (Sau khi test xong thì XÓA đi) */}
+      {/* ======================================================== */}
+      <div className="fixed bottom-6 left-6 z-[9999] flex flex-col gap-2 rounded-2xl border-2 border-dashed border-red-400 bg-white/90 p-4 shadow-2xl backdrop-blur-md dark:bg-slate-800/90 dark:border-red-500">
+        <h3 className="text-center text-xs font-black uppercase tracking-wider text-red-500">
+          🛠 Test Lỗi Sidebar
+        </h3>
+        
+        <div className="grid grid-cols-1 gap-2">
+          {/* Test lỗi thả banner từ trên xuống */}
+          <button 
+            onClick={() => setTestSidebarError("⚠️ Lỗi 400: Bé chưa nhập tên bộ thẻ kìa!")}
+            className="rounded-lg bg-orange-100 px-3 py-2 text-xs font-bold text-orange-700 hover:bg-orange-200 dark:bg-orange-900/50 dark:text-orange-300"
+          >
+            Test Lỗi Form (Banner)
+          </button>
+          
+          <button 
+            onClick={() => setTestSidebarError("🤖 Lỗi 502: Cú Mèo đang nghẽn mạng, bé thử lại nha!")}
+            className="rounded-lg bg-red-100 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300"
+          >
+            Test Lỗi AI (Banner)
+          </button>
+
+          <hr className="my-1 border-red-200 dark:border-red-800" />
+
+          {/* Test lỗi thẻ TTR màu đỏ */}
+          <button 
+            onClick={() => {
+              const tempId = Date.now();
+              setTtrTasks(prev => [{
+                id: tempId,
+                name: "Bài tập Động vật (Đang lỗi)",
+                status: 'error',
+                errorMessage: "Phiên đăng nhập hết hạn. Vui lòng tải lại trang."
+              }, ...prev]);
+            }}
+            className="rounded-lg bg-purple-100 px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-300"
+          >
+            Test Lỗi Thẻ TTR
+          </button>
+        </div>
+      </div>
     </InteractionLayout>
   );
 };

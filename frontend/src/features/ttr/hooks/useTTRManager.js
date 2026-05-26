@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createTTRActivity, fetchActivitiesByInteraction } from '../api/ttrApi';
+import { parseBackendError, logBackendError, setErrorFromParsed } from "../../../utils/backendError";
 
 export const useTTRManager = (interactionId) => {
   const [isSetupOpen, setIsSetupOpen] = useState(false); 
@@ -7,6 +8,7 @@ export const useTTRManager = (interactionId) => {
   const [ttrTasks, setTtrTasks] = useState([]); 
   const [actionModal, setActionModal] = useState({ isOpen: false, activityId: null });
   const [gameConfig, setGameConfig] = useState({ activityId: null, initialMode: 'play', gameMode: 'normal' });
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadTTR = async () => {
@@ -24,7 +26,9 @@ export const useTTRManager = (interactionId) => {
           setTtrTasks(formatted);
         }
       } catch (err) {
-        console.error("Lỗi tải TTR Data:", err);
+        const parsed = parseBackendError(err, "Không tải được danh sách bài TTR. Bé thử lại sau nhé!");
+        logBackendError("useTTRManager.loadTTR", parsed);
+        setErrorFromParsed(setError, parsed);
       }
     };
     if (interactionId) loadTTR();
@@ -57,9 +61,12 @@ export const useTTRManager = (interactionId) => {
         ));
       })
       .catch(error => {
+        // [ĐỒNG BỘ] Bắt lỗi và log chuyên nghiệp
+        const parsed = parseBackendError(error, "Lỗi khi tạo bài tập, bé thử lại nhé!");
+        logBackendError("useTTRManager.handleCreateTTRBackground", parsed);
+        
         setTtrTasks(prev => prev.filter(task => task.id !== tempId));
-        console.error("Lỗi tạo bài: ", error);
-        alert(`❌ LỖI TẠO BÀI:\nHệ thống không thể xử lý. Hãy chắc chắn bạn đã chọn Độ Khó là DỄ!`);
+        setErrorFromParsed(setError, parsed); // Hiển thị thông báo thân thiện cho bé
       });
   };
 
@@ -96,6 +103,7 @@ export const useTTRManager = (interactionId) => {
     handleCreateTTRBackground,
     handlePlayTask,
     handleStartFromMenu,
-    closeGame
+    closeGame, 
+    error, clearError: () => setError(null)
   };
 };

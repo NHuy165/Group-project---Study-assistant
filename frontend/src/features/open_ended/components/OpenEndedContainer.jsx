@@ -7,7 +7,10 @@ export const OpenEndedContainer = ({ activityId, onClose }) => {
   const { 
     activityData, 
     isLoading, 
-    isSubmitting, 
+    isSubmitting,
+    error,
+    clearError,
+    testError, // Lấy hàm test từ hook
     saveAnswerDraft, 
     submitActivity 
   } = useOpenEnded(activityId);
@@ -15,11 +18,17 @@ export const OpenEndedContainer = ({ activityId, onClose }) => {
   if (!activityId) return null;
 
   return createPortal(
-
     <div className="fixed inset-0 z-[9999] flex items-center justify-center h-screen w-screen overflow-hidden bg-black/30 backdrop-blur-sm animate-in fade-in duration-300">
       <OpenEndedArea 
-        activityData={activityData} isLoading={isLoading} isSubmitting={isSubmitting}
-        onSaveDraft={saveAnswerDraft} onSubmit={submitActivity} onExit={onClose} 
+        activityData={activityData} 
+        isLoading={isLoading} 
+        isSubmitting={isSubmitting}
+        error={error}
+        clearError={clearError}
+        testError={testError}
+        onSaveDraft={saveAnswerDraft} 
+        onSubmit={submitActivity} 
+        onExit={onClose} 
       />
     </div>,
     document.body

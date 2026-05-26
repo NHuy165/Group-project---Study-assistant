@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { fetchStudyActivity } from '../api/ttrApi';
 import { useTTRModeManager } from './useTTRModeManager';
+import { parseBackendError, logBackendError, setErrorFromParsed } from "../../../utils/backendError";
 
 // Dùng để test tính năng trước khi có BE, sẽ xóa sau khi tích hợp API thật
 import { MOCK_BACKEND_DATA } from '../utils/mockData';
@@ -66,18 +67,10 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
         setIsLoading(false);
       } 
       catch (err) {
-        console.error("Lỗi tải game:", err);
-        let errorMsg = "Không thể tải dữ liệu bài tập. Vui lòng thử lại!";
-        
-        if (err.status === 401) {
-          errorMsg = "Bạn cần đăng nhập lại để chơi bài tập này.";
-        } else if (err.status === 404 || err.type === 'NOT_FOUND') {
-          errorMsg = "Bài tập này không tồn tại hoặc đã bị xóa ở nơi khác.";
-        } else if (err.status === 500) {
-          errorMsg = "Lỗi máy chủ nội bộ. Không thể lấy dữ liệu bài tập.";
-        }
-
-        setError(errorMsg);
+        // [ĐỒNG BỘ] Sử dụng chuẩn error handler mới
+        const parsed = parseBackendError(err, "Không thể tải dữ liệu bài tập. Vui lòng thử lại!");
+        logBackendError("useTTRGame.loadData", parsed);
+        setErrorFromParsed(setError, parsed); 
         setIsLoading(false);
       }
     };

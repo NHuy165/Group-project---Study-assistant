@@ -1,23 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import { readAllFlashcards, createFlashcard, deleteFlashcard, createEmptyFlashcard } from '../api/flashcardAPI';
-import { resolveFlashcardError } from "../utils/flashcardErrorHandler";
+import { parseBackendError, logBackendError, setErrorFromParsed } from "../../../utils/backendError";
 
-/**
- * Hook quản lý logic bộ flashcard: load, tạo, xóa
- * @param {string} interactionId - ID của interaction
- * @returns {Object} - flashcardSets, isLoading, error, methods
- */
 const useFlashcardSetManagement = (interactionId) => {
-    const [flashcardSets, setFlashcardSets] = useState([]); // danh sách các bộ flashcard
+    const [flashcardSets, setFlashcardSets] = useState([]); 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-
     const [prompt, setPrompt] = useState('');
     const [isCreatingWithAI, setIsCreatingWithAI] = useState(false);
 
-    /**
-     * Tải toàn bộ flashcards từ backend
-     */
     const loadFlashcardSets = useCallback(async () => {
         if (!interactionId) return;
 
@@ -25,24 +16,17 @@ const useFlashcardSetManagement = (interactionId) => {
         setError('');
         try {
             const response = await readAllFlashcards(interactionId);
-            const data = Array.isArray(response) ? response : [];
-            setFlashcardSets(data);
+            setFlashcardSets(Array.isArray(response) ? response : []);
         } catch (error) {
-            const { userMessage } = resolveFlashcardError(error, {
-                action: "readSets",
-                fallbackMessage: "Chưa tải được các bộ thẻ flashcard. Bé vui lòng thử lại sau nhé.",
-                scope: "useFlashcardSetManagement.loadFlashcardSets",
-            });
-            setError(userMessage);
+            const parsed = parseBackendError(error, "Chưa tải được các bộ thẻ flashcard. Bé vui lòng thử lại sau nhé.");
+            logBackendError("useFlashcardSetManagement.loadFlashcardSets", parsed);
+            setErrorFromParsed(setError, parsed);
             setFlashcardSets([]);
         } finally {
             setIsLoading(false);
         }
     }, [interactionId]);
 
-    /**
-     * Tạo flashcard mới từ prompt
-     */
     const createNewFlashcardSet = useCallback(async (promptData) => {
         const promptText = typeof promptData === 'object' ? promptData.prompt : promptData;
         const subjectType = typeof promptData === 'object' ? promptData.subject_type : null;
@@ -55,7 +39,6 @@ const useFlashcardSetManagement = (interactionId) => {
         setIsCreatingWithAI(true);
         setError('');
         try {
-            // createFlashcard trả về array of { id, front, back, ... }
             const newFlashcardSet = await createFlashcard(interactionId, {
                 prompt: promptText,
                 subject_type: subjectType,
@@ -64,38 +47,25 @@ const useFlashcardSetManagement = (interactionId) => {
             if (newFlashcardSet) {
                 setFlashcardSets(prev => [newFlashcardSet, ...prev]); 
             }
-            // loadFlashcardSets();
-
             setPrompt('');
             return newFlashcardSet;
 
         } catch (error) {
-            const { userMessage } = resolveFlashcardError(error, {
-                action: "create",
-                fallbackMessage: "Chưa tạo được bộ thẻ flashcard mới. Bé vui lòng thử lại sau nhé.",
-                scope: "useFlashcardSetManagement.createNewFlashcardSet",
-            });
-            setError(userMessage);
+            const parsed = parseBackendError(error, "Chưa tạo được bộ thẻ flashcard mới. Bé vui lòng thử lại sau nhé.");
+            logBackendError("useFlashcardSetManagement.createNewFlashcardSet", parsed);
+            setErrorFromParsed(setError, parsed);
         } finally {
             setIsCreatingWithAI(false);
         }
         return null;
-    }, [interactionId]);//, loadFlashcardSets]);
+    }, [interactionId]);
 
-    /**
-     * Tạo bộ flashcard trống
-     */
     const createEmptyFlashcardSet = useCallback(async (formData) => {
         const subjectType = formData?.subject_type || '';
         const setName = formData?.name || '';
         const setDescription = formData?.description || '';
 
-        if (
-            !subjectType.trim() ||
-            !setName.trim() ||
-            !setDescription.trim() ||
-            !interactionId
-        ) {
+        if (!subjectType.trim() || !setName.trim() || !setDescription.trim() || !interactionId) {
             setError('Bé vui lòng nhập nội dung nhé');
             return null;
         }
@@ -103,84 +73,54 @@ const useFlashcardSetManagement = (interactionId) => {
         setIsLoading(true);
         setError('');
         try {
-
             const newFlashcardSet = await createEmptyFlashcard(interactionId, {
                 subject_type: subjectType,
                 name: setName,
                 description: setDescription,
-            }
-            );
+            });
 
             if (newFlashcardSet) {
                 setFlashcardSets(prev => [newFlashcardSet, ...prev]); 
             }
-            // await loadFlashcardSets();
-
             setPrompt('');
             return newFlashcardSet;
 
         } catch (error) {
-            const { userMessage } = resolveFlashcardError(error, {
-                action: "createEmpty",
-                fallbackMessage: "Chưa tạo được bộ thẻ flashcard trống. Bé vui lòng thử lại sau nhé.",
-                scope: "useFlashcardSetManagement.createEmptyFlashcardSet",
-            });
-            setError(userMessage);
+            const parsed = parseBackendError(error, "Chưa tạo được bộ thẻ flashcard trống. Bé vui lòng thử lại sau nhé.");
+            logBackendError("useFlashcardSetManagement.createEmptyFlashcardSet", parsed);
+            setErrorFromParsed(setError, parsed);
         } finally {
             setIsLoading(false);
         }
         return null;
-    }, [interactionId]);//, loadFlashcardSets]);
+    }, [interactionId]);
 
-    /**
-     * Xóa bộ flashcard
-     */
     const removeFlashcardSet = useCallback(async (study_activity_id) => {
         setIsLoading(true);
         setError('');
         try {
-            // Gọi API xóa trước
             await deleteFlashcard(study_activity_id);
-            // Xóa từ local state
-            setFlashcardSets(prev => prev.filter(set => set.id !== study_activity_id))
+            setFlashcardSets(prev => prev.filter(set => set.id !== study_activity_id));
             setError('');
         } catch (error) {
-            const { userMessage } = resolveFlashcardError(error, {
-                action: "delete",
-                fallbackMessage: "Chưa xóa được bộ thẻ flashcard này. Bé vui lòng thử lại sau nhé.",
-                scope: "useFlashcardSetManagement.removeFlashcardSet",
-            });
-            setError(userMessage);
+            const parsed = parseBackendError(error, "Chưa xóa được bộ thẻ flashcard này. Bé vui lòng thử lại sau nhé.");
+            logBackendError("useFlashcardSetManagement.removeFlashcardSet", parsed);
+            setErrorFromParsed(setError, parsed);
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-    /**
-     * Tự động tải flashcards khi interactionId thay đổi
-     */
     useEffect(() => {
         if (interactionId) {
-            const timeoutId = setTimeout(() => {
-                loadFlashcardSets();
-            }, 0);
-
+            const timeoutId = setTimeout(() => loadFlashcardSets(), 0);
             return () => clearTimeout(timeoutId);
         }
     }, [interactionId, loadFlashcardSets]);
 
     return {
-        flashcardSets, 
-        setFlashcardSets, // Để component có thể update nếu cần
-        isLoading,
-        isCreatingWithAI,
-        error,
-        prompt, 
-        setPrompt,
-        loadFlashcardSets,
-        createNewFlashcardSet,
-        createEmptyFlashcardSet,
-        removeFlashcardSet,
+        flashcardSets, setFlashcardSets, isLoading, isCreatingWithAI, error, prompt, setPrompt,
+        loadFlashcardSets, createNewFlashcardSet, createEmptyFlashcardSet, removeFlashcardSet,
     };
 };
 

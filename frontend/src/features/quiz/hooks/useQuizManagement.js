@@ -6,7 +6,7 @@ import {
   useUpdateQuiz,
   useDeleteQuiz,
 } from "./useQuiz";
-import { resolveQuizError } from "../utils/quizErrorHandler";
+import { parseBackendError, logBackendError, setErrorFromParsed } from "../../../utils/backendError";
 
 const useQuizManagement = (interactionId) => {
   // Local state to keep the UI snappy (Optimistic Updates)
@@ -32,13 +32,9 @@ const useQuizManagement = (interactionId) => {
       const data = await fetchQuizzes(interactionId);
       setQuizzes(data);
     } catch (error) {
-      const { userMessage } = resolveQuizError(error, {
-        action: "loadList",
-        fallbackMessage:
-          "Không tải được danh sách trắc nghiệm. Bé thử lại sau nhé.",
-        scope: "useQuizManagement.loadQuizzes",
-      });
-      setGlobalError(userMessage);
+      const parsed = parseBackendError(error, "Không tải được danh sách trắc nghiệm. Bé thử lại sau nhé.");
+      logBackendError("useQuizManagement.loadQuizzes", parsed);
+      setErrorFromParsed(setGlobalError, parsed);
     }
   }, [interactionId, fetchQuizzes]);
 
@@ -57,12 +53,9 @@ const useQuizManagement = (interactionId) => {
       setQuizzes((prev) => [newQuiz, ...prev]); // New quiz appears at the top
       return newQuiz;
     } catch (error) {
-      const { userMessage } = resolveQuizError(error, {
-        action: "create",
-        fallbackMessage: "Chưa tạo được bài trắc nghiệm mới. Bé thử lại nhé.",
-        scope: "useQuizManagement.createNewQuiz",
-      });
-      setGlobalError(userMessage);
+      const parsed = parseBackendError(error, "Chưa tạo được bài trắc nghiệm mới. Bé thử lại nhé.");
+      logBackendError("useQuizManagement.createNewQuiz", parsed);
+      setErrorFromParsed(setGlobalError, parsed);
       return null;
     }
   };
@@ -75,16 +68,13 @@ const useQuizManagement = (interactionId) => {
       );
       return detail;
     } catch (error) {
-      const { userMessage, parsed } = resolveQuizError(error, {
-        action: "loadDetail",
-        fallbackMessage:
-          "Không tải được chi tiết bài trắc nghiệm. Bé thử lại nhé.",
-        scope: "useQuizManagement.loadQuizDetail",
-      });
-      if (parsed?.status === 404) {
+      const parsed = parseBackendError(error, "Không tải được chi tiết bài trắc nghiệm. Bé thử lại nhé.");
+      logBackendError("useQuizManagement.loadQuizDetail", parsed);
+      
+      if (parsed.status === 404) {
         setQuizzes((prev) => prev.filter((item) => item.id !== quizId));
       }
-      setGlobalError(userMessage);
+      setErrorFromParsed(setGlobalError, parsed);
       return null;
     }
   };
@@ -97,15 +87,13 @@ const useQuizManagement = (interactionId) => {
       setQuizzes((prev) => prev.filter((item) => item.id !== quizId));
       return true;
     } catch (error) {
-      const { userMessage, parsed } = resolveQuizError(error, {
-        action: "delete",
-        fallbackMessage: "Chưa xóa được bài trắc nghiệm. Bé thử lại nhé.",
-        scope: "useQuizManagement.removeQuiz",
-      });
-      if (parsed?.status === 404) {
+      const parsed = parseBackendError(error, "Chưa xóa được bài trắc nghiệm. Bé thử lại nhé.");
+      logBackendError("useQuizManagement.removeQuiz", parsed);
+      
+      if (parsed.status === 404) {
         setQuizzes((prev) => prev.filter((item) => item.id !== quizId));
       }
-      setGlobalError(userMessage);
+      setErrorFromParsed(setGlobalError, parsed);
       return null;
     }
   };
@@ -129,16 +117,13 @@ const useQuizManagement = (interactionId) => {
       );
       return updated;
     } catch (error) {
-      const { userMessage, parsed } = resolveQuizError(error, {
-        action: "updateMeta",
-        fallbackMessage:
-          "Chưa cập nhật được thông tin bài trắc nghiệm. Bé thử lại nhé.",
-        scope: "useQuizManagement.updateQuizMeta",
-      });
-      if (parsed?.status === 404) {
+      const parsed = parseBackendError(error, "Chưa cập nhật được thông tin bài trắc nghiệm. Bé thử lại nhé.");
+      logBackendError("useQuizManagement.updateQuizMeta", parsed);
+      
+      if (parsed.status === 404) {
         setQuizzes((prev) => prev.filter((item) => item.id !== quizId));
       }
-      setGlobalError(userMessage);
+      setErrorFromParsed(setGlobalError, parsed);
       return null;
     }
   };

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import videoIcon from "../../../assets/icon/video.svg";
 import slideIcon from "../../../assets/icon/slide.svg";
 import quizIcon from "../../../assets/icon/Quiz.svg";
-import { Trash } from "@phosphor-icons/react";
+import { Trash, WarningCircle, X } from "@phosphor-icons/react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { ConfirmModal } from "../../../components/ConfirmModal";
 
@@ -29,15 +29,14 @@ export const ToolsSidebar = ({
   flashcardSets = [], 
   onOpenFlashcardSet, 
   onDeleteFlashcardSet,
+  // 1. NHẬN PROPS LỖI VÀO ĐÂY
+  toolError,
+  onClearToolError
 }) => {
   const { isNight } = useTheme();
   
-  // STATE DUY NHẤT QUẢN LÝ XÓA CHO TẤT CẢ CÁC TÍNH NĂNG
   const [deleteTarget, setDeleteTarget] = useState({
-    isOpen: false,
-    id: null,
-    type: "", // 'QUIZ', 'TTR', 'OPEN_ENDED', 'FLASHCARD'
-    name: ""
+    isOpen: false, id: null, type: "", name: ""
   });
 
   const openDeleteModal = (id, type, name) => {
@@ -57,12 +56,6 @@ export const ToolsSidebar = ({
     closeDeleteModal();
   };
 
-  const handleToolClick = (toolId) => {
-    if (onToolClick) {
-      onToolClick(toolId);
-    }
-  };
-
   return (
     <aside
       className={`flex w-[20%] flex-col space-y-4 rounded-3xl p-6 backdrop-md shadow-xl border transition-colors duration-500 ${
@@ -71,6 +64,26 @@ export const ToolsSidebar = ({
           : "bg-white/30 border-white/20"
       }`}
     >
+      {/* 2. KHU VỰC BÁO LỖI (Sẽ trượt mượt mà xuống khi có lỗi) */}
+      {toolError && (
+        <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 shadow-sm ${
+            isNight ? "border-red-500/30 bg-[#2a1118]/80 text-red-200" : "border-red-200 bg-red-50 text-red-600"
+          }`}>
+            <WarningCircle size={20} weight="fill" className="shrink-0 text-red-500 mt-0.5" />
+            <p className="flex-1 text-xs font-bold leading-snug">{toolError}</p>
+            <button 
+              onClick={onClearToolError} 
+              className={`shrink-0 rounded-lg p-1 transition-colors ${
+                isNight ? "hover:bg-red-500/20 text-red-400" : "hover:bg-red-200 text-red-500"
+              }`}
+            >
+              <X size={14} weight="bold" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Section Công cụ */}
       <section>
         <header className="mb-4 space-y-4">
@@ -142,7 +155,6 @@ export const ToolsSidebar = ({
           
           {/* HIỂN THỊ DANH SÁCH BÀI TTR */}
           {ttrTasks && ttrTasks.map((task) => {
-            // UI RIÊNG CHO TRẠNG THÁI LỖI
             if (task.status === 'error') {
               return (
                 <div key={`ttr-${task.id}`} className={`flex flex-col rounded-2xl px-3 py-2 shadow-sm border transition-all ${
@@ -167,7 +179,6 @@ export const ToolsSidebar = ({
               );
             }
 
-            // UI CHO TRẠNG THÁI LOADING / READY (Đã thêm nút Trash)
             return (
               <div key={`ttr-${task.id}`} className="group relative flex w-full items-center">
                 <button 
@@ -315,7 +326,6 @@ export const ToolsSidebar = ({
         </nav>
       </section>
 
-      {/* COMPONENT XÁC NHẬN XÓA TỔNG HỢP DUY NHẤT */}
       <ConfirmModal
         isOpen={deleteTarget.isOpen}
         onClose={closeDeleteModal}

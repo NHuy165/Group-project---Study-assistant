@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { quizService } from "../services/quiz.service";
 import { mergeExerciseItem } from "../utils/quizHelpers";
-import { resolveQuizError } from "../utils/quizErrorHandler";
+import { parseBackendError, logBackendError, setErrorFromParsed } from "../../../utils/backendError";
 
 export const useQuizGame = (quiz, onQuizUpdate) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -104,15 +104,14 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
         onQuizUpdate(mergeExerciseItem(quiz, updatedItem));
       }
     } catch (error) {
+      // Revert lại nếu Backend lỗi
       if (onQuizUpdate) {
         onQuizUpdate(mergeExerciseItem(quiz, currentQuestion));
       }
-      const { userMessage } = resolveQuizError(error, {
-        action: "submitAnswer",
-        fallbackMessage: "Bé chưa lưu được câu trả lời. Bé thử lại nhé.",
-        scope: "useQuizGame.handleSelectOption",
-      });
-      setActionError(userMessage);
+      
+      const parsed = parseBackendError(error, "Bé chưa lưu được câu trả lời. Bé thử lại nhé.");
+      logBackendError("useQuizGame.handleSelectOption", parsed);
+      setErrorFromParsed(setActionError, parsed);
     }
   };
 
@@ -146,12 +145,9 @@ export const useQuizGame = (quiz, onQuizUpdate) => {
       const updated = await quizService.submitQuiz(quiz.id);
       if (updated && onQuizUpdate) onQuizUpdate(updated);
     } catch (error) {
-      const { userMessage } = resolveQuizError(error, {
-        action: "submitQuiz",
-        fallbackMessage: "Bé chưa nộp bài được. Bé thử lại sau ít phút nhé.",
-        scope: "useQuizGame.submitQuiz",
-      });
-      setActionError(userMessage);
+      const parsed = parseBackendError(error, "Bé chưa nộp bài được. Bé thử lại sau ít phút nhé.");
+      logBackendError("useQuizGame.submitQuiz", parsed);
+      setErrorFromParsed(setActionError, parsed);
     } finally {
       setIsSubmitting(false);
     }
