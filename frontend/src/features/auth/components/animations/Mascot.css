@@ -1,7 +1,7 @@
 /* src/features/auth/components/Mascot.css */
 .mascot-wrap {
   position: absolute;
-  top: -136px;
+  top: -240px;
   left: 50%;
   transform: translateX(-50%);
   width: 170px;

@@ -25,21 +25,6 @@ const InteractionContent = ({ children, onNewChat, headerTitle = "EduSpark", mod
         </span>
       </Link>
 
-      {/* New Chat button */}
-      <button
-        onClick={onNewChat}
-        className="absolute right-10 top-10 z-50 rounded-full px-6 py-2.5 text-sm font-bold shadow-md backdrop-blur-md transition hover:scale-105 active:scale-95"
-        style={{
-          background: btnBg,
-          color: btnText,
-          border: isNight ? "1px solid rgba(100,140,255,0.3)" : "1px solid rgba(255,255,255,0.4)",
-          transition: "background 0.5s ease, color 0.5s ease, border 0.5s ease",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = btnHover)}
-        onMouseLeave={(e) => (e.currentTarget.style.background = btnBg)}
-      >
-        + New chat
-      </button>
 
       <main className="flex h-full w-full space-x-6 overflow-hidden">
         {children}
