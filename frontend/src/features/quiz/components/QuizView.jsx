@@ -2,14 +2,13 @@ import React, { useEffect, useState, useRef } from "react";
 import Confetti from "react-confetti";
 import { ChevronLeft, ChevronRight, Send, Flag, PartyPopper } from "lucide-react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
-
-// Import các sub-components
 import QuestionCard from "./QuestionCard";
 import QuizMilestone from "./QuizMilestone";
 import QuizNavigator from "./QuizNavigator";
 import QuizScoreBoard from "./QuizScoreBoard";
 import QuizSidebarInfo from "./QuizSidebarInfo";
 import QuizConfirmModal from "./QuizConfirmModal";
+import ErrorBanner from "../../../components/ErrorBanner";
 
 const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
   const { isNight } = useTheme();
@@ -218,17 +217,8 @@ const QuizView = ({ quiz, game, onUpdateMeta, isSaving }) => {
 
       <QuizMilestone milestoneMessage={milestoneMessage} clearMilestoneMessage={clearMilestoneMessage} />
 
-      {actionError && (
-        <div className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${isNight ? "border-red-400/30 bg-red-500/10 text-red-200" : "border-red-300 bg-red-50 text-red-700"}`}>
-          <span>{actionError}</span>
-          <button
-            onClick={clearActionError}
-            className={`rounded-lg px-2 py-1 text-xs font-bold ${isNight ? "bg-red-500/20 text-red-100" : "bg-red-100 text-red-700"}`}
-          >
-            Đã hiểu
-          </button>
-        </div>
-      )}
+      {/* actionError: hiện inline ngay trong luồng làm bài, không nổi lên che nội dung */}
+      <ErrorBanner error={actionError} onDismiss={clearActionError} />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_260px] items-start">
         

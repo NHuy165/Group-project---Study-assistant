@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BlankSlot } from './BlankSlot';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
 import { SmartContent } from "../../../components/SmartContent";
+import ErrorBanner from '../../../components/ErrorBanner';
 
 // ====================================================================
 // HOOK VẼ SÉT PHÂN NHÁNH TRÊN CANVAS (Giữ nguyên toàn bộ logic vẽ sét)
@@ -165,9 +166,10 @@ const useCrackCanvas = (canvasRef, active) => {
 // COMPONENT CHÍNH TTRCARD (Đã đồng bộ hóa ID Option hoàn toàn)
 // ====================================================================
 export const TTRCard = ({ 
+  isLoading, error, onRetry, onExit,
   isCompleted, mode, timeLeft, maxTime, isTimeFrozen, freezeTimeLeft, shields, isFogActive, isGameOver, gameOverReason,
   currentIndex, totalQuestions, currentQuestion, activeBlankId, filledBlanks, wrongBlanks, confirmedBlanks, checkStatus, 
-  streak, onSelectWord, onBlankClick, onDropWord, onCheckAnswer, onNextQuestion, onExit,
+  streak, onSelectWord, onBlankClick, onDropWord, onCheckAnswer, onNextQuestion,
   power5050, powerMagic, shieldActive, eliminatedOptions, handleUse5050, handleUseMagic 
 }) => {
   const { isNight } = useTheme();
@@ -257,6 +259,37 @@ export const TTRCard = ({
     rafId = requestAnimationFrame(pulse);
     return () => cancelAnimationFrame(rafId);
   }, [dayQuakeActive]);
+
+  // LOADING SCREEN
+  if (isLoading) {
+    return (
+      <main className={`flex w-full min-h-[580px] flex-col items-center justify-center rounded-[2.5rem] p-8 backdrop-blur-md shadow-2xl border border-white/20 ${isNight ? 'bg-[#151b23]/90' : 'bg-white/95'}`}>
+        <div className="text-6xl animate-spin mb-6">⚙️</div>
+        <p className={`text-xl font-black ${isNight ? 'text-gray-300' : 'text-gray-700'}`}>Đang tải bài tập...</p>
+      </main>
+    );
+  }
+
+  // ERROR SCREEN
+  if (error) {
+    return (
+      <main className={`flex w-full min-h-[580px] flex-col items-center justify-center rounded-[2.5rem] p-8 backdrop-blur-md shadow-2xl border border-white/20 gap-6 ${isNight ? 'bg-[#151b23]/90' : 'bg-white/95'}`}>
+        <div className="w-full max-w-md">
+          <ErrorBanner error={error} />
+        </div>
+        <div className="flex gap-3">
+          {onRetry && (
+            <button onClick={onRetry} className="px-6 py-3 rounded-2xl font-black bg-purple-600 text-white hover:bg-purple-500 transition-all hover:scale-105 active:scale-95">
+              Thử lại
+            </button>
+          )}
+          <button onClick={onExit} className={`px-6 py-3 rounded-2xl font-black border-2 transition-all hover:scale-105 active:scale-95 ${isNight ? 'border-gray-600 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+            Quay về
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (!currentQuestion) return null;
 

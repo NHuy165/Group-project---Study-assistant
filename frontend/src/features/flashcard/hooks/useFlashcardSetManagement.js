@@ -120,7 +120,8 @@ const useFlashcardSetManagement = (interactionId) => {
 
     return {
         flashcardSets, setFlashcardSets, isLoading, isCreatingWithAI, error, prompt, setPrompt,
-        loadFlashcardSets, createNewFlashcardSet, createEmptyFlashcardSet, removeFlashcardSet,
+        loadFlashcardSets, createNewFlashcardSet, createEmptyFlashcardSet, removeFlashcardSet
+
     };
 };
 

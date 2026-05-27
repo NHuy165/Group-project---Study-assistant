@@ -104,6 +104,7 @@ export const useTTRManager = (interactionId) => {
     handlePlayTask,
     handleStartFromMenu,
     closeGame, 
-    error, clearError: () => setError(null)
+    managerError: error,
+    clearManagerError: () => setError(null)
   };
 };

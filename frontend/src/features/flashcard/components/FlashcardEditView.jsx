@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import useFlashcardManagement from '../hooks/useFlashcardManagement';
 import { Trash } from "@phosphor-icons/react";
 import { useTheme } from '../../../components/theme/ThemeWrapper';
+import ErrorBanner from '../../../components/ErrorBanner';
 
 const emptyDraft = {
     front: '',
@@ -16,6 +17,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
         createNewFlashcard,
         updateCard,
         deleteFlashcard,
+        clearError,
     } = useFlashcardManagement(selectedSet?.id);
 
     const { isNight } = useTheme();
@@ -127,15 +129,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                 </div>
             </div>
 
-            {error && (
-                <div className={`rounded border p-3 text-sm ${
-                    isNight
-                        ? 'border-red-600/50 bg-red-900/20 text-red-400'
-                        : 'border-red-300 bg-red-100 text-red-700'
-                }`}>
-                    {error}
-                </div>
-            )}
+            <ErrorBanner error={error} onDismiss={clearError} />
 
             <section className={`rounded-lg border p-4 shadow-sm transition-all ${
                 isNight

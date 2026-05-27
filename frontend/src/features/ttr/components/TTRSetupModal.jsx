@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../components/theme/ThemeWrapper'; 
+import ErrorBanner from '../../../components/ErrorBanner';
 
 const SUGGESTED_PROMPTS = [
   "Tóm tắt định luật bảo toàn năng lượng.", 
@@ -7,7 +8,7 @@ const SUGGESTED_PROMPTS = [
   "Từ vựng tiếng Anh chủ đề Động vật."
 ];
 
-export const TTRSetupModal = ({ isOpen, onClose, onSubmit }) => {
+export const TTRSetupModal = ({ isOpen, onClose, onSubmit, managerError, clearManagerError }) => {
   const { isNight } = useTheme();
   const [content, setContent] = useState('');
   const [selectedPrompts, setSelectedPrompts] = useState([]);
@@ -165,6 +166,12 @@ const handleSubmit = (e) => {
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
+            {managerError && (
+              <div className="w-full">
+                <ErrorBanner error={managerError} onDismiss={clearManagerError} />
+              </div>
+            )}
+            <div className="w-full flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="w-full md:w-1/2 flex items-center gap-4">
               <span className="text-sm font-bold whitespace-nowrap">Số câu: {questionCount}</span>
               <input type="range" min="5" max="20" value={questionCount} onChange={(e) => setQuestionCount(e.target.value)} className="w-full accent-purple-600"/>
@@ -172,6 +179,7 @@ const handleSubmit = (e) => {
             <button type="submit" className="w-full md:w-auto bg-purple-600 text-white px-10 py-4 rounded-2xl font-black hover:scale-105 active:scale-95 shadow-lg transition-all flex items-center justify-center gap-2">
               🌟 BẮT ĐẦU TẠO BÀI
             </button>
+            </div>
           </div>
         </form>
       </div>

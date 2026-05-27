@@ -253,7 +253,7 @@ export const useTTRGame = (studyActivityId, onClose, initialMode = 'play') => {
   const toggleReviewMode = useCallback((active) => { setIsReviewMode(active); }, []);
 
   return {
-    isLoading, error, isReviewMode, toggleReviewMode,
+    isLoading, error, clearError: () => setError(null), isReviewMode, toggleReviewMode,
     isCompleted, mode: initialMode, 
     ...modeManager,
     currentIndex, totalQuestions, currentQuestion: questions[currentIndex],

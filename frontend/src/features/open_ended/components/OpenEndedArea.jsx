@@ -3,10 +3,11 @@ import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { useExerciseStore } from "../hooks/useExerciseStore";
 import { OpenEndedSidebar } from "./OpenEndedSidebar";
 import { OpenEndedWorkspace } from "./OpenEndedWorkspace";
+import ErrorBanner from "../../../components/ErrorBanner";
 
 export const OpenEndedArea = ({ 
   activityData, isLoading, isSubmitting, 
-  error, clearError, testError, // Nhận thêm props
+  error, clearError,
   onSaveDraft, onSubmit, onExit 
 }) => {
   const { isNight } = useTheme(); 
@@ -56,38 +57,12 @@ export const OpenEndedArea = ({
   return (
     <div className="relative flex h-[82vh] w-[95vw] max-w-[1600px] gap-8 mt-12 overflow-hidden bg-transparent">
       
-      {/* ===================== BANNER HIỂN THỊ LỖI ===================== */}
+      {/* FLOATING ERROR BANNER — nổi trên đầu, không đẩy layout */}
       {error && (
-        <div className="absolute top-4 left-1/2 z-[200] -translate-x-1/2 animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className={`flex items-center justify-between gap-4 rounded-2xl border px-6 py-4 shadow-2xl ${
-            isNight ? "border-red-400/50 bg-[#2a1118]/95 text-red-200" : "border-red-300 bg-red-50 text-red-700"
-          }`}>
-            <span className="text-2xl">⚠️</span>
-            <span className="text-[15px] font-bold">{error}</span>
-            <button
-              onClick={clearError}
-              className={`ml-4 rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 ${
-                isNight ? "bg-red-500/30 text-red-100 hover:bg-red-500/50" : "bg-red-600 text-white hover:bg-red-700"
-              }`}
-            >
-              Đã hiểu
-            </button>
-          </div>
+        <div className="absolute top-4 left-1/2 z-[200] w-full max-w-lg -translate-x-1/2 px-4 animate-in slide-in-from-top-4 fade-in duration-300">
+          <ErrorBanner error={error} onDismiss={clearError} />
         </div>
       )}
-
-      {/* ===================== KHU VỰC TEST LỖI (Góc dưới trái) ===================== */}
-      <div className={`absolute bottom-4 left-4 z-[200] flex flex-col gap-2 rounded-xl p-3 text-xs font-bold shadow-lg backdrop-blur-md ${isNight ? 'bg-slate-800/80 border border-slate-700' : 'bg-white/80 border border-slate-300'}`}>
-        <p className={`text-center mb-1 ${isNight ? 'text-slate-300' : 'text-slate-600'}`}>Mô phỏng lỗi BE</p>
-        <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => testError(400)} className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600">400 Bad Req</button>
-            <button onClick={() => testError(401)} className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600">401 Auth</button>
-            <button onClick={() => testError(404)} className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600">404 Not Found</button>
-            <button onClick={() => testError(409, "SUBMITTED_EXERCISE")} className="rounded bg-orange-500 px-2 py-1 text-white hover:bg-orange-600">409 Submitted</button>
-            <button onClick={() => testError(500)} className="rounded bg-red-500 px-2 py-1 text-white hover:bg-red-600">500 Server</button>
-            <button onClick={() => testError(502)} className="rounded bg-red-500 px-2 py-1 text-white hover:bg-red-600">502 AI Lỗi</button>
-        </div>
-      </div>
 
       {isSubmitting && (
         <div className={`absolute inset-0 z-[100] flex flex-col items-center justify-center rounded-[2.5rem] backdrop-blur-md ${isNight ? 'bg-black/60' : 'bg-white/60'}`}>

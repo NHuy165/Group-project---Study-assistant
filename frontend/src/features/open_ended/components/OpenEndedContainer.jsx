@@ -10,7 +10,6 @@ export const OpenEndedContainer = ({ activityId, onClose }) => {
     isSubmitting,
     error,
     clearError,
-    testError, // Lấy hàm test từ hook
     saveAnswerDraft, 
     submitActivity 
   } = useOpenEnded(activityId);
@@ -25,7 +24,6 @@ export const OpenEndedContainer = ({ activityId, onClose }) => {
         isSubmitting={isSubmitting}
         error={error}
         clearError={clearError}
-        testError={testError}
         onSaveDraft={saveAnswerDraft} 
         onSubmit={submitActivity} 
         onExit={onClose} 

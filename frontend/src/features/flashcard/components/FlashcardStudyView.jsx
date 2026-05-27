@@ -3,12 +3,14 @@ import useFlashcardNavigation from '../hooks/useFlashcard';
 import Flashcard from './Flashcard';
 import useFlashcardManagement from '../hooks/useFlashcardManagement';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
+import ErrorBanner from '../../../components/ErrorBanner';
 
 const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
     const {
         cardsList,
         isLoading,
         error,
+        clearError,
     } = useFlashcardManagement(selectedSet?.id);
 
     const {
@@ -39,6 +41,31 @@ const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
         );
     }
 
+    if (error && (!cardsList || cardsList.length === 0)) {
+        return (
+            <div className={`flex h-full items-center justify-center rounded-[2.5rem] border p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all ${
+                isNight
+                    ? 'border-white/10 bg-[#1e293b]/90 text-gray-100'
+                    : 'border-white/40 bg-white/90 text-gray-800'
+            }`}>
+                <div className="max-w-md w-full flex flex-col gap-4">
+                    <ErrorBanner error={error} onDismiss={clearError} />
+                    <div className="text-center">
+                        <p className={`text-lg font-semibold ${isNight ? 'text-blue-300' : 'text-slate-700'}`}>
+                            Không thể tải flashcard
+                        </p>
+                        <p className={`mt-2 text-sm ${isNight ? 'text-gray-400' : 'text-slate-500'}`}>
+                            Bé thử tải lại hoặc quay về chọn bộ thẻ khác.
+                        </p>
+                        <button type="button" onClick={onBack} className="mt-4 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                            Quay lại
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (!cardsList || cardsList.length === 0) {
         return (
             <div className={`flex h-full items-center justify-center rounded-[2.5rem] border p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all ${
@@ -47,15 +74,6 @@ const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
                     : 'border-white/40 bg-white/90 text-gray-800'
             }`}>
                 <div className="max-w-md text-center">
-                    {error && (
-                        <div className={`mb-4 rounded border p-3 text-sm ${
-                            isNight
-                                ? 'border-red-600/50 bg-red-900/20 text-red-400'
-                                : 'border-red-300 bg-red-100 text-red-700'
-                        }`}>
-                            {error}
-                        </div>
-                    )}
                     <p className={`text-lg font-semibold ${
                         isNight ? 'text-blue-300' : 'text-slate-700'
                     }`}>
