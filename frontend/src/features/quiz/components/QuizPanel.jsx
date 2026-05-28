@@ -52,7 +52,7 @@ const QuizPanel = ({ interactionId, quizId, onClose }) => {
           
           {/* 1. BÊN TRÁI: Dòng chữ rực rỡ và Icon tách riêng */}
           <div className="flex-1 flex items-center gap-3">
-            <h2 className={`text-2xl md:text-3xl font-black tracking-tighter uppercase italic transition-all duration-700 bg-clip-text text-transparent bg-gradient-to-r whitespace-nowrap ${
+            <h2 className={`text-xl sm:text-2xl md:text-3xl pr-2 font-black tracking-tighter uppercase italic transition-all duration-700 bg-clip-text text-transparent bg-gradient-to-r whitespace-nowrap ${
               selectedQuiz?.isSubmitted
                 ? isNight 
                   ? "from-yellow-400 via-emerald-400 to-orange-500 drop-shadow-[0_2px_10px_rgba(52,211,153,0.3)]" 
