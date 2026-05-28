@@ -1,6 +1,7 @@
 // src/features/interactions/hooks/useInteractions.js
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../api/interactionsAPI";
+import { useChartStore } from "../../home/hooks/useChartStore";
 
 // Helper tập trung xử lý thông báo lỗi
 const getErrorMessage = (status) => {
@@ -13,6 +14,7 @@ const getErrorMessage = (status) => {
 };
 
 export const useInteractions = () => {
+    const triggerRefresh = useChartStore((state) => state.triggerRefresh);
     // 1. STATE CHÍNH
     const [interactions, setInteractions] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +23,7 @@ export const useInteractions = () => {
 
     // 2. STATE FORM & EDITING
     const [formData, setFormData] = useState({ name: '', description: '' });
-    const [editingId, setEditingId] = useState(null);
+    const [editingId, setEditingId] = useState(null); // null means the user is creating new a one
 
     // 3. UI HANDLERS
     const handleFormChange = (e) => {
@@ -57,7 +59,7 @@ export const useInteractions = () => {
 
     // 5. CRUD OPERATIONS
     const readInteractions = useCallback(() => {
-        return executeRequest(api.readInteractions, (data) => {
+        return executeRequest(api.readInteractions, (data) => { // để ý truyền vô ko có dấu ngoặc
             setInteractions(data);
             if (data.length > 0 && !activeInteractionId) {
                 setActiveInteractionId(data[0].id);
@@ -70,7 +72,7 @@ export const useInteractions = () => {
     }, [readInteractions]);
 
     const createInteraction = (input) => {
-        return executeRequest(() => api.createInteraction(input), (newInteraction) => {
+        return executeRequest(() => api.createInteraction(input), (newInteraction) => { // truyền thẳng ở đây thì phải thêm cú pháp () => 
             setInteractions((prev) => [...prev, newInteraction]);
             cancelEditClick(); // Reset form sau khi tạo thành công
         });
@@ -86,6 +88,8 @@ export const useInteractions = () => {
     const deleteInteraction = (id) => {
         return executeRequest(() => api.deleteInteraction(id), () => {
             setInteractions((prev) => prev.filter((item) => item.id !== id));
+
+            triggerRefresh(); // Báo cho các component khác biết là đã có thay đổi (VD: để Home fetch lại biểu đồ)
         });
     };
 

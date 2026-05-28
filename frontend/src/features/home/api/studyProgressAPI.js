@@ -1,0 +1,64 @@
+import axiosClient from '../../../api/axiosClient';
+
+/**
+ * Hàm gọi API chung để lấy dữ liệu tiến độ học tập
+ * @param {string} target - Mục tiêu thống kê (VD: 'SCORE', 'COUNT_ITEM', 'COUNT_ACTIVITY')
+ * @param {Array} payload - Mảng chứa các quy tắc lọc (filters) và gom nhóm (GROUP_BY)
+ * @returns {Promise} Dữ liệu mảng trả về từ API
+ */
+export const getStudyProgress = async (target, payload) => {
+    // Gọi POST /study-progress/?target={target}
+    // Axios sẽ tự động parse query params và gắn vào URL
+    const response = await axiosClient.post('/study-progress/', payload, {
+        params: { target }
+    });
+    return response.data;
+};
+
+// ============================================================================
+// CÁC HÀM GỌI API CỤ THỂ CHO TỪNG BIỂU ĐỒ 
+// (Giúp code ở Component rõ nghĩa hơn, tái sử dụng hàm getStudyProgress ở trên)
+// ============================================================================
+
+// Biểu đồ 1: Tỉ lệ đạt điểm tối đa các môn (Radar 1 biến)
+export const fetchScoreRatioRadarChart = async (payload) => {
+    return await getStudyProgress('SCORE', payload);
+};
+
+// Biểu đồ 2: Phân bổ bài tập theo môn học (Tròn 1 biến)
+export const fetchSubjectDistributionPieChart = async (payload) => {
+    return await getStudyProgress('COUNT_ITEM', payload);
+};
+
+// Biểu đồ 3: Chuỗi ngày luyện tập liên tục (GitHub calendar/Heatmap)
+export const fetchStudyStreakHeatmap = async (payload) => {
+    return await getStudyProgress('COUNT_ITEM', payload);
+};
+
+// Biểu đồ 4: Tỉ lệ hoàn thành bài tập (Vành khuyên)
+export const fetchCompletionRateDonutChart = async (payload) => {
+    return await getStudyProgress('COUNT_ACTIVITY', payload);
+};
+
+// Biểu đồ 5: Số bài nộp theo định dạng (Cột)
+export const fetchSubmittedFormatColumnChart = async (payload) => {
+    return await getStudyProgress('COUNT_ACTIVITY', payload);
+};
+
+// Biểu đồ 6: Xu hướng điểm số theo thời gian (Đường nhiều biến)
+export const fetchScoreTrendMultiLineChart = async (payload) => {
+    return await getStudyProgress('SCORE', payload);
+};
+
+// Biểu đồ 7: Hoạt động học tập yêu thích nhất (Thanh ngang / Cột chồng)
+export const fetchFavoriteActivityBarChart = async (payload) => {
+    return await getStudyProgress('COUNT_ACTIVITY', payload);
+};
+
+
+// Lấy thông tin đã tạo bất kỳ câu hỏi nào chưa
+export const fetchTotalExercisesCount = async () => {
+    // Payload rỗng để không bị giới hạn bởi thời gian hay môn học
+    const payload = [];
+    return await getStudyProgress('COUNT_ITEM', payload);
+};
