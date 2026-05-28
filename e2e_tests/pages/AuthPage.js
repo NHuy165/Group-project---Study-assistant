@@ -23,7 +23,7 @@ export class AuthPage {
   }
 
   async navigate() {
-    await this.page.goto('http://localhost:5173/#/login')
+    await this.page.goto(`${process.env.FRONTEND_URL}/#/login`)
   }
 
   async register(name, email, password) {

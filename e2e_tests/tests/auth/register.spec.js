@@ -3,7 +3,10 @@ import { AuthPage } from '../../pages/AuthPage'
 
 test.describe('App test', () => {
   test.beforeEach(async ({ page, request }) => {
-    await request.post('http://0.0.0.0:8000/api/dev/wipe-db')
+    const response = await request.post(
+      `${process.env.BACKEND_URL}/dev/wipe-db`,
+    )
+    expect(response.ok()).toBeTruthy()
   })
 
   test('registration', async ({ page }) => {
