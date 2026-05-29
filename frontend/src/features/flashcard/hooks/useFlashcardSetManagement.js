@@ -5,7 +5,7 @@ import { parseBackendError, logBackendError, setErrorFromParsed } from "../../..
 const useFlashcardSetManagement = (interactionId) => {
     const [flashcardSets, setFlashcardSets] = useState([]); 
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(null);
     const [prompt, setPrompt] = useState('');
     const [isCreatingWithAI, setIsCreatingWithAI] = useState(false);
 
@@ -13,7 +13,7 @@ const useFlashcardSetManagement = (interactionId) => {
         if (!interactionId) return;
 
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             const response = await readAllFlashcards(interactionId);
             setFlashcardSets(Array.isArray(response) ? response : []);
@@ -32,12 +32,12 @@ const useFlashcardSetManagement = (interactionId) => {
         const subjectType = typeof promptData === 'object' ? promptData.subject_type : null;
 
         if (!promptText?.trim() || !interactionId) {
-            setError('Bé vui lòng nhập nội dung nhé');
+            setError({ message: 'Bé vui lòng nhập nội dung nhé', type: 'warning' });
             return null;
         }
 
         setIsCreatingWithAI(true);
-        setError('');
+        setError(null);
         try {
             const newFlashcardSet = await createFlashcard(interactionId, {
                 prompt: promptText,
@@ -66,12 +66,12 @@ const useFlashcardSetManagement = (interactionId) => {
         const setDescription = formData?.description || '';
 
         if (!subjectType.trim() || !setName.trim() || !setDescription.trim() || !interactionId) {
-            setError('Bé vui lòng nhập nội dung nhé');
+            setError({ message: 'Bé vui lòng nhập nội dung nhé', type: 'warning' });
             return null;
         }
 
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             const newFlashcardSet = await createEmptyFlashcard(interactionId, {
                 subject_type: subjectType,
@@ -97,11 +97,11 @@ const useFlashcardSetManagement = (interactionId) => {
 
     const removeFlashcardSet = useCallback(async (study_activity_id) => {
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             await deleteFlashcard(study_activity_id);
             setFlashcardSets(prev => prev.filter(set => set.id !== study_activity_id));
-            setError('');
+            setError(null);
         } catch (error) {
             const parsed = parseBackendError(error, "Chưa xóa được bộ thẻ flashcard này. Bé vui lòng thử lại sau nhé.");
             logBackendError("useFlashcardSetManagement.removeFlashcardSet", parsed);

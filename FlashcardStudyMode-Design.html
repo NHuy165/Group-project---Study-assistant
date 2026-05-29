@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Study Mode - EduSpark.AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body, #root {
+            height: 100%;
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: "Inter", "Chalkboard SE", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* ===== OVERLAY/MODAL CONTAINER ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            padding: 2rem;
+        }
+
+        /* ===== FLASHCARD STUDY CONTAINER ===== */
+        .flashcard-study-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 2.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== HEADER SECTION ===== */
+        .study-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        .set-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .set-description {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .edit-btn {
+            padding: 0.625rem 1rem;
+            border: 1px solid #c7d2fe;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            background: #e0e7ff;
+            border-color: #a5b4fc;
+        }
+
+        .close-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.75rem;
+            border-radius: 0.5rem;
+        }
+
+        .close-btn:hover {
+            color: #ef4444;
+            transform: rotate(90deg);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* ===== PROGRESS SECTION ===== */
+        .progress-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 0.5rem;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            border-radius: 9999px;
+            transition: width 0.4s ease;
+            width: 45%;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+            text-align: center;
+        }
+
+        /* ===== FLASHCARD 3D FLIP CONTAINER ===== */
+        .flashcard-container-3d {
+            perspective: 1000px;
+            width: 100%;
+            height: 300px;
+            cursor: pointer;
+            margin: 1rem 0;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-style: preserve-3d;
+        }
+
+        .flashcard-container-3d.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .flashcard-front {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            color: #172554;
+            border: 2px solid #bfdbfe;
+            font-size: 1.875rem;
+            font-weight: 600;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .flashcard-back {
+            background: #f0fdf4;
+            color: #14532d;
+            border: 2px solid #86efac;
+            transform: rotateY(180deg);
+            font-size: 1.125rem;
+            font-weight: 500;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        /* Different subject backgrounds */
+        .flashcard-front.maths {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #7dd3fc;
+            color: #172554;
+        }
+
+        .flashcard-back.maths {
+            background: #dbeafe;
+            border-color: #7dd3fc;
+            color: #172554;
+        }
+
+        .flashcard-front.vietnamese {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #fca5a5;
+            color: #7f1d1d;
+        }
+
+        .flashcard-back.vietnamese {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #7f1d1d;
+        }
+
+        .flashcard-front.english {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: #86efac;
+            color: #052e16;
+        }
+
+        .flashcard-back.english {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #052e16;
+        }
+
+        .flip-hint {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            font-size: 0.75rem;
+            color: rgba(0, 0, 0, 0.4);
+            font-style: italic;
+            pointer-events: none;
+        }
+
+        /* ===== CONTROL BUTTONS SECTION ===== */
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .control-btn {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .control-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .flip-btn {
+            background: #eef2ff;
+            color: #3730a3;
+            border-color: #c7d2fe;
+        }
+
+        .flip-btn:hover:not(:disabled) {
+            background: #e0e7ff;
+            border-color: #a5b4fc;
+        }
+
+        .next-btn {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+            grid-column: 3;
+        }
+
+        .next-btn:hover:not(:disabled) {
+            background: #4338ca;
+            border-color: #4338ca;
+        }
+
+        /* ===== NIGHT MODE ===== */
+        body.night-mode {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        .night-mode .flashcard-study-container {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(100, 116, 139, 0.2);
+            color: #e2e8f0;
+        }
+
+        .night-mode .set-title {
+            color: #93c5fd;
+        }
+
+        .night-mode .set-description {
+            color: #cbd5e1;
+        }
+
+        .night-mode .edit-btn {
+            background: rgba(79, 70, 229, 0.1);
+            border-color: rgba(79, 70, 229, 0.4);
+            color: #a5b4fc;
+        }
+
+        .night-mode .edit-btn:hover {
+            background: rgba(79, 70, 229, 0.2);
+        }
+
+        .night-mode .close-btn {
+            color: #94a3b8;
+        }
+
+        .night-mode .close-btn:hover {
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .night-mode .progress-bar-container {
+            background: #334155;
+        }
+
+        .night-mode .progress-text {
+            color: #cbd5e1;
+        }
+
+        .night-mode .control-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+
+        .night-mode .control-btn:hover:not(:disabled) {
+            background: #334155;
+            border-color: #64748b;
+        }
+
+        .night-mode .flip-btn {
+            background: rgba(79, 70, 229, 0.15);
+            color: #a5b4fc;
+            border-color: rgba(79, 70, 229, 0.3);
+        }
+
+        .night-mode .flip-btn:hover:not(:disabled) {
+            background: rgba(79, 70, 229, 0.25);
+        }
+
+        .night-mode .next-btn {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: white;
+        }
+
+        .night-mode .next-btn:hover:not(:disabled) {
+            background: #4338ca;
+            border-color: #4338ca;
+        }
+
+        /* ===== COMPLETION SCREEN ===== */
+        .completion-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .completion-screen.show {
+            display: flex;
+            animation: scaleIn 0.4s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .completion-emoji {
+            font-size: 3.5rem;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .completion-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .night-mode .completion-title {
+            color: #f1f5f9;
+        }
+
+        .completion-text {
+            font-size: 0.95rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .night-mode .completion-text {
+            color: #cbd5e1;
+        }
+
+        .completion-stats {
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .night-mode .completion-stats {
+            background: rgba(55, 65, 81, 0.3);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+        }
+
+        .stat-item:not(:last-child) {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .night-mode .stat-item:not(:last-child) {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            color: #64748b;
+        }
+
+        .night-mode .stat-label {
+            color: #cbd5e1;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .night-mode .stat-value {
+            color: #e2e8f0;
+        }
+
+        .completion-actions {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-again {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-again:hover {
+            background: #4338ca;
+        }
+
+        .btn-close {
+            background: #e2e8f0;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-close:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .night-mode .btn-close {
+            background: #334155;
+            color: #e2e8f0;
+            border-color: #475569;
+        }
+
+        .night-mode .btn-close:hover {
+            background: #475569;
+            border-color: #64748b;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .flashcard-study-container {
+                max-width: 100%;
+                padding: 1.5rem;
+            }
+
+            .flashcard-container-3d {
+                height: 250px;
+            }
+
+            .flashcard-face {
+                padding: 1.5rem;
+            }
+
+            .flashcard-front {
+                font-size: 1.5rem;
+            }
+
+            .flashcard-back {
+                font-size: 1rem;
+            }
+
+            .study-header {
+                flex-direction: column;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .control-buttons {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            .next-btn {
+                grid-column: span 2;
+            }
+        }
+
+        /* Custom scrollbar for flashcard text overflow */
+        .flashcard-face::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .flashcard-face::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .flashcard-face::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .flashcard-face::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- MODAL OVERLAY -->
+    <div class="modal-overlay">
+        <!-- FLASHCARD STUDY CONTAINER -->
+        <div class="flashcard-study-container">
+            <!-- HEADER SECTION -->
+            <div class="study-header">
+                <div class="header-content">
+                    <h3 class="set-title">English Vocabulary - Unit 1</h3>
+                    <p class="set-description">Learning essential English words and phrases for everyday conversations</p>
+                </div>
+                <div class="header-actions">
+                    <button class="edit-btn">✏️ Chỉnh sửa</button>
+                    <button class="close-btn" title="Đóng">×</button>
+                </div>
+            </div>
+
+            <!-- PROGRESS SECTION -->
+            <div class="progress-section">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill"></div>
+                </div>
+                <p class="progress-text">Thẻ 6 / 15</p>
+            </div>
+
+            <!-- FLASHCARD 3D FLIP -->
+            <div class="flashcard-container-3d" id="flashcardFlip">
+                <div class="flashcard-inner">
+                    <!-- FRONT -->
+                    <div class="flashcard-face flashcard-front english">
+                        <span>Serendipity</span>
+                        <span class="flip-hint">Nhấp để lật</span>
+                    </div>
+                    <!-- BACK -->
+                    <div class="flashcard-face flashcard-back english">
+                        <div style="text-align: left;">
+                            <strong>Định nghĩa:</strong> Sự may mắn, tìm được điều tốt lành một cách ngẫu nhiên<br><br>
+                            <strong>Ví dụ:</strong> "It was pure serendipity that we met at the coffee shop."<br><br>
+                            <strong>Từ loại:</strong> Danh từ (Noun)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTROL BUTTONS -->
+            <div class="control-buttons">
+                <button class="control-btn" id="prevBtn">← Trước</button>
+                <button class="control-btn flip-btn" id="flipBtn">🔄 Lật thẻ</button>
+                <button class="control-btn next-btn" id="nextBtn">Sau →</button>
+            </div>
+
+            <!-- COMPLETION SCREEN (Hidden by default) -->
+            <div class="completion-screen" id="completionScreen">
+                <div class="completion-emoji">🎉</div>
+                <h2 class="completion-title">Hoàn thành!</h2>
+                <p class="completion-text">Bạn đã hoàn thành việc ôn tập tất cả các flashcard trong bộ này.</p>
+                
+                <div class="completion-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Tổng thẻ:</span>
+                        <span class="stat-value">15</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Thời gian ôn tập:</span>
+                        <span class="stat-value">8 phút 32 giây</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tốc độ trung bình:</span>
+                        <span class="stat-value">34 giây/thẻ</span>
+                    </div>
+                </div>
+
+                <div class="completion-actions">
+                    <button class="action-btn btn-again">🔄 Ôn tập lại</button>
+                    <button class="action-btn btn-close">✕ Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Flashcard flip functionality
+        const flashcardFlip = document.getElementById('flashcardFlip');
+        const flipBtn = document.getElementById('flipBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const completionScreen = document.getElementById('completionScreen');
+        let isFlipped = false;
+        let currentCard = 1;
+        const totalCards = 15;
+
+        // Flip card on click
+        flashcardFlip.addEventListener('click', () => {
+            isFlipped = !isFlipped;
+            flashcardFlip.classList.toggle('flipped');
+        });
+
+        flipBtn.addEventListener('click', () => {
+            isFlipped = !isFlipped;
+            flashcardFlip.classList.toggle('flipped');
+        });
+
+        // Navigation
+        prevBtn.addEventListener('click', () => {
+            if (currentCard > 1) {
+                currentCard--;
+                updateCard();
+                isFlipped = false;
+                flashcardFlip.classList.remove('flipped');
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentCard < totalCards) {
+                currentCard++;
+                updateCard();
+                isFlipped = false;
+                flashcardFlip.classList.remove('flipped');
+            } else if (currentCard === totalCards) {
+                // Show completion screen
+                document.querySelector('.control-buttons').style.display = 'none';
+                document.querySelector('.flashcard-container-3d').style.display = 'none';
+                document.querySelector('.progress-section').style.display = 'none';
+                completionScreen.classList.add('show');
+            }
+        });
+
+        // Update button states
+        function updateCard() {
+            prevBtn.disabled = currentCard === 1;
+            nextBtn.disabled = false;
+            nextBtn.textContent = currentCard === totalCards ? 'Hoàn thành ✓' : 'Sau →';
+            
+            // Update progress
+            const progress = (currentCard / totalCards) * 100;
+            document.querySelector('.progress-bar-fill').style.width = progress + '%';
+            document.querySelector('.progress-text').textContent = `Thẻ ${currentCard} / ${totalCards}`;
+        }
+
+        // Initialize
+        updateCard();
+
+        // Close button
+        document.querySelector('.close-btn').addEventListener('click', () => {
+            console.log('Close flashcard study mode');
+            // In thực tế, điều này sẽ gọi callback onBack từ component
+        });
+
+        // Edit button
+        document.querySelector('.edit-btn').addEventListener('click', () => {
+            console.log('Edit flashcard set');
+            // Chuyển sang edit mode
+        });
+
+        // Completion actions
+        document.querySelector('.btn-again').addEventListener('click', () => {
+            // Reset và ôn tập lại
+            currentCard = 1;
+            isFlipped = false;
+            flashcardFlip.classList.remove('flipped');
+            document.querySelector('.control-buttons').style.display = 'grid';
+            document.querySelector('.flashcard-container-3d').style.display = 'block';
+            document.querySelector('.progress-section').style.display = 'block';
+            completionScreen.classList.remove('show');
+            updateCard();
+        });
+
+        document.querySelector('.btn-close').addEventListener('click', () => {
+            console.log('Close flashcard panel');
+        });
+
+        // Night mode toggle (for demo)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'n') {
+                document.body.classList.toggle('night-mode');
+            }
+        });
+    </script>
+</body>
+</html>

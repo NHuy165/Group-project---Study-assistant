@@ -5,13 +5,13 @@ import { parseBackendError, logBackendError, setErrorFromParsed } from "../../..
 const useFlashcardManagement = (study_activity_id) => {
     const [cardsList, setCardsList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(null);
 
     const loadFlashcards = useCallback(async () => {
         if (!study_activity_id) return;
 
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             const response = await readFlashcard(study_activity_id);
             setCardsList(Array.isArray(response) ? response : []);
@@ -30,12 +30,12 @@ const useFlashcardManagement = (study_activity_id) => {
         const backText = typeof back === 'string' ? back : back?.content || '';
 
         if (!frontText.trim() || !backText.trim() || !study_activity_id ) {
-            setError('Vui lòng nhập nội dung đầy đủ');
+            setError({ message: 'Vui lòng nhập nội dung đầy đủ', type: 'warning' });
             return null;
         }
 
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             const newFlashcards = { front: frontText, back: backText };
             const response = await addCard(flashcardId, newFlashcards);
@@ -56,12 +56,12 @@ const useFlashcardManagement = (study_activity_id) => {
         const backText = typeof back === 'string' ? back : back?.content || '';
 
         if (!frontText.trim() || !backText.trim() || !study_activity_id ) {
-            setError('Bé vui lòng nhập nội dung nhé');
+            setError({ message: 'Bé vui lòng nhập nội dung nhé', type: 'warning' });
             return null;
         }
 
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             const newFlashcards = { front: frontText, back: backText };
             const response = await updateFlashcard(flashcardId, newFlashcards);
@@ -79,11 +79,11 @@ const useFlashcardManagement = (study_activity_id) => {
 
     const deleteFlashcard = useCallback(async (flashcardId) => {
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
             const response = await deleteCard(flashcardId);
             await loadFlashcards();
-            setError('');
+            setError(null);
             return response;
         } catch (error) {
             const parsed = parseBackendError(error, "Chưa xóa được thẻ flashcard này. Bé vui lòng thử lại sau nhé.");
