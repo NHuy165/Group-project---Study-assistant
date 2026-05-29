@@ -18,10 +18,70 @@ const roundToTwoDecimals = (num) => {
   return Math.round(num * 100) / 100;
 };
 
+const parseSortValue = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+
+  const numericValue = Number(value);
+  return Number.isNaN(numericValue) ? String(value) : numericValue;
+};
+
+const getQuestionSortKey = (question, fallbackIndex = 0) => {
+  const sortCandidates = [
+    question?.sortIndex,
+    question?.order,
+    question?.position,
+    question?.sequence,
+    question?.index,
+    question?.questionNumber,
+    question?.displayOrder,
+    question?.id,
+  ];
+
+  for (const candidate of sortCandidates) {
+    const parsedValue = parseSortValue(candidate);
+    if (parsedValue !== null) return parsedValue;
+  }
+
+  return fallbackIndex;
+};
+
+const compareQuestionSortKeys = (left, right) => {
+  const leftType = typeof left;
+  const rightType = typeof right;
+
+  if (leftType === "number" && rightType === "number") {
+    return left - right;
+  }
+
+  return String(left).localeCompare(String(right), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+};
+
+const sortQuestionsByOrder = (questions) =>
+  [...questions].sort((leftQuestion, rightQuestion) => {
+    const leftKey = getQuestionSortKey(leftQuestion);
+    const rightKey = getQuestionSortKey(rightQuestion);
+    return compareQuestionSortKeys(leftKey, rightKey);
+  });
+
 // Map data from backend, including user_score and max_score
 export const transformExerciseItem = (item) => ({
   id: item.id,
   text: item.question,
+  sortIndex: parseSortValue(
+    item.sort_index ??
+      item.sortIndex ??
+      item.order ??
+      item.position ??
+      item.sequence ??
+      item.index ??
+      item.question_number ??
+      item.questionNumber ??
+      item.display_order ??
+      item.displayOrder,
+  ),
   maxScore: roundToTwoDecimals(item.max_score),
   userScore: roundToTwoDecimals(item.user_score),
   attemptId: parseAttempt(item.attempt),
@@ -51,7 +111,8 @@ export const transformStudyActivitySummary = (activity) => ({
 
 // Compute final score using accurate graded values from backend
 const parseScoreValue = (value) => {
-  const num = typeof value === "number" && Number.isFinite(value) ? value : null;
+  const num =
+    typeof value === "number" && Number.isFinite(value) ? value : null;
   return roundToTwoDecimals(num); // <-- Sửa ở đây
 };
 
@@ -97,7 +158,9 @@ export const computeScoreFromQuestions = (questions) => {
 };
 
 export const transformStudyActivityDetail = (activity) => {
-  const questions = (activity.items || []).map(transformExerciseItem);
+  const questions = sortQuestionsByOrder(
+    (activity.items || []).map(transformExerciseItem),
+  );
 
   const computedScore = computeScoreFromQuestions(questions);
   const topLevelScore = {
