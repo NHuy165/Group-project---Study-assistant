@@ -69,8 +69,8 @@ export const NotebookHeader = () => {
       </div>
       
       {/* ROW 2: Hành trình học tập + Chuỗi học tập */}
-      <div className="flex gap-4 shrink-0 h-[190px] items-center">
-        <div className="flex-[2.5] min-w-0 h-full">
+      <div className="flex gap-4 shrink-0 h-[200px] items-center">
+        <div className="flex-[3] min-w-0 h-full">
           <LearningPathCard />
         </div>
         
@@ -81,7 +81,7 @@ export const NotebookHeader = () => {
           </div>
         </div>
 
-        <div className="flex-[1] min-w-0 h-full">
+        <div className="flex-[0.85] min-w-0 h-full">
           <StreakCard dayCount={3} />
         </div>
       </div>

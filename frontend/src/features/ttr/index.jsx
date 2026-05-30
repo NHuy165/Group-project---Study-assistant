@@ -39,19 +39,19 @@ const TTRGameCore = ({ activityId, mode, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-center gap-6 w-full max-w-7xl relative">
+      <div className="grid w-full max-w-[96rem] grid-cols-1 gap-6 xl:grid-cols-[clamp(180px,18vw,220px)_minmax(0,1fr)_clamp(180px,18vw,220px)] xl:items-center relative">
         <MagicCursor isActive={game.streak >= 10} />
-        <div className="w-[240px] h-[600px] shrink-0">
+        <div className="h-[560px] w-full xl:h-[600px]">
           <TTRMapTracker
             currentIndex={game.currentIndex}
             totalQuestions={game.totalQuestions}
             shieldActive={game.shieldActive}
           />
         </div>
-        <div className="w-full max-w-4xl shrink-0">
+        <div className="w-full min-w-0">
           <TTRCard {...game} />
         </div>
-        <div className="w-[240px] shrink-0 hidden lg:block pointer-events-none"></div>
+        <div className="hidden xl:block pointer-events-none" />
       </div>
     </div>
   );
