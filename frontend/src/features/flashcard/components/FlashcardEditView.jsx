@@ -87,15 +87,17 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                 ? 'border-white/10 bg-[#1e293b]/90 text-gray-100'
                 : 'border-white/40 bg-white/90 text-gray-800'
         }`}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h3 className={`text-xl text-lg font-bold ${
+            {/* Thêm relative và pr-44 để tạo khoảng trống cố định bên phải, tránh chữ đè lên nút */}
+            <div className="relative flex flex-col pr-44">
+                <div className="flex-1">
+                    {/* Đã dọn dẹp class text trùng lặp */}
+                    <h3 className={`text-xl font-bold break-words ${
                         isNight ? 'text-blue-300' : 'text-slate-800'
                     }`}>
                         {selectedSet?.name || 'Flashcard set'}
                     </h3>
                     {selectedSet?.description && (
-                        <p className={`text-lg mt-1 text-sm leading-6 ${
+                        <p className={`mt-1 text-sm leading-6 break-words ${
                             isNight ? 'text-gray-400' : 'text-slate-500'
                         }`}>
                             {selectedSet.description}
@@ -103,21 +105,20 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
                     )}
                 </div>
 
-                <div className="flex items-center gap-5">
+                {/* Cụm nút được đưa về absolute ở góc trên bên phải */}
+                <div className="absolute top-0 right-0 flex items-center gap-4 shrink-0">
                     <button
                         type="button"
                         onClick={onStudy}
-                        className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+                        className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 whitespace-nowrap"
                     >
                         Học bộ này
                     </button>
                     <button
                         type="button"
                         onClick={onBack}
-                        className={`text-gray-400 transition-all hover:rotate-90 ${
-                            isNight
-                                ? 'hover:text-red-400'
-                                : 'hover:text-red-500'
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center text-gray-400 transition-all hover:rotate-90 ${
+                            isNight ? 'hover:text-red-400' : 'hover:text-red-500'
                         }`}
                         aria-label="Đóng flashcard"
                         title="Đóng"

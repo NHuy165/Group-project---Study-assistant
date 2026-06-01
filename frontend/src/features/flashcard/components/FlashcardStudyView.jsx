@@ -119,7 +119,8 @@ const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
                 ? 'border-white/10 bg-[#1e293b]/90 text-gray-100'
                 : 'border-white/40 bg-white/90 text-gray-800'
         }`}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            {/* Thêm relative và pr-36 để chữ không đè lên nút */}
+            <div className="relative flex flex-col gap-1 pr-36">
                 <div>
                     <h3 className={`text-lg font-bold ${
                         isNight ? 'text-blue-300' : 'text-slate-800'
@@ -135,7 +136,8 @@ const FlashcardStudyView = ({ selectedSet, onBack, onEdit }) => {
                     )}
                 </div>
 
-                <div className="flex gap-2">
+                {/* Cụm nút được chuyển thành absolute */}
+                <div className="absolute top-0 right-0 flex gap-2">
                     <button
                         type="button"
                         onClick={onEdit}
