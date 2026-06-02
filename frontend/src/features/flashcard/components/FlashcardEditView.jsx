@@ -80,7 +80,7 @@ const FlashcardEditView = ({ selectedSet, onBack, onStudy }) => {
     const canSaveEdit = editingCard.front.trim() && editingCard.back.trim();
 
     return (
-        <div className="mx-auto max-w-5xl rounded-[2.5rem] isolate shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all overflow-hidden">
+        <div className="mx-auto max-w-5xl rounded-[2.5rem] border isolate shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all overflow-hidden">
     
         <div className= {`custom-scrollbar flex max-h-[calc(100vh-8rem)] flex-col gap-5 overflow-y-auto pt-10 pb-10 pl-10 pr-6 ${
             isNight

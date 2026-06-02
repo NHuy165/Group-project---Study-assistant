@@ -11,6 +11,7 @@ const FlashcardGenerator = ({
     setPrompt,
     onCreateFlashcardSet,
     onCreateEmptyFlashcardSet,
+    closeAfterAiSubmit = false,
 }) => {
     const { isNight } = useTheme();
     const [createMode, setCreateMode] = useState('ai');
@@ -60,10 +61,14 @@ const FlashcardGenerator = ({
         if (!isFormValid || isSubmitting) return;
 
         if (createMode === 'ai') {
-            const createdSet = await onCreateFlashcardSet({
+            const creationPromise = onCreateFlashcardSet({
                 prompt: finalPrompt,
                 subject_type: subject,
             });
+
+            if (closeAfterAiSubmit) return;
+
+            const createdSet = await creationPromise;
             if (createdSet) {
                 setPrompt('');
                 setSelectedSamples([]);
