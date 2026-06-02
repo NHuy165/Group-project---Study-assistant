@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BeforeValidator
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
-from backend.src.models_schema.miscellaneous.enums import DocumentType
+from backend.src.models_schema.miscellaneous.enums import DocumentType, SubjectType
 from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 class DocumentBase(SQLModel):
     name: str
     page_starts_at: int = 1
+    subject_type: SubjectType
 
 
 # ----- INPUT ----- #
@@ -41,6 +42,9 @@ class DocumentOutput(DocumentBase):
 class DocumentUpdate(DocumentBase):
     name: Annotated[str | None, BeforeValidator(beva_forbid_none)] = None
     page_starts_at: Annotated[int | None, BeforeValidator(beva_forbid_none)] = None
+    subject_type: Annotated[SubjectType | None, BeforeValidator(beva_forbid_none)] = (
+        None
+    )
 
 
 # ----- TABLE MODEL ----- #

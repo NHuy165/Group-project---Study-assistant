@@ -63,6 +63,7 @@ async def save_document(
         interaction=interaction,
         page_starts_at=page_starts_at,
         type=selected_type,
+        subject_type=document_input.subject_type,
     )  # type: ignore
 
     session.add(document)
