@@ -238,10 +238,20 @@ export const InteractionPage = () => {
 
   const handleDeleteTTR = async (activityId) => {
     try {
-      // 1. Gọi xuống Backend để xóa
+      // 1. Tìm task đang muốn xóa trong danh sách
+      const taskToDelete = ttrTasks.find((t) => t.id === activityId);
+
+      // 2. Nếu là task lỗi (do AI tạo xịt) hoặc đang loading (có ID tạm thời từ Date.now())
+      // thì chỉ cần xóa ở giao diện, KHÔNG gọi xuống Backend
+      if (taskToDelete && (taskToDelete.status === 'error' || taskToDelete.status === 'loading')) {
+        setTtrTasks((prev) => prev.filter((t) => t.id !== activityId));
+        return; 
+      }
+
+      // 3. Với các bài tập bình thường đã lưu trên DB, gọi xuống Backend để xóa
       await deleteTTRActivity(activityId);
       
-      // 2. Nếu BE xóa thành công, mới cập nhật lại mảng ở giao diện (Frontend)
+      // 4. Nếu BE xóa thành công, cập nhật lại giao diện
       setTtrTasks(prev => prev.filter(t => t.id !== activityId));
       console.log("Đã xóa TTR thành công:", activityId);
     } catch (error) {

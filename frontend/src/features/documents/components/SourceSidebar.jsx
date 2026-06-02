@@ -1,30 +1,45 @@
-// src/features/documents/components/SourceSidebar.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { DocumentItem } from "./DocumentItem";
-
-// Lấy Context theme
 import { useTheme } from "../../../components/theme/ThemeWrapper"; 
+
+// 1. Khai báo danh sách các Tab (Khay chứa)
+const FILTER_TABS = [
+  { id: 'ALL', label: 'Tất cả', emoji: '📚' },
+  { id: 'MATHS', label: 'Toán', emoji: '📐' },
+  { id: 'LITERATURE', label: 'T.Việt', emoji: '📖' },
+  { id: 'ENGLISH', label: 'T.Anh', emoji: '🔤' }
+];
 
 export const SourceSidebar = ({ 
   documents, selectedDocIds, onAddClick, editingId, setEditingId, 
   tempName, setTempName, onRename, onPreview, onDocCheck, onDelete, isLoading
 }) => {
-
-  const { isNight } = useTheme(); // <--- Gọi hook theme
+  const { isNight } = useTheme(); 
+  
+  // 2. State lưu trữ Tab đang được chọn
+  const [activeFilter, setActiveFilter] = useState('ALL');
 
   const sortedDocuments = useMemo(() => {
     return [...documents].sort((a, b) => {
       const dateA = new Date(a.createdAt || a.created_at || 0);
       const dateB = new Date(b.createdAt || b.created_at || 0);
-      return dateA - dateB;
+      // Sắp xếp giảm dần (mới nhất lên đầu)
+      return dateB - dateA; 
     });
   }, [documents]);
 
+  // 3. Logic lọc tài liệu theo môn học
+  const displayedDocuments = useMemo(() => {
+    if (activeFilter === 'ALL') return sortedDocuments;
+    return sortedDocuments.filter(doc => doc.subject === activeFilter);
+  }, [sortedDocuments, activeFilter]);
+
   return (
-    <aside className={`flex w-[22%] flex-col space-y-4 rounded-3xl p-6 backdrop-md shadow-xl border transition-colors duration-500 ${
+    <aside className={`flex w-[22%] flex-col space-y-4 rounded-3xl p-6 backdrop-blur-md shadow-xl border transition-colors duration-500 ${
       isNight ? "bg-gray-900/60 border-gray-700/50" : "bg-white/30 border-white/20"
     }`}>
-      <header className="space-y-4">
+      
+      <header className="space-y-4 shrink-0">
         <div className={`flex items-center space-x-2 text-2xl font-bold transition-colors ${
           isNight ? "text-gray-100" : "text-gray-800"
         }`}>
@@ -36,27 +51,76 @@ export const SourceSidebar = ({
         }`} />
       </header>
 
-      <button onClick={onAddClick} className="w-full rounded-2xl bg-[#bf94e4] py-3.5 font-bold text-white transition hover:bg-[#b388d8] shadow-md hover:shadow-lg">
+      <button 
+        onClick={onAddClick} 
+        className="shrink-0 w-full rounded-2xl bg-[#bf94e4] py-3.5 font-bold text-white transition hover:bg-[#b388d8] shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+      >
         + Thêm nguồn
       </button>
 
+      {/* 4. THANH ĐIỀU HƯỚNG TABS (CÁC KHAY CHỨA) */}
+      <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 shrink-0">
+        {FILTER_TABS.map(tab => {
+          const isActive = activeFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id)}
+              title={tab.label} // Tooltip dự phòng của trình duyệt
+              className={`group flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 ease-in-out cursor-pointer ${
+                isActive
+                  ? "bg-[#bf94e4] text-white shadow-md shadow-[#bf94e4]/30 px-3.5 py-2.5"
+                  : (isNight ? "bg-gray-800/60 text-gray-400 hover:bg-gray-700 hover:text-gray-200 px-3 py-2.5" : "bg-white/50 text-slate-500 hover:bg-white hover:text-slate-800 px-3 py-2.5")
+              }`}
+            >
+              <span className="text-[15px] shrink-0 drop-shadow-sm">{tab.emoji}</span>
+              
+              {/* Text bị ẩn đi qua max-w-0, chỉ bung ra khi Active HOẶC khi Hover */}
+              <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out flex items-center ${
+                isActive 
+                  ? "max-w-[80px] opacity-100 ml-1.5" 
+                  : "max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100 group-hover:ml-1.5"
+              }`}>
+                {tab.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
       <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-        {/* Loading */}
+        {/* Loading State */}
         {isLoading && documents.length === 0 && (
-          <p className={`text-center text-sm mt-10 animate-pulse ${isNight ? "text-gray-400" : "text-gray-500"}`}>
-            Đang tải tài liệu...
-          </p>
+          <div className="flex flex-col items-center justify-center mt-10 opacity-50">
+            <span className="text-3xl animate-bounce mb-2">⏳</span>
+            <p className={`text-center text-sm font-semibold ${isNight ? "text-gray-400" : "text-gray-500"}`}>
+              Đang tải tài liệu...
+            </p>
+          </div>
         )}
         
-        {/* Empty state */}
-        {!isLoading && sortedDocuments.length === 0 && (
-          <p className={`text-center text-sm mt-10 ${isNight ? "text-gray-400" : "text-gray-500"}`}>
-            Bé chưa có tài liệu nào.
-          </p>
+        {/* Empty State (Chưa có tài liệu nào trên hệ thống) */}
+        {!isLoading && documents.length === 0 && (
+          <div className="flex flex-col items-center justify-center mt-10 opacity-60">
+            <span className="text-4xl mb-3">📭</span>
+            <p className={`text-center text-sm font-semibold ${isNight ? "text-gray-400" : "text-gray-500"}`}>
+              Bé chưa có tài liệu nào.
+            </p>
+          </div>
+        )}
+
+        {/* Empty State (Có tài liệu nhưng tab hiện tại đang trống) */}
+        {!isLoading && documents.length > 0 && displayedDocuments.length === 0 && (
+          <div className="flex flex-col items-center justify-center mt-10 opacity-60">
+            <span className="text-4xl mb-3">🗂️</span>
+            <p className={`text-center text-sm font-semibold ${isNight ? "text-gray-400" : "text-gray-500"}`}>
+              Chưa có tài liệu {FILTER_TABS.find(t => t.id === activeFilter)?.label}.
+            </p>
+          </div>
         )}
         
-        {/* Render danh sách tài liệu */}
-        {sortedDocuments.map((doc) => (
+        {/* Render danh sách tài liệu đã được lọc */}
+        {displayedDocuments.map((doc) => (
           <DocumentItem
             key={doc.id}
             document={doc}
@@ -69,10 +133,11 @@ export const SourceSidebar = ({
             onCheck={onDocCheck}
             onDelete={onDelete}
             onPreview={onPreview}
-            isNight={isNight} /* <--- Truyền isNight xuống đây để đổi màu từng file tài liệu */
+            isNight={isNight} 
           />
         ))}
       </nav>
+
     </aside>
   );
 };

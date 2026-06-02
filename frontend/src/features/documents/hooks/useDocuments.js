@@ -36,28 +36,42 @@ export const useDocuments = (interactionId) => {
         }
     };
 
-    const uploadMultipleFiles = async (files, input) => {
-        // 1. Đưa tất cả file vào danh sách hiển thị UI trạng thái "isUploading" ngay lập tức
-        const tempDocs = files.map((file, index) => ({ 
+    const uploadMultipleFiles = async (fileItems) => {
+        // 1. Tạo danh sách file "ảo" hiển thị UI trạng thái "isUploading" ngay lập tức
+        const tempDocs = fileItems.map((item, index) => ({ 
             id: `temp-${Date.now()}-${index}`, 
-            name: file.name, 
+            name: item.file.name, 
+            subject: item.subject, // Lưu môn học tạm thời để hiển thị UI (nếu cần)
             isUploading: true 
         }));
         
-        setDocuments(prev => [...prev, ...tempDocs]);
+        // Thêm các file mới vào ĐẦU danh sách
+        setDocuments(prev => [...tempDocs, ...prev]);
 
         // 2. Chạy tải lên SONG SONG tất cả các file cùng một lúc (All at once)
         await Promise.all(
-            files.map(async (file) => {
+            fileItems.map(async (item, index) => {
+                const tempId = tempDocs[index].id;
+                
                 try {
-                    const newDoc = await api.saveDocument(interactionId, file, input);
-                    // Cập nhật lại UI khi file này tải xong
+                    // Đóng gói input riêng cho từng file (bao gồm tên và môn học)
+                    const documentInput = {
+                        name: item.file.name,
+                        subject: item.subject // <-- Lấy đúng môn học bé đã chọn cho file này
+                    };
+
+                    const newDoc = await api.saveDocument(interactionId, item.file, documentInput);
+                    
+                    // Cập nhật lại UI khi file NÀY tải xong (thay thế file ảo bằng file thật từ server)
                     setDocuments(prev => prev.map(d => 
-                        (d.isUploading && d.name === file.name) ? newDoc : d
+                        d.id === tempId ? newDoc : d
                     ));
                 } catch (err) { 
-                    // Nếu file này lỗi, xóa file này khỏi danh sách đang tải
-                    setDocuments(prev => prev.filter(d => !(d.isUploading && d.name === file.name))); 
+                    console.error(`Lỗi tải lên file ${item.file.name}:`, err);
+                    // Nếu file này lỗi, cập nhật trạng thái isError = true để UI chuyển màu đỏ
+                    setDocuments(prev => prev.map(d => 
+                        d.id === tempId ? { ...d, isUploading: false, isError: true } : d
+                    )); 
                 }
             })
         );

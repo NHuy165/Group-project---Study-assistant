@@ -11,6 +11,7 @@ pyjwt
 pwdlib[argon2]
 python-dotenv
 
+
 # AI and RAG
 google-genai
 google-api-core
@@ -18,3 +19,5 @@ ollama
 pypdf
 pgvector
 langchain-text-splitters
+
+debugpy
