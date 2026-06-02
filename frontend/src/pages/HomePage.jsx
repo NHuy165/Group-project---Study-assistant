@@ -51,6 +51,7 @@ import { ThemeWrapper, useTheme } from "../components/theme/ThemeWrapper";
 import { NotebookHeader } from "../features/home/components/LeftBlock/NotebookHeader";
 import { UserProfileCard } from "../features/home/components/LeftBlock/UserProfileCard"; 
 import { getSidebarCardClasses } from "../features/home/utils/dropdownColor";
+import EvaluationBot from "../features/home/components/EvaluationBot";
 
 const HomeContent = () => {
   const { isNight } = useTheme();
@@ -77,6 +78,8 @@ const HomeContent = () => {
           
         </aside>
       </div>
+      {/* Evaluation bot floating button */}
+      <EvaluationBot />
     </div>
   );
 };

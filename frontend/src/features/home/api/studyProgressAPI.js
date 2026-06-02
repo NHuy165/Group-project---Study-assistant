@@ -62,3 +62,27 @@ export const fetchTotalExercisesCount = async () => {
     const payload = [];
     return await getStudyProgress('COUNT_ITEM', payload);
 };
+
+// Lấy đánh giá học sinh
+export const getStudentAssessment = async () => {
+    try {
+        // const response = await axiosClient.get('/student/assessment');
+        const response = {
+            id: 1,
+            data: "No evaluation",
+        }
+        // backend is expected to return a plain text string, but be tolerant
+        const payload = response.data;
+        if (typeof payload === 'string') return payload;
+        // common alternative shapes
+        if (payload && typeof payload === 'object') {
+            if (typeof payload.text === 'string') return payload.text;
+            if (typeof payload.message === 'string') return payload.message;
+        }
+        // fallback to JSON string
+        return JSON.stringify(payload);
+    } catch (err) {
+        console.error('Error fetching student assessment:', err);
+        throw err;
+    }
+}
