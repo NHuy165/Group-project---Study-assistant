@@ -3,11 +3,24 @@ from typing import Any
 from pydantic import BaseModel, model_validator
 
 from backend.src.exceptions.core import ExceptionLLMError_502
-from backend.src.models_schema.activity.study_activity import (
+from backend.src.models_schema.activity.llm_request_json_schema import (
     OpenEndedGradingInitiationSchema,
 )
 
-# ----- INDIVIDUAL ACTIVITY ITEM CREATION SCHEMAS ----- #
+# ----- ACTIVITY BASE SCHEMA ----- #
+
+
+class StudyActivityValidationBase(BaseModel):
+    name: str
+    description: str
+    activity_items: list[Any]
+
+
+# ----- ACTIVITY CREATION SCHEMAS ----- #
+
+# === Exercise === #
+
+# ++ MCQ ++ #
 
 
 class MCQItemSchema(BaseModel):
@@ -24,9 +37,36 @@ class MCQItemSchema(BaseModel):
         return self
 
 
+class MCQSchema(StudyActivityValidationBase):
+    activity_items: list[MCQItemSchema]
+
+
+# ++ Open Ended ++ #
+
+
+class OpenEndedItemSchema(BaseModel):
+    question: str
+
+
+class OpenEndedCreationSchema(StudyActivityValidationBase):
+    activity_items: list[OpenEndedItemSchema]
+
+
+# === Review === #
+
+# ++ Flashcards ++ #
+
+
 class FlashcardItemSchema(BaseModel):
     front: str
     back: str
+
+
+class FlashcardsSchema(StudyActivityValidationBase):
+    activity_items: list[FlashcardItemSchema]
+
+
+# ++ Gap Fill ++ #
 
 
 class GapFillItemSchema(BaseModel):
@@ -46,53 +86,19 @@ class GapFillItemSchema(BaseModel):
         return self
 
 
-class OpenEndedItemSchema(BaseModel):
-    question: str
+class GapFillSchema(StudyActivityValidationBase):
+    activity_items: list[GapFillItemSchema]
 
 
-# ----- INDIVIDUAL OPEN ENDED GRADING SCHEMAS ----- #
+# ----- GRADING SCHEMAS ----- #
+
+# === Open Ended === #
 
 
 class OpenEndedGradingResultItemSchema(BaseModel):
     id: int
     user_score: float
     explanation: str
-
-
-# ----- ACTIVITY BASE SCHEMA ----- #
-
-
-class StudyActivityValidationBase(BaseModel):
-    name: str
-    description: str
-    activity_items: list[Any]
-
-
-# ----- ACTIVITY CREATION SCHEMAS ----- #
-
-# === Exercise === #
-
-
-class MCQSchema(StudyActivityValidationBase):
-    activity_items: list[MCQItemSchema]
-
-
-class OpenEndedCreationSchema(StudyActivityValidationBase):
-    activity_items: list[OpenEndedItemSchema]
-
-
-# === Review === #
-
-
-class FlashcardsSchema(StudyActivityValidationBase):
-    activity_items: list[FlashcardItemSchema]
-
-
-class GapFillSchema(StudyActivityValidationBase):
-    activity_items: list[GapFillItemSchema]
-
-
-# ----- OPEN ENDED GRADING SCHEMAS ----- #
 
 
 class OpenEndedGradingResultSchema(BaseModel):

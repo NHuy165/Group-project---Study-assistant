@@ -18,7 +18,10 @@ from backend.src.models_schema.activity.exercise_item import (
     ExerciseItemUpdate,
 )
 from backend.src.models_schema.activity.exercise_item_content import ExerciseItemContent
-from backend.src.models_schema.activity.json_schema import (
+from backend.src.models_schema.activity.llm_request_json_schema import (
+    OpenEndedGradingInitiationSchema,
+)
+from backend.src.models_schema.activity.llm_return_json_schema import (
     FlashcardsSchema,
     GapFillSchema,
     MCQSchema,
@@ -35,10 +38,8 @@ from backend.src.models_schema.activity.review_item import (
 from backend.src.models_schema.activity.review_item_content import ReviewItemContent
 from backend.src.models_schema.activity.study_activity import (
     FlashcardsActivityInput,
-    OpenEndedGradingInitiationSchema,
     StudyActivity,
     StudyActivityInput,
-    StudyActivityOutputComplete,
     StudyActivityUpdate,
 )
 from backend.src.models_schema.interaction import Interaction
