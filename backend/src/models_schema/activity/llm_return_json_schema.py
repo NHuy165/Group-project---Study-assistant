@@ -1,16 +1,18 @@
 from typing import Any
 
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator
+from sqlmodel import SQLModel
 
 from backend.src.exceptions.core import ExceptionLLMError_502
 from backend.src.models_schema.activity.llm_request_json_schema import (
-    OpenEndedGradingInitiationSchema,
+    MCQForGradingSchema,
+    OpenEndedForGradingSchema,
 )
 
 # ----- ACTIVITY BASE SCHEMA ----- #
 
 
-class StudyActivityValidationBase(BaseModel):
+class StudyActivityValidationBase(SQLModel):
     name: str
     description: str
     activity_items: list[Any]
@@ -23,7 +25,7 @@ class StudyActivityValidationBase(BaseModel):
 # ++ MCQ ++ #
 
 
-class MCQItemSchema(BaseModel):
+class MCQItemSchema(SQLModel):
     question: str
     answers: list[str]
     correct: int
@@ -44,7 +46,7 @@ class MCQSchema(StudyActivityValidationBase):
 # ++ Open Ended ++ #
 
 
-class OpenEndedItemSchema(BaseModel):
+class OpenEndedItemSchema(SQLModel):
     question: str
 
 
@@ -57,7 +59,7 @@ class OpenEndedCreationSchema(StudyActivityValidationBase):
 # ++ Flashcards ++ #
 
 
-class FlashcardItemSchema(BaseModel):
+class FlashcardItemSchema(SQLModel):
     front: str
     back: str
 
@@ -69,7 +71,7 @@ class FlashcardsSchema(StudyActivityValidationBase):
 # ++ Gap Fill ++ #
 
 
-class GapFillItemSchema(BaseModel):
+class GapFillItemSchema(SQLModel):
     text: str
     corrects: list[str]
     distractors: list[str]
@@ -92,34 +94,76 @@ class GapFillSchema(StudyActivityValidationBase):
 
 # ----- GRADING SCHEMAS ----- #
 
-# === Open Ended === #
+# === Base schema === #
 
 
-class OpenEndedGradingResultItemSchema(BaseModel):
+class GradedItemSchema(SQLModel):
     id: int
-    user_score: float
     explanation: str
 
 
-class OpenEndedGradingResultSchema(BaseModel):
-    grading_input: OpenEndedGradingInitiationSchema
-    grading_results: list[OpenEndedGradingResultItemSchema]
+class GradedSchema(SQLModel):
+    grading_input: SQLModel
+    grading_results: list[GradedItemSchema]
+
+
+# === Open Ended === #
+
+
+class OpenEndedGradedItemSchema(GradedItemSchema):
+    user_score: float
+
+
+class OpenEndedGradedSchema(GradedSchema):
+    grading_input: OpenEndedForGradingSchema
+    grading_results: list[OpenEndedGradedItemSchema]
 
     @model_validator(mode="after")
     def validate_output(self):
-        input_answers = {
-            answer.id: answer.max_score
-            for answer in self.grading_input.questions_answers
-        }
+        """
+        Validates grading results' ids and scores.
+        """
+        grading_scores = {item.id: item.user_score for item in self.grading_results}
 
-        for grading_result in self.grading_results:
-            max_score = input_answers.get(grading_result.id)
-            if max_score is None:
-                raise ExceptionLLMError_502("Incorrect graded answer id.")
+        for item in self.grading_input.items:
+            grading_score = grading_scores.get(item.id)
+            if grading_score is None:
+                raise ExceptionLLMError_502(
+                    f"Missing grade for item with id {item.id}."
+                )
 
-            if grading_result.user_score < 0 or grading_result.user_score > max_score:
+            if grading_score < 0 or grading_score > item.max_score:
                 raise ExceptionLLMError_502(
                     "Graded score fell outside of acceptable range."
+                )
+
+        return self
+
+
+# === MCQ === #
+
+
+class MCQGradedItemSchema(GradedItemSchema):
+    pass
+
+
+class MCQGradedSchema(GradedSchema):
+    grading_input: MCQForGradingSchema
+    grading_results: list[MCQGradedItemSchema]
+
+    @model_validator(mode="after")
+    def validate_output(self):
+        """
+        Validates grading results' ids.
+        """
+        results = {item.id: item.explanation for item in self.grading_results}
+
+        for item in self.grading_input.items:
+            result = results.get(item.id)
+
+            if result is None:
+                raise ExceptionLLMError_502(
+                    f"Missing grade for item with id {item.id}."
                 )
 
         return self

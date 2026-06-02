@@ -22,6 +22,6 @@ class PromptRewriteParams(AugmentationParams):
     context_conversations: str
 
 
-class AnswersGradingParams(AugmentationParams):
+class GradingParams(AugmentationParams):
     creation_prompt: str
     context_document: str
