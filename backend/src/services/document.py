@@ -6,10 +6,14 @@ from backend.src.exceptions.core import (
     ExceptionNotFound_404,
     ExceptionRequestValidation_400,
 )
-from backend.src.models_schema.document import Document, DocumentInput, DocumentUpdate
-from backend.src.models_schema.interaction import Interaction
+from backend.src.models_schema.document.document import (
+    Document,
+    DocumentInput,
+    DocumentUpdate,
+)
+from backend.src.models_schema.interaction.interaction import Interaction
 from backend.src.models_schema.miscellaneous.enums import DocumentType
-from backend.src.models_schema.user import User
+from backend.src.models_schema.user.user import User
 from backend.src.RAG.chunking.base import DocumentExtractor
 from backend.src.RAG.chunking.image import ImageExtractor
 from backend.src.RAG.chunking.PDF import PdfExtractor

@@ -14,9 +14,9 @@ from backend.src.exceptions.core import (
     ExceptionAuthentication_401,
     ExceptionNotFound_404,
 )
-from backend.src.models_schema.auth import TokenData
-from backend.src.models_schema.interaction import Interaction
-from backend.src.models_schema.user import User
+from backend.src.models_schema.auth.auth import TokenData
+from backend.src.models_schema.interaction.interaction import Interaction
+from backend.src.models_schema.user.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 

@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
 from backend.src.core.config import settings
-from backend.src.models_schema.document import Document
-from backend.src.models_schema.document_chunk import DocumentChunk
-from backend.src.models_schema.interaction import Interaction
+from backend.src.models_schema.document.document import Document
+from backend.src.models_schema.document.document_chunk import DocumentChunk
+from backend.src.models_schema.interaction.interaction import Interaction
 
 
 async def keyword_search(

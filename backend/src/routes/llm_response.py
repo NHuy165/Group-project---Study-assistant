@@ -4,7 +4,10 @@ from fastapi import APIRouter, Query
 
 from backend.src.core.dependencies import InteractionDep, SessionDep, UserDep
 from backend.src.exceptions.core import Responses
-from backend.src.models_schema.llm_response import LLMResponseInput, LLMResponseOutput
+from backend.src.models_schema.llm_response.llm_response import (
+    LLMResponseInput,
+    LLMResponseOutput,
+)
 from backend.src.services import llm_response
 
 router = APIRouter()

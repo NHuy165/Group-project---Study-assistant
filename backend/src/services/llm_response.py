@@ -3,8 +3,8 @@ from sqlmodel import col, select
 
 from backend.src.core.ai_api import GlobalAPI
 from backend.src.core.config import settings
-from backend.src.models_schema.interaction import Interaction
-from backend.src.models_schema.llm_response import (
+from backend.src.models_schema.interaction.interaction import Interaction
+from backend.src.models_schema.llm_response.llm_response import (
     LLMResponse,
     LLMResponseInput,
 )

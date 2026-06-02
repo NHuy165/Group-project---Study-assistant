@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, UploadFile, status
 
 from backend.src.core.dependencies import InteractionDep, SessionDep, UserDep
 from backend.src.exceptions.core import Responses
-from backend.src.models_schema.document import (
+from backend.src.models_schema.document.document import (
     DocumentInput,
     DocumentOutput,
     DocumentUpdate,

@@ -5,7 +5,7 @@ from typing import Callable
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlmodel import SQLModel, col, delete, select, update
+from sqlmodel import col, delete, select, update
 
 from backend.src.core.ai_api import ExceptionRequest_400, GlobalAPI
 from backend.src.core.config import settings
@@ -21,7 +21,6 @@ from backend.src.models_schema.activity.exercise_item import (
 from backend.src.models_schema.activity.exercise_item_content import ExerciseItemContent
 from backend.src.models_schema.activity.llm_request_json_schema import (
     ForGradingSchema,
-    MCQForGradingItemSchema,
     MCQForGradingSchema,
     OpenEndedForGradingSchema,
 )
@@ -33,7 +32,6 @@ from backend.src.models_schema.activity.llm_return_json_schema import (
     MCQGradedSchema,
     MCQSchema,
     OpenEndedCreationSchema,
-    OpenEndedGradedItemSchema,
     OpenEndedGradedSchema,
     StudyActivityValidationBase,
 )
@@ -49,7 +47,7 @@ from backend.src.models_schema.activity.study_activity import (
     StudyActivityInput,
     StudyActivityUpdate,
 )
-from backend.src.models_schema.interaction import Interaction
+from backend.src.models_schema.interaction.interaction import Interaction
 from backend.src.models_schema.miscellaneous.enums import (
     ExerciseItemContentType,
     ReviewItemContentType,
@@ -61,7 +59,7 @@ from backend.src.models_schema.RAG.augmentation import (
     GradingParams,
     StudyActivityParams,
 )
-from backend.src.models_schema.user import User
+from backend.src.models_schema.user.user import User
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     mcq_grading_augmentation,
     open_ended_grading_augmentation,

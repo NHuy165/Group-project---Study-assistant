@@ -8,8 +8,8 @@ from backend.src.models_schema.miscellaneous.enums import DocumentType, SubjectT
 from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
-    from backend.src.models_schema.document_chunk import DocumentChunk
-    from backend.src.models_schema.interaction import Interaction
+    from backend.src.models_schema.document.document_chunk import DocumentChunk
+    from backend.src.models_schema.interaction.interaction import Interaction
 
 # ----- BASE ----- #
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from backend.src.core.dependencies import SessionDep, UserDep
 from backend.src.exceptions.core import Responses
 from backend.src.models_schema.miscellaneous.enums import AggregateTarget
-from backend.src.models_schema.study_progress import Criterion
+from backend.src.models_schema.study_progress.study_progress import Criterion
 from backend.src.services import study_progress
 
 router = APIRouter()

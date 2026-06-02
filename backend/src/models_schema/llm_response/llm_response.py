@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from backend.src.models_schema.interaction import Interaction
+    from backend.src.models_schema.interaction.interaction import Interaction
 
 # ----- BASE ----- #
 
