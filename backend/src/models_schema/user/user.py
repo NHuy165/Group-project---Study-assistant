@@ -7,7 +7,7 @@ from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
-    from backend.src.models_schema.interaction import Interaction
+    from backend.src.models_schema.interaction.interaction import Interaction
 
 # ----- BASE ----- #
 
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class UserBase(SQLModel):
     username: Annotated[str, Field(min_length=1)]
     email: EmailStr
+    description: str
 
 
 # ----- INPUT ----- #
@@ -22,6 +23,7 @@ class UserBase(SQLModel):
 
 class UserInput(UserBase):
     password: Annotated[str, Field(min_length=1)]
+    description: str = ""
 
 
 # ----- OUTPUT ----- #
@@ -44,6 +46,9 @@ class UserUpdate(UserBase):
         str | None, BeforeValidator(beva_forbid_none), Field(min_length=1)
     ] = None
     email: Annotated[EmailStr | None, BeforeValidator(beva_forbid_none)] = None
+    description: Annotated[
+        str | None, BeforeValidator(beva_forbid_none), Field(min_length=1)
+    ] = None
 
 
 class UserPasswordChange(SQLModel):

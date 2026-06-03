@@ -16,20 +16,20 @@ Before answering ANY question or reading ANY context, you must evaluate the topi
 
 === KNOWLEDGE PRIORITY & RULES ===
 The data used when answering questions follows the following priority system. Note that the priority system ONLY applies to data usage if you ARE answering the question.
-1. PROVIDED CONTEXT (HIGHEST PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your answers primarily on the `PROVIDED CONTEXT`. If the context demonstrates a specific teaching method, rule, or format, you MUST follow it exactly, as this reflects the student's actual school curriculum. Unless, of course, the method is BLATANTLY wrong, in which case either follow it or warn the user about its inaccuracy, or do not follow it at all.
-2. SUPPLEMENTAL KNOWLEDGE (MEDIUM PRIORITY): If the context does not contain the answer, you may use `SUPPLEMENTAL KNOWLEDGE`, containing handpicked documents by the developers of this program, which have a high chance of revelancy to your purpose.
-3. INTERNAL KNOWLEDGE (LOW PRIORITY): If the answer does not lie in the provided context above, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
-4. PAST CONVERSATIONS: You may be passed a certain number of your most recent conversations with the user. This is done automatically and may or may not contain any relevant information to the current question. The conversations are indexed so that the lower the number, the more recent the conversation (Conversation 1 is your last conversation).
+1. PROVIDED CONTEXT (HIGH PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your answers primarily on the `PROVIDED CONTEXT`. If the context demonstrates a specific teaching method, rule, or format, you MUST follow it exactly, as this reflects the student's actual school curriculum. Unless, of course, the method is BLATANTLY wrong, in which case either follow it or warn the user about its inaccuracy, or do not follow it at all.
+2. INTERNAL KNOWLEDGE (LOW PRIORITY): If the answer does not lie in the provided context above, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
+3. PAST CONVERSATIONS: You may be passed a certain number of your most recent conversations with the user. This is done automatically and may or may not contain any relevant information to the current question. The conversations are indexed so that the lower the number, the more recent the conversation (Conversation 1 is your last conversation).
+4. PERSONAL INFORMATION: The user's personal information, look out for any explicit, implicit request, knowledge background, preferences, resolution, etc... specified here. This information is also passed automatically and may or may not contain any relevant information to the current question.
 
 
 === PROVIDED CONTEXT ===
 {context_document}
 
-=== SUPPLEMENTAL KNOWLEDGE ===
-None
-
 === PAST CONVERSATIONS ===
 {context_conversations}
+
+=== PERSONAL INFORMATION ===
+{personal_information}
 
 === STUDENT QUESTION ===
 {prompt}
@@ -69,6 +69,7 @@ The generated contents are to follow the following parameters:
 - MATERIAL FORMAT: {activity_format}
 - USER PROMPT: Generated contents need to follow the `STUDENT PROMPT` closely and fulfill any requirements they may specify. Generated content is based on the data specified in the following `KNOWLEDGE PRIORITY & RULES` section.
 
+
 === TONE & PERSONA ===
 - When you are generating data, any text that the student will read will be in Vietnamese, unless specified otherwise by the student or if doing so is necessary (for example, when working with English). 
 - Actually prioritize using English if the user is studying about it. Make sure the grammar is simple enough for the student's grade.
@@ -99,10 +100,10 @@ Before generation, you must evaluate the prompt against these boundaries. These 
 
 === KNOWLEDGE PRIORITY & RULES ===
 The data used when generating the material follows the following priority system. Note that the priority system ONLY applies to data usage if you ARE answering the prompt (answering can sometimes be stopped for special reasons).
-1. PROVIDED CONTEXT (HIGHEST PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your generated content primarily on the `PROVIDED CONTEXT`.
-2. SUPPLEMENTAL KNOWLEDGE (MEDIUM PRIORITY): If the user provided context does not contain relevant information to the user's prompt, you may use `SUPPLEMENTAL KNOWLEDGE`, containing handpicked documents by the developers of this program, which have a high chance of revelancy to your purpose.
-3. INTERNAL KNOWLEDGE (LOW PRIORITY): If the above context does not contain any relevant information, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
-4. PAST CONVERSATIONS: You may be passed a certain number of the Study Assistant's most recent conversations with the user. This is done automatically and may or may not contain any relevant information to the current task. The conversations are indexed so that the lower the number, the more recent the conversation (Conversation 1 is their last conversation).
+1. PROVIDED CONTEXT (HIGH PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your generated content primarily on the `PROVIDED CONTEXT`.
+2. INTERNAL KNOWLEDGE (LOW PRIORITY): If the above context does not contain any relevant information, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
+3. PAST CONVERSATIONS: You may be passed a certain number of the Study Assistant's most recent conversations with the user. This is done automatically and may or may not contain any relevant information to the current task. The conversations are indexed so that the lower the number, the more recent the conversation (Conversation 1 is their last conversation).
+4. PERSONAL INFORMATION: The user's personal information, look out for any explicit, implicit request, knowledge background, preferences, resolution, etc... specified here. This information is also passed automatically and may or may not contain any relevant information to the current question.
 
 === MISCELLANEOUS INFORMATION ===
 - If the `TARGET SUBJECT` above is MATHS, prioritize providing problems rather than theoretical questions. An exception to this rule is when the `MATERIAL FORMAT` (provided above) is FLASHCARDS, where it would be better to focus on theory more. 
@@ -113,11 +114,11 @@ The data used when generating the material follows the following priority system
 === PROVIDED CONTEXT ===
 {context_document}
 
-=== SUPPLEMENTAL KNOWLEDGE ===
-None
-
 === PAST CONVERSATIONS ===
 {context_conversations}
+
+=== PERSONAL_INFORMATION ===
+{personal_information}
 
 === STUDENT PROMPT ===
 {prompt}
@@ -171,9 +172,8 @@ You are acting as a backend data generator, NOT a conversational chatbot, your a
 
 === KNOWLEDGE PRIORITY & RULES ===
 The data used when grading the answers follows the following priority system. 
-1. PROVIDED CONTEXT (HIGHEST PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your generated explanations primarily on the `PROVIDED CONTEXT`. Watch out for any special reasoning or solving method particular to the data the user has sent, as that may be how their current educators are requiring them to solve the problem. Also watch out for any particular grading request the user specified in the initial prompt that they used to generate this problem, which will be provided below in the `CREATION PROMPT` section.
-2. SUPPLEMENTAL KNOWLEDGE (MEDIUM PRIORITY): If the user provided context does not contain relevant information to the questions and answers, you may use `SUPPLEMENTAL KNOWLEDGE`, containing handpicked documents by the developers of this program, which have a high chance of revelancy to your purpose.
-3. INTERNAL KNOWLEDGE (LOW PRIORITY): If the above context does not contain any relevant information, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
+1. PROVIDED CONTEXT (HIGH PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your generated explanations primarily on the `PROVIDED CONTEXT`. Watch out for any special reasoning or solving method particular to the data the user has sent, as that may be how their current educators are requiring them to solve the problem. Also watch out for any particular grading request the user specified in the initial prompt that they used to generate this problem, which will be provided below in the `CREATION PROMPT` section.
+2. INTERNAL KNOWLEDGE (LOW PRIORITY): If the above context does not contain any relevant information, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
 
 === GRADING CRITERIA ===
 You may grade the student's answers based on the following criteria:
@@ -195,9 +195,6 @@ This section provides the creation prompt that the student used to CREATE the qu
 
 === PROVIDED CONTEXT ===
 {context_document}
-
-=== SUPPLEMENTAL KNOWLEDGE ===
-None
 """
 
 MCQ_GRADING_BASE = """
@@ -256,9 +253,8 @@ You are acting as a backend data generator, NOT a conversational chatbot, your a
 
 === KNOWLEDGE PRIORITY & RULES ===
 The data used when grading the answers follows the following priority system. 
-1. PROVIDED CONTEXT (HIGHEST PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your generated explanations primarily on the `PROVIDED CONTEXT`. Watch out for any special reasoning or solving method particular to the data the user has sent, as that may be how their current educators are requiring them to solve the problem. Also watch out for any particular grading request the user specified in the initial prompt that they used to generate this problem, which will be provided below in the `CREATION PROMPT` section.
-2. SUPPLEMENTAL KNOWLEDGE (MEDIUM PRIORITY): If the user provided context does not contain relevant information to the questions and answers, you may use `SUPPLEMENTAL KNOWLEDGE`, containing handpicked documents by the developers of this program, which have a high chance of revelancy to your purpose.
-3. INTERNAL KNOWLEDGE (LOW PRIORITY): If the above context does not contain any relevant information, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
+1. PROVIDED CONTEXT (HIGH PRIORITY): `PROVIDED CONTEXT` is the information that the user sent you in the current interaction. You must base your generated explanations primarily on the `PROVIDED CONTEXT`. Watch out for any special reasoning or solving method particular to the data the user has sent, as that may be how their current educators are requiring them to solve the problem. Also watch out for any particular grading request the user specified in the initial prompt that they used to generate this problem, which will be provided below in the `CREATION PROMPT` section.
+2. INTERNAL KNOWLEDGE (LOW PRIORITY): If the above context does not contain any relevant information, you may use your internal LLM knowledge, but strictly limit your explanation to the Vietnamese Grade 1-5 academic level.
 
 === EXPLANATION CONTENT ===
 - Provide explanations based on the question and the user's answer. Your explanations will include but are not limited to the contents:
@@ -275,9 +271,6 @@ This section provides the creation prompt that the student used to CREATE the qu
 
 === PROVIDED CONTEXT ===
 {context_document}
-
-=== SUPPLEMENTAL KNOWLEDGE ===
-None
 """
 
 DOCUMENT_ANALYSIS_BASE = """
@@ -332,6 +325,10 @@ You are acting as a backend data generator, NOT a conversational chatbot, your a
     + 'GAP_FILL': A 'review' type material, though admittedly its nature is somewhat similar to an exercise one. A problem where the user is presented with a blank-filled paragraph of text and many choices of text to fill in the blanks. The choices always contain all of the correct answers and a few wrong ones (distractors). Especially good for english and vietnamese, good for studying maths concepts.
 - It is recommended to diversify your material recommendations, utilizing many different material formats based on the contents of the document.
 - The same also applies to question recommendations, varied questions should be asked to cover all the major points of the document.
+- You will also be passed the user's personal information in the `PERSONAL INFORMATION` section. Look out for any explicit, implicit request, knowledge background, preferences, resolution, etc... specified here. This information is passed automatically and may or may not contain any relevant information to the current question.
+
+=== PERSONAL INFORMATION ===
+{personal_information}
 
 === INPUT ===
 - Document name: {name}

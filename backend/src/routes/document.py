@@ -39,7 +39,7 @@ async def save_document(
     Embeds and saves a user-uploaded document to the database. Documents belong to an interaction.
     """
     document_output, document_analysis = await document.save_document(
-        session, file, interaction, document_input
+        user, session, file, interaction, document_input
     )
 
     return document_output, document_analysis

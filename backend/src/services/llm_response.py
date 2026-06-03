@@ -9,6 +9,7 @@ from backend.src.models_schema.llm_response.llm_response import (
     LLMResponseInput,
 )
 from backend.src.models_schema.RAG.augmentation import AnswerGenerationParams
+from backend.src.models_schema.user.user import User
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     answer_generation_augmentation,
 )
@@ -25,6 +26,7 @@ from backend.src.RAG.retrieval.prompt_rewrite import rewrite_prompt
 
 
 async def create_llm_response(
+    user: User,
     session: AsyncSession,
     llm_response_input: LLMResponseInput,
     interaction: Interaction,
@@ -64,6 +66,7 @@ async def create_llm_response(
         prompt=llm_response_input.prompt,
         context_conversations=formatted_past_conversations,
         context_document=formatted_chunks,
+        personal_information=user.description,
     )
     final_prompt = answer_generation_augmentation(augmentation_params)
 

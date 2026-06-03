@@ -24,6 +24,7 @@ from backend.src.RAG.chunking.text import TextExtractor
 
 
 async def save_document(
+    user: User,
     session: AsyncSession,
     file: UploadFile,
     interaction: Interaction,
@@ -76,6 +77,7 @@ async def save_document(
 
     # Saves document contents
     document_analysis = await selected_extractor.extract(
+        user=user,
         session=session,
         file=file,
         document=document,

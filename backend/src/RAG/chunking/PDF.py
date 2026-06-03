@@ -15,6 +15,7 @@ from backend.src.models_schema.document.document_analysis import (
 from backend.src.models_schema.document.document_chunk import DocumentChunk
 from backend.src.models_schema.miscellaneous.enums import DocumentType
 from backend.src.models_schema.RAG.augmentation import DocumentAnalysisParams
+from backend.src.models_schema.user.user import User
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     document_analysis_augmentation,
 )
@@ -43,7 +44,7 @@ class PdfExtractor(DocumentExtractor):
 
     @classmethod
     async def extract(
-        cls, session: AsyncSession, file: UploadFile, document: Document
+        cls, user: User, session: AsyncSession, file: UploadFile, document: Document
     ) -> DocumentAnalysis | None:
 
         def process():
@@ -110,6 +111,7 @@ class PdfExtractor(DocumentExtractor):
                 name=document.name,
                 subject_type=document.subject_type,
                 document_type=document.type,
+                personal_information=user.description,
             )
             final_prompt = document_analysis_augmentation(params)
             analysis_task = GlobalAPI.generate_document_analysis(final_prompt)

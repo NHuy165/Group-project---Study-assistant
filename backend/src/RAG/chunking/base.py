@@ -12,6 +12,7 @@ from backend.src.models_schema.document.document_analysis import (
     MaterialRecommendation,
     QuestionRecommendation,
 )
+from backend.src.models_schema.user.user import User
 
 smart_splitter = RecursiveCharacterTextSplitter(
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
@@ -32,7 +33,7 @@ class DocumentExtractor(ABC):
     @classmethod
     @abstractmethod
     async def extract(
-        cls, session: AsyncSession, file: UploadFile, document: Document
+        cls, user: User, session: AsyncSession, file: UploadFile, document: Document
     ) -> DocumentAnalysis | None:
         """
         Extracts and saves chunks.

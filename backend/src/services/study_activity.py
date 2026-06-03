@@ -232,6 +232,7 @@ save_mapper = {
 
 
 async def create_study_activity(
+    user: User,
     session: AsyncSession,
     interaction: Interaction,
     study_activity_input: StudyActivityInput,
@@ -276,6 +277,7 @@ async def create_study_activity(
         json_schema=json_schema,
         subject_type=study_activity_input.subject_type,
         activity_format=study_activity_input.activity_format,
+        personal_information=user.description,
     )
 
     final_prompt = study_activity_augmentation(params)

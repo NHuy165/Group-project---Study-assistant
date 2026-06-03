@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from backend.src.models_schema.miscellaneous.enums import SubjectType
-
 
 class AugmentationParams(BaseModel):
     prompt: str
@@ -10,6 +8,7 @@ class AugmentationParams(BaseModel):
 class AnswerGenerationParams(AugmentationParams):
     context_conversations: str
     context_document: str
+    personal_information: str
 
 
 class StudyActivityParams(AugmentationParams):
@@ -18,6 +17,7 @@ class StudyActivityParams(AugmentationParams):
     subject_type: str
     json_schema: str
     activity_format: str
+    personal_information: str
 
 
 class PromptRewriteParams(AugmentationParams):
@@ -33,3 +33,4 @@ class DocumentAnalysisParams(AugmentationParams):
     name: str
     subject_type: str
     document_type: str
+    personal_information: str
