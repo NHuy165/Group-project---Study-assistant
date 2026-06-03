@@ -51,6 +51,7 @@ async def create_llm_response(
         interaction=interaction,
         raw_prompt=rewritten_prompt,
         embedded_prompt=embedded_prompt,
+        document_id=llm_response_input.document_id,
     )
 
     # Formats chunks

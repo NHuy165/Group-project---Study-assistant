@@ -13,6 +13,7 @@ async def vector_search(
     session: AsyncSession,
     interaction: Interaction,
     embedded_prompt: list[float],
+    document_id: int | None,
 ) -> Sequence[DocumentChunk]:
     query_vector = (
         select(DocumentChunk)
@@ -22,6 +23,9 @@ async def vector_search(
         .limit(settings.N_CHUNKS_RETRIEVED * 2)
         # .options(selectinload(DocumentChunk.document))  # type: ignore
     )
+
+    if document_id:
+        query_vector = query_vector.where(Document.id == document_id)
 
     vector_chunks = (await session.execute(query_vector)).scalars().all()
 

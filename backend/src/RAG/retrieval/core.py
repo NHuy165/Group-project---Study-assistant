@@ -16,14 +16,17 @@ async def retrieval(
     interaction: Interaction,
     raw_prompt: str,
     embedded_prompt: list[float],
+    document_id: int | None,
 ) -> Iterable[DocumentChunk]:
     """
     Retrieves relevant core chunks AND their surrounding chunks
     """
 
     # Hybrid search
-    vector_chunks = await vector_search(session, interaction, embedded_prompt)
-    keyword_chunks = await keyword_search(session, interaction, raw_prompt)
+    vector_chunks = await vector_search(
+        session, interaction, embedded_prompt, document_id
+    )
+    keyword_chunks = await keyword_search(session, interaction, raw_prompt, document_id)
 
     # Merge
     core_chunks = RRF(vector_chunks, keyword_chunks)

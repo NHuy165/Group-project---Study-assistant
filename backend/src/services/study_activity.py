@@ -257,6 +257,7 @@ async def create_study_activity(
         interaction=interaction,
         raw_prompt=rewritten_prompt,
         embedded_prompt=embedded_prompt,
+        document_id=study_activity_input.document_id,
     )
     formatted_chunks = chunks_formatter(document_chunks)
 
@@ -789,6 +790,7 @@ async def submit_exercise_activity(
         interaction=interaction,
         raw_prompt=prompt_for_retrieval,
         embedded_prompt=embedded_prompt,
+        document_id=None,
     )
 
     await session.commit()  # Temporary close

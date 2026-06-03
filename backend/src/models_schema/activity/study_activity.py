@@ -39,6 +39,7 @@ class StudyActivityBase(SQLModel):
 class StudyActivityInput(StudyActivityBase):
     prompt: str
     activity_type: StudyActivityType | None = None
+    document_id: int | None = None
 
     @model_validator(mode="after")
     def automatic_activity_type(self):
