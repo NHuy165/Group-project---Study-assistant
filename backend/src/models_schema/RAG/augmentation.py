@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from backend.src.models_schema.miscellaneous.enums import SubjectType
+
 
 class AugmentationParams(BaseModel):
     prompt: str
@@ -25,3 +27,9 @@ class PromptRewriteParams(AugmentationParams):
 class GradingParams(AugmentationParams):
     creation_prompt: str
     context_document: str
+
+
+class DocumentAnalysisParams(AugmentationParams):
+    name: str
+    subject_type: str
+    document_type: str

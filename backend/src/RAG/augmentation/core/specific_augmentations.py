@@ -3,12 +3,14 @@ from typing import Callable
 from backend.src.models_schema.RAG.augmentation import (
     AnswerGenerationParams,
     AugmentationParams,
+    DocumentAnalysisParams,
     GradingParams,
     PromptRewriteParams,
     StudyActivityParams,
 )
 from backend.src.RAG.augmentation.prompts_formatting.base_prompts import (
     ANSWER_GENERATION_BASE,
+    DOCUMENT_ANALYSIS_BASE,
     MCQ_GRADING_BASE,
     OPEN_ENDED_GRADING_BASE,
     PROMPT_REWRITE_BASE,
@@ -46,4 +48,8 @@ open_ended_grading_augmentation = augmentation_generator(
 mcq_grading_augmentation = augmentation_generator(
     MCQ_GRADING_BASE,
     GradingParams,
+)
+document_analysis_augmentation = augmentation_generator(
+    DOCUMENT_ANALYSIS_BASE,
+    DocumentAnalysisParams,
 )

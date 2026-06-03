@@ -9,6 +9,7 @@ from backend.src.models_schema.document.document import (
     DocumentOutput,
     DocumentUpdate,
 )
+from backend.src.models_schema.document.document_analysis import DocumentAnalysisOutput
 from backend.src.services import document
 
 router = APIRouter()
@@ -19,7 +20,7 @@ router = APIRouter()
 
 @router.post(
     "/{interaction_id}/upload",
-    response_model=DocumentOutput,
+    response_model=tuple[DocumentOutput, DocumentAnalysisOutput | None],
     responses={
         401: Responses.RESPONSE_401_UNAUTHORIZED,
         404: Responses.RESPONSE_404_NOT_FOUND,
@@ -37,13 +38,11 @@ async def save_document(
     """
     Embeds and saves a user-uploaded document to the database. Documents belong to an interaction.
     """
-    document_output = await document.save_document(
+    document_output, document_analysis = await document.save_document(
         session, file, interaction, document_input
     )
 
-    await session.refresh(document_output)
-
-    return document_output
+    return document_output, document_analysis
 
 
 # ----- READ ----- #
