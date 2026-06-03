@@ -1,21 +1,29 @@
 import React, { useState } from "react";
-import { getFileIcon } from "../../interactions/utils/fileUtils";
+import { createPortal } from "react-dom"; // Biến portal đưa modal ra ngoài body
+import { getFileIcon } from "../../interactions/utils/fileUtils"; // Dùng file utils của bạn
 import { DocumentDetailModal } from "./DocumentDetailModal";
+import { useLearningPath } from "../hooks/useLearningPath"; 
 
 export const DocumentItem = ({ 
-  document, onRename, onDelete, onCheck,
-  isSelected, isEditing, tempName, setTempName, setEditingId, isNight 
+  document, onRename, onDelete,
+  isEditing, tempName, setTempName, setEditingId, isNight 
 }) => {
   const [showModal, setShowModal] = useState(false);
   const isUploading = document.isUploading;
 
-  const dotIndex = document.name.lastIndexOf('.');
+  // Khởi tạo trạng thái lộ trình riêng cho tài liệu này
+  const { isGeneratingPath, pathData, generateLearningPath } = useLearningPath();
+
+  const dotIndex = document.name?.lastIndexOf('.') ?? -1;
   const ext = dotIndex !== -1 ? document.name.substring(dotIndex) : '';
   
   const handleKeyDown = (e) => {
     if (e.key === "Enter") onRename(document.id);
     if (e.key === "Escape") setEditingId(null); 
   };
+
+  // Sử dụng hàm getFileIcon từ file utils có sẵn của bạn
+  const fileIcon = getFileIcon(document.name);
 
   return (
     <>
@@ -35,12 +43,8 @@ export const DocumentItem = ({
               <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,1)]"></div>
             </div>
           ) : (
-            <input 
-              type="checkbox" 
-              checked={isSelected}
-              onChange={() => onCheck(document.id)}
-              className={`h-5 w-5 shrink-0 cursor-pointer rounded-md border-2 accent-[#4ecdc4] ${isNight ? "border-gray-600 bg-gray-700" : "border-gray-300"}`} 
-            />
+            // Hiển thị icon tương ứng với loại file
+            <span className="text-xl shrink-0 drop-shadow-sm">{fileIcon}</span>
           )}
 
           {isEditing ? (
@@ -57,7 +61,7 @@ export const DocumentItem = ({
             </div>
           ) : (
             <div 
-              onDoubleClick={() => setEditingId(document)} 
+              onDoubleClick={() => !isUploading && setEditingId(document)} 
               className="flex flex-1 items-center gap-2 overflow-hidden cursor-pointer"
               title="Nhấp đúp để đổi tên"
             >
@@ -81,28 +85,37 @@ export const DocumentItem = ({
           )}
         </div>
 
+        {/* Nút Chi Tiết */}
         <div className="ml-2 flex shrink-0 items-center gap-1">
           <button 
             onClick={() => setShowModal(true)}
-            className={`rounded-xl p-2 transition-all duration-300 ${
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-extrabold transition-all duration-300 ${
               isUploading 
-                ? 'opacity-30 grayscale' 
-                : (isNight ? 'hover:scale-110 hover:bg-gray-700' : 'hover:scale-110 hover:bg-slate-100')
+                ? 'opacity-30 grayscale pointer-events-none' 
+                : (isNight ? 'bg-[#4ecdc4]/20 text-[#4ecdc4] hover:bg-[#4ecdc4]/40' : 'bg-[#e6fcfb] text-[#38b5ac] hover:bg-[#4ecdc4] hover:text-white shadow-sm')
             }`}
-            title="Xem chi tiết"
+            title="Quản lý file & Tạo lộ trình"
           >
-            <span className="text-xl">{getFileIcon ? getFileIcon(document.name) : "📄"}</span>
+            <span className="text-sm">✨</span> Chi tiết
           </button>
         </div>
       </div>
 
-      <DocumentDetailModal
-        document={document}
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onRename={onRename}
-        onDelete={onDelete}
-      />
+      {/* SỬA ĐỔI CHÍNH XÁC: Gọi window.document.body để không bị trùng tên với biến prop */}
+      {showModal && createPortal(
+        <DocumentDetailModal
+          document={document}
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onRename={onRename}
+          onDelete={onDelete}
+          isGeneratingPath={isGeneratingPath}
+          pathData={pathData}
+          onGenerate={() => generateLearningPath(document.id, document.name)}
+          fileIcon={fileIcon}
+        />,
+        window.document.body 
+      )}
     </>
   );
 };

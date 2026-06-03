@@ -36,7 +36,7 @@ export const SourceSidebar = ({
   }, [sortedDocuments, activeFilter]);
 
   return (
-    <aside className={`flex w-[22%] flex-col space-y-4 rounded-3xl p-6 backdrop-blur-md shadow-xl border transition-colors duration-500 ${
+    <aside className={`flex w-[22%] flex-col space-y-4 rounded-3xl p-6 backdrop-md shadow-xl border transition-colors duration-500 ${
       isNight ? "bg-gray-900/60 border-gray-700/50" : "bg-white/30 border-white/20"
     }`}>
       
@@ -52,26 +52,12 @@ export const SourceSidebar = ({
         }`} />
       </header>
 
-      <div className="flex gap-3 shrink-0">
-        <button 
-          onClick={onAddClick} 
-          className={`rounded-2xl py-3.5 font-bold text-white transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 ${
-            documents.length > 0 ? "w-1/2 bg-[#bf94e4] hover:bg-[#b388d8]" : "w-full bg-[#bf94e4] hover:bg-[#b388d8]"
-          }`}
-        >
-          {documents.length > 0 ? "+ Thêm" : "+ Thêm nguồn"}
-        </button>
-
-        {/* Nút Tạo Lộ Trình chỉ hiện khi đã có tài liệu */}
-        {documents.length > 0 && (
-          <button 
-            onClick={onOpenPathModal}
-            className="w-1/2 rounded-2xl bg-gradient-to-r from-[#4ecdc4] to-[#45b7af] py-3.5 font-bold text-white transition-all shadow-md shadow-[#4ecdc4]/30 hover:shadow-lg hover:shadow-[#4ecdc4]/40 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-1.5"
-          >
-            <span className="text-lg animate-pulse">🏁</span> Lộ trình
-          </button>
-        )}
-      </div>
+      <button 
+        onClick={onAddClick} 
+        className="shrink-0 w-full rounded-2xl bg-[#bf94e4] py-3.5 font-bold text-white transition-all hover:bg-[#b388d8] shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+      >
+        + Thêm nguồn
+      </button>
 
       {/* 4. THANH ĐIỀU HƯỚNG TABS (CÁC KHAY CHỨA) */}
       <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 shrink-0">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
-
 // ==========================================
 // 1. IMPORTS HOOKS
 // ==========================================
@@ -22,9 +21,6 @@ import { ToolsSidebar } from "../features/interactions/components/ToolsSidebar";
 import { AddSourceModal } from "../features/documents/components/AddSourceModal";
 import { OpenEndedContainer } from "../features/open_ended/components/OpenEndedContainer";
 import { ToolSetupArea } from "../features/interactions/components/ToolSetupArea";
-
-import { useLearningPath } from "../features/documents/hooks/useLearningPath";
-import { LearningPathModal } from "../features/documents/components/LearningPathModal";
 
 import { TTRFeature } from "../features/ttr/index";
 import { TTRSetupModal } from "../features/ttr/components/TTRSetupModal";
@@ -50,7 +46,6 @@ export const InteractionPage = () => {
   const [isFlashcardMode, setIsFlashcardMode] = useState(false);
   const [flashcardPanelMode, setFlashcardPanelMode] = useState('create');
   const [selectedFlashcardSet, setSelectedFlashcardSet] = useState(null);
-
 
   // State Tap To Review (TTR)
   const [isSetupOpen, setIsSetupOpen] = useState(false); 
@@ -86,15 +81,6 @@ export const InteractionPage = () => {
     deleteDocument,
     isLoading: isDocsLoading,
   } = useDocuments(interactionId);
-
-  const {
-    isPathModalOpen,
-    openPathModal,
-    closePathModal,
-    isGeneratingPath,
-    pathData,
-    generateLearningPath
-  } = useLearningPath(interactionId);
 
   const {
     chatlog,
@@ -300,14 +286,6 @@ export const InteractionPage = () => {
             }} 
           />
 
-          <LearningPathModal 
-            isOpen={isPathModalOpen}
-            onClose={closePathModal}
-            isLoading={isGeneratingPath}
-            pathContent={pathData}
-            onGenerate={generateLearningPath}
-          />
-
           {/* FIX ĐỒNG BỘ: Đưa ToolSetupArea vào khu vực modals dưới dạng Lớp phủ (Modal Overlay) */}
           {activeToolSetup && (
             <ToolSetupArea
@@ -364,7 +342,6 @@ export const InteractionPage = () => {
       <SourceSidebar
         documents={documents}
         isLoading={isDocsLoading}
-        onOpenPathModal={openPathModal}
         selectedDocIds={selectedDocIds}
         onAddClick={() => setIsModalOpen(true)}
         editingId={editingID}
