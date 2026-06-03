@@ -5,7 +5,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.config import settings
-from backend.src.models_schema.document import Document
+from backend.src.models_schema.document.document import Document
 
 smart_splitter = RecursiveCharacterTextSplitter(
     chunk_size=settings.DEFAULT_CHUNK_SIZE,

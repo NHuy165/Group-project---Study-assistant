@@ -14,7 +14,7 @@ from backend.src.models_schema.miscellaneous.enums import (
     OperatorType,
     StudyActivityType,
 )
-from backend.src.models_schema.study_progress import Criterion
+from backend.src.models_schema.study_progress.study_progress import Criterion
 
 
 def process_group_bys(criteria: list[Criterion]) -> list[Any]:

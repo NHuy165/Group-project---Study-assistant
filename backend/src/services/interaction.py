@@ -5,15 +5,15 @@ from backend.src.exceptions.core import ExceptionNotFound_404
 from backend.src.models_schema.activity.exercise_item import ExerciseItem
 from backend.src.models_schema.activity.review_item import ReviewItem
 from backend.src.models_schema.activity.study_activity import StudyActivity
-from backend.src.models_schema.document import Document
-from backend.src.models_schema.interaction import (
+from backend.src.models_schema.document.document import Document
+from backend.src.models_schema.interaction.interaction import (
     Interaction,
     InteractionInput,
     InteractionUpdate,
 )
-from backend.src.models_schema.llm_response import LLMResponse
-from backend.src.models_schema.note import Note
-from backend.src.models_schema.user import User
+from backend.src.models_schema.llm_response.llm_response import LLMResponse
+from backend.src.models_schema.note.note import Note
+from backend.src.models_schema.user.user import User
 from backend.src.services.study_activity import ExerciseItemContent, ReviewItemContent
 
 # ----- CREATE ----- #

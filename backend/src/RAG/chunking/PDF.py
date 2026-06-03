@@ -5,8 +5,8 @@ from pypdf import PdfReader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.ai_api import GlobalAPI
-from backend.src.models_schema.document import Document
-from backend.src.models_schema.document_chunk import DocumentChunk
+from backend.src.models_schema.document.document import Document
+from backend.src.models_schema.document.document_chunk import DocumentChunk
 from backend.src.models_schema.miscellaneous.enums import DocumentType
 from backend.src.RAG.chunking.base import DocumentExtractor, smart_splitter
 

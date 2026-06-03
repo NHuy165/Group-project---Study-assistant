@@ -7,7 +7,7 @@ from backend.src.exceptions.core import (
     ExceptionAuthentication_401,
     ExceptionTakenInfo_409,
 )
-from backend.src.models_schema.user import (
+from backend.src.models_schema.user.user import (
     User,
     UserInput,
     UserPasswordChange,
