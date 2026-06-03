@@ -2,20 +2,20 @@ import axiosClient from '../../../api/axiosClient';
 
 const PATH = '/document';
 
-// POST: parameter: interactionId; body: file, name, description, subject
+// POST: query: name, subject_type; body: file
 export const saveDocument = async (interactionId, file, documentInput) => {
+    // 1. Chỉ đưa file vào Body (FormData)
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('name', documentInput.name);
-    formData.append('description', documentInput.description || '');
     
-    // THÊM DÒNG NÀY ĐỂ GỬI MÔN HỌC LÊN SERVER
-    if (documentInput.subject) {
-        formData.append('subject', documentInput.subject);
-    }
+    // 2. Chuyển name và subject_type thành URL Query Parameters
+    const params = new URLSearchParams();
+    if (documentInput.name) params.append('name', documentInput.name);
+    if (documentInput.subject_type) params.append('subject_type', documentInput.subject_type);
 
+    // Gửi POST request với query string đính kèm
     const response = await axiosClient.post(
-        `${PATH}/${interactionId}/upload`, 
+        `${PATH}/${interactionId}/upload?${params.toString()}`, 
         formData, 
         {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -24,7 +24,7 @@ export const saveDocument = async (interactionId, file, documentInput) => {
     return response.data;
 };
 
-// GET: parameter: interactionId - THÊM / CUỐI
+// GET: parameter: interactionId
 export const readDocuments = async (interactionId) => {
     const response = await axiosClient.get(`${PATH}/${interactionId}/`);  
     return response.data;
@@ -39,5 +39,5 @@ export const updateDocument = async (documentId, updateData) => {
 // DELETE: parameter: documentId
 export const deleteDocument = async (documentId) => {
     const response = await axiosClient.delete(`${PATH}/${documentId}`);
-    return response.data;
+    return response.status === 204 || response.status === 200;
 };

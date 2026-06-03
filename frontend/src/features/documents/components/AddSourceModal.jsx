@@ -4,7 +4,7 @@ import { useTheme } from "../../../components/theme/ThemeWrapper";
 
 const SUBJECTS = [
   { id: 'MATHS', label: 'Toán', emoji: '📐' },
-  { id: 'LITERATURE', label: 'Tiếng Việt', emoji: '📖' },
+  { id: 'VIETNAMESE', label: 'Tiếng Việt', emoji: '📖' },
   { id: 'ENGLISH', label: 'Tiếng Anh', emoji: '🔤' }
 ];
 
@@ -51,7 +51,7 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length > 0) {
       // Gán mặc định môn Toán cho mọi file mới chọn
-      const newItems = selectedFiles.map(f => ({ file: f, subject: 'MATHS' }));
+      const newItems = selectedFiles.map(f => ({ file: f, subject_type: 'MATHS' }));
       setFileItems((prev) => [...prev, ...newItems]);
       if (fileItems.length === 0) setCurrentIndex(0); 
     }
@@ -74,7 +74,7 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
   // Cập nhật môn học chỉ cho file đang được chọn xem (currentIndex)
   const updateSubjectForCurrentFile = (subjectId) => {
     setFileItems(prev => prev.map((item, idx) => 
-      idx === currentIndex ? { ...item, subject: subjectId } : item
+      idx === currentIndex ? { ...item, subject_type: subjectId } : item
     ));
   };
 
@@ -203,7 +203,7 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                 
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 pb-2">
                   {fileItems.map((item, i) => {
-                    const subjectInfo = SUBJECTS.find(s => s.id === item.subject);
+                    const subjectInfo = SUBJECTS.find(s => s.id === item.subject_type);
                     return (
                       <div 
                         key={i} 
@@ -267,7 +267,7 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                   </div>
                   <div className="flex gap-2">
                     {SUBJECTS.map(sub => {
-                      const isSelected = fileItems[currentIndex]?.subject === sub.id;
+                      const isSelected = fileItems[currentIndex]?.subject_type === sub.id;
                       return (
                         <button
                           key={sub.id}

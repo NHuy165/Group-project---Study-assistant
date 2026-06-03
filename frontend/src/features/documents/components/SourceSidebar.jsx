@@ -6,7 +6,7 @@ import { useTheme } from "../../../components/theme/ThemeWrapper";
 const FILTER_TABS = [
   { id: 'ALL', label: 'Tất cả', emoji: '📚' },
   { id: 'MATHS', label: 'Toán', emoji: '📐' },
-  { id: 'LITERATURE', label: 'T.Việt', emoji: '📖' },
+  { id: 'VIETNAMESE', label: 'T.Việt', emoji: '📖' },
   { id: 'ENGLISH', label: 'T.Anh', emoji: '🔤' }
 ];
 
@@ -32,7 +32,7 @@ export const SourceSidebar = ({
   // 3. Logic lọc tài liệu theo môn học
   const displayedDocuments = useMemo(() => {
     if (activeFilter === 'ALL') return sortedDocuments;
-    return sortedDocuments.filter(doc => doc.subject === activeFilter);
+    return sortedDocuments.filter(doc => doc.subject_type === activeFilter);
   }, [sortedDocuments, activeFilter]);
 
   return (

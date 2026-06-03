@@ -15,24 +15,50 @@ export const useDocuments = (interactionId) => {
         setDocumentName(baseName);
     };
 
-    const updateDocument = async (id, customFullName = null) => {
+    const updateDocument = async (id, updates = null) => {
         const doc = documents.find(d => d.id === id);
         if (!doc) return setEditingID(null);
 
-        const dotIndex = doc.name.lastIndexOf('.');
-        const ext = dotIndex !== -1 ? doc.name.substring(dotIndex) : '';
-        const newFullName = customFullName || (documentName.trim() ? documentName.trim() + ext : doc.name);
+        let payload = {};
+        let newName = doc.name;
+        let newSubject = doc.subject_type;
 
-        if (!newFullName.trim() || newFullName === doc.name) {
+        // Trạng thái 1: Sửa từ Modal (Có truyền object updates { name, subject_type })
+        if (updates && typeof updates === 'object') {
+            if (updates.name && updates.name !== doc.name) {
+                newName = updates.name;
+                payload.name = newName;
+            }
+            if (updates.subject_type && updates.subject_type !== doc.subject_type) {
+                newSubject = updates.subject_type;
+                payload.subject_type = newSubject;
+            }
+        } 
+        // Trạng thái 2: Sửa tên nhanh bằng cách nhấn Enter ở Sidebar (Sử dụng State documentName)
+        else {
+            const dotIndex = doc.name.lastIndexOf('.');
+            const ext = dotIndex !== -1 ? doc.name.substring(dotIndex) : '';
+            if (documentName.trim()) {
+                newName = documentName.trim() + ext;
+                if (newName !== doc.name) payload.name = newName;
+            }
+        }
+
+        // Nếu không có gì thay đổi thì đóng chế độ Edit và thoát
+        if (Object.keys(payload).length === 0) {
             return setEditingID(null);
         }
 
         try {
-            setDocuments((prev) => prev.map((d) => d.id === id ? { ...d, name: newFullName } : d));
+            // Cập nhật UI ngay lập tức (Optimistic UI)
+            setDocuments((prev) => prev.map((d) => d.id === id ? { ...d, ...payload } : d));
             setEditingID(null);
-            await api.updateDocument(id, { name: newFullName });
+            
+            // Gọi API cập nhật ngầm
+            await api.updateDocument(id, payload);
         } catch (err) { 
-            // Xử lý lỗi (nếu cần)
+            console.error("Lỗi cập nhật tài liệu:", err);
+            readDocuments(); // Nếu API lỗi thì reset lại danh sách cho chắc
         }
     };
 
@@ -41,7 +67,7 @@ export const useDocuments = (interactionId) => {
         const tempDocs = fileItems.map((item, index) => ({ 
             id: `temp-${Date.now()}-${index}`, 
             name: item.file.name, 
-            subject: item.subject, // Lưu môn học tạm thời để hiển thị UI (nếu cần)
+            subject_type: item.subject_type, // Lưu môn học tạm thời để hiển thị UI
             isUploading: true 
         }));
         
@@ -57,7 +83,7 @@ export const useDocuments = (interactionId) => {
                     // Đóng gói input riêng cho từng file (bao gồm tên và môn học)
                     const documentInput = {
                         name: item.file.name,
-                        subject: item.subject // <-- Lấy đúng môn học bé đã chọn cho file này
+                        subject_type: item.subject_type // <-- Lấy đúng môn học bé đã chọn cho file này
                     };
 
                     const newDoc = await api.saveDocument(interactionId, item.file, documentInput);
