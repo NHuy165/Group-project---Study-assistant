@@ -6,7 +6,7 @@ from fastapi import Depends, Path
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 from backend.src.core.config import settings
 from backend.src.core.database import get_async_session
@@ -16,6 +16,7 @@ from backend.src.exceptions.core import (
 )
 from backend.src.models_schema.auth.auth import TokenData
 from backend.src.models_schema.interaction.interaction import Interaction
+from backend.src.models_schema.user.check_in import CheckIn
 from backend.src.models_schema.user.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
@@ -46,27 +47,52 @@ async def get_current_user(
     except ValidationError:
         raise ExceptionAuthentication_401()
 
-    user = await session.get(User, validated_contents.sub)
-
-    # User not found failure
-    if user is None:
+    # Fetches user
+    query = (
+        select(User, CheckIn)
+        .select_from(User)
+        .outerjoin(CheckIn)
+        .where(User.id == validated_contents.sub)
+        .order_by(col(CheckIn.time).desc())
+        .limit(1)
+    )
+    row = (await session.execute(query)).first()
+    if row is None:
         raise ExceptionAuthentication_401()
+
+    # Updates login status
+    user, last_check_in = row
+    assert isinstance(user, User)
+    assert isinstance(last_check_in, CheckIn | None)
 
     now = datetime.now(timezone.utc)
 
-    if user.last_logged_in_at is None:
-        user.login_streak = 1
-        user.longest_login_streak = 1
-    else:
-        if now.date() - user.last_logged_in_at.date() == timedelta(days=1):
-            user.login_streak += 1
-            if user.login_streak > user.longest_login_streak:
-                user.longest_login_streak = user.login_streak
-
-        elif now.date() - user.last_logged_in_at.date() > timedelta(days=1):
+    # If user has never logged in or didn't log in today
+    if last_check_in is None or last_check_in.time.date() < now.date():
+        # If user has never logged in
+        if last_check_in is None:
             user.login_streak = 1
+            user.longest_login_streak = 1
+        else:
+            time_between = now.date() - last_check_in.time.date()
 
-    user.last_logged_in_at = now
+            # If user last logged in yesterday
+            if time_between == timedelta(days=1):
+                user.login_streak += 1
+                if user.login_streak > user.longest_login_streak:
+                    user.longest_login_streak = user.login_streak
+
+            # If user didn't log in yesterday
+            elif time_between > timedelta(days=1):
+                user.login_streak = 1
+
+        new_check_in = CheckIn(
+            time=now,
+            user=user,
+        )
+
+        session.add(new_check_in)
+        await session.commit()
 
     return user
 

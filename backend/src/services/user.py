@@ -1,12 +1,15 @@
+from datetime import datetime, timezone
+
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 from backend.src.core.security import get_hashed_password, verify_password
 from backend.src.exceptions.core import (
     ExceptionAuthentication_401,
     ExceptionTakenInfo_409,
 )
+from backend.src.models_schema.user.check_in import CheckIn
 from backend.src.models_schema.user.user import (
     User,
     UserInput,

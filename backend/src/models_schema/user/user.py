@@ -8,6 +8,7 @@ from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
     from backend.src.models_schema.interaction.interaction import Interaction
+    from backend.src.models_schema.user.check_in import CheckIn
 
 # ----- BASE ----- #
 
@@ -32,7 +33,6 @@ class UserInput(UserBase):
 class UserOutput(UserBase):
     id: int
     created_at: datetime
-    last_logged_in_at: datetime | None
 
     login_streak: int
     longest_login_streak: int
@@ -73,11 +73,6 @@ class User(UserBase, table=True):
             default_factory=lambda: datetime.now(timezone.utc),
         ),
     ]
-    last_logged_in_at: Annotated[
-        datetime | None,
-        Field(
-            sa_column=Column(DateTime(timezone=True)),
-        ),
-    ] = None
 
     interactions: list["Interaction"] = Relationship(back_populates="user")
+    check_ins: list["CheckIn"] = Relationship(back_populates="user")
