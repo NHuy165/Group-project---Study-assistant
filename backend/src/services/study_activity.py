@@ -273,7 +273,7 @@ async def create_study_activity(
     params = StudyActivityParams(
         prompt=study_activity_input.prompt,
         context_conversations=formatted_past_conversations,
-        context_document=formatted_chunks,
+        context_chunks=formatted_chunks,
         json_schema=json_schema,
         subject_type=study_activity_input.subject_type,
         activity_format=study_activity_input.activity_format,
@@ -802,7 +802,7 @@ async def submit_exercise_activity(
     params = GradingParams(
         prompt=exercise_works.model_dump_json(),
         creation_prompt=study_activity.prompt,  # type: ignore
-        context_document=formatted_chunks,
+        context_chunks=formatted_chunks,
     )
 
     final_prompt = grading_augmentation(params)

@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     MODEL_IN_USE_GENERATE_MATERIAL: str
     MODEL_IN_USE_GRADE_ANSWERS: str
     MODEL_IN_USE_GENERATE_DOCUMENT_ANALYSIS: str
+    MODEL_IN_USE_GENERATE_STUDY_ASSESSMENT: str
 
     # ** Google ** #
     EMBED_MODEL_GOOGLE: str
@@ -73,6 +74,11 @@ class Settings(BaseSettings):
     # ** Study Activity ** #
     DEFAULT_EXERCISE_TOTAL_SCORE: float
     N_GENERATION_RETRIES: int
+
+    # ** Study Assessment ** #
+    DEFAULT_N_DOCUMENTS_FETCHED: int
+    DEFAULT_N_LLM_RESPONSES_FETCHED: int
+    DEFAULT_N_STUDY_ACTIVITIES_FETCHED: int
 
     # ----- CONFIG ----- #
 

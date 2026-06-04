@@ -51,6 +51,4 @@ class LLMResponse(LLMResponseBase, table=True):
         ),
     ]
 
-    # type: flashcard, quiz...
-
     interaction: "Interaction" = Relationship(back_populates="llm_responses")

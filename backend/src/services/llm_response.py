@@ -65,7 +65,7 @@ async def create_llm_response(
     augmentation_params = AnswerGenerationParams(
         prompt=llm_response_input.prompt,
         context_conversations=formatted_past_conversations,
-        context_document=formatted_chunks,
+        context_chunks=formatted_chunks,
         personal_information=user.description,
     )
     final_prompt = answer_generation_augmentation(augmentation_params)
