@@ -12,9 +12,9 @@ export const StreakCard = ({
   const longestValue = isLoading ? "--" : longestStreak;
   const flameCount = isLoading ? 0 : Math.min(currentStreak, 5);
 
-  // Nền ngoài cùng của Card
+  // Outer card background: Changed to a solid dark color in night mode to match the notebook card
   const cardCls = isNight
-    ? "bg-gradient-to-br from-slate-900/80 to-purple-900/40 border-white/10 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.5)]"
+    ? "bg-slate-900/90 border-white/10 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.5)]" 
     : "bg-white/60 border-white/60 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]";
 
   return (
@@ -44,21 +44,21 @@ export const StreakCard = ({
 
         <div className="flex-1 min-h-2" />
 
-        {/* Ô CHUỖI HỌC TẬP: Dùng nền đen mờ (bg-black/40) vào ban đêm để làm bệ phóng cho chữ sáng */}
+        {/* STREAK BOX: Applied the purple gradient here for night mode to make it stand out */}
         <div
           className={`mt-1 mb-1 flex flex-col items-center rounded-2xl p-2.5 w-[88%] border shadow-lg backdrop-blur-md transition-colors self-center ${
             isNight
-              ? "bg-black/40 border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
-              : "bg-white/50 border-white/60"
+              ? "bg-gradient-to-br from-slate-900/80 to-purple-900/60 border-purple-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+              : "bg-white/50 border-gray-200"
           }`}
         >
-          {/* Chữ chuyển sang màu trắng/xám sáng */}
           <span
             className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isNight ? "text-gray-100 drop-shadow-md" : "text-slate-500"}`}
           >
             Chuỗi học tập
           </span>
           <div className="grid w-full grid-cols-2 gap-2 text-center">
+            {/* Current Streak */}
             <div
               className={`rounded-xl px-2 py-2 ${isNight ? "bg-white/5" : "bg-white/70"}`}
             >
@@ -68,21 +68,20 @@ export const StreakCard = ({
                 Hiện tại
               </div>
               <div
-                className={`mt-1 flex items-center justify-center gap-1 text-[22px] font-black leading-none ${
+                className={`mt-1 flex items-center justify-center gap-2 text-[22px] font-black leading-none ${
                   isNight
                     ? "text-[#ffb703] drop-shadow-[0_0_12px_rgba(255,183,3,0.6)]"
                     : "text-[#ea580c]"
                 }`}
               >
                 <span>{currentValue}</span>
-                <span className="text-[16px] flex drop-shadow-md">
-                  {[...Array(flameCount)].map((_, i) => (
-                    <span key={i}>🔥</span>
-                  ))}
-                </span>
+                {!isLoading && currentStreak > 0 && (
+                  <span className="text-[18px] drop-shadow-md">🔥</span>
+                )}
               </div>
             </div>
 
+            {/* Longest Streak */}
             <div
               className={`rounded-xl px-2 py-2 ${isNight ? "bg-white/5" : "bg-white/70"}`}
             >
@@ -92,13 +91,14 @@ export const StreakCard = ({
                 Dài nhất
               </div>
               <div
-                className={`mt-1 text-[22px] font-black leading-none ${
+                className={`mt-1 flex items-center justify-center gap-2 text-[22px] font-black leading-none ${
                   isNight
                     ? "text-cyan-300 drop-shadow-[0_0_12px_rgba(103,232,249,0.35)]"
                     : "text-sky-600"
                 }`}
               >
-                {longestValue}
+                <span className="text-[18px]">🏆</span>
+                <span>{longestValue}</span>
               </div>
             </div>
           </div>
