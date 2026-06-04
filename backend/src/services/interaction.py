@@ -115,29 +115,6 @@ async def soft_delete_items(session: AsyncSession, interaction_id: int):
     await session.execute(query_review)
 
 
-async def hard_delete_items_contents(session: AsyncSession, interaction_id: int):
-    subquery_review = (
-        select(ReviewItem.id)
-        .join(StudyActivity)
-        .where(StudyActivity.interaction_id == interaction_id)
-    )
-    query_review = delete(ReviewItemContent).where(
-        col(ReviewItemContent.review_item_id).in_(subquery_review)
-    )
-
-    subquery_exercise = (
-        select(ExerciseItem.id)
-        .join(StudyActivity)
-        .where(StudyActivity.interaction_id == interaction_id)
-    )
-    query_exercise = delete(ExerciseItemContent).where(
-        col(ExerciseItemContent.exercise_item_id).in_(subquery_exercise)
-    )
-
-    await session.execute(query_review)
-    await session.execute(query_exercise)
-
-
 async def hard_delete_documents(session: AsyncSession, interaction_id: int):
     query = delete(Document).where(col(Document.interaction_id) == interaction_id)
     await session.execute(query)
@@ -180,9 +157,6 @@ async def delete_interaction(
 
     # Soft deletes the associated items
     await soft_delete_items(session, interaction_id)
-
-    # Hard deletes the item contents
-    await hard_delete_items_contents(session, interaction_id)
 
     # Hard deletes the other things
     await hard_delete_documents(session, interaction_id)

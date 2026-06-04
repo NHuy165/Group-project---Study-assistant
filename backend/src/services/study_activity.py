@@ -920,25 +920,6 @@ async def soft_delete_items(session: AsyncSession, study_activity_id: int):
     await session.execute(query_review)
 
 
-async def hard_delete_items_contents(session: AsyncSession, study_activity_id: int):
-    subquery_review = select(ReviewItem.id).where(
-        ReviewItem.study_activity_id == study_activity_id
-    )
-    query_review = delete(ReviewItemContent).where(
-        col(ReviewItemContent.review_item_id).in_(subquery_review)
-    )
-
-    subquery_exercise = select(ExerciseItem.id).where(
-        ExerciseItem.study_activity_id == study_activity_id
-    )
-    query_exercise = delete(ExerciseItemContent).where(
-        col(ExerciseItemContent.exercise_item_id).in_(subquery_exercise)
-    )
-
-    await session.execute(query_review)
-    await session.execute(query_exercise)
-
-
 async def delete_study_activity(
     user: User,
     session: AsyncSession,
@@ -968,9 +949,6 @@ async def delete_study_activity(
 
     # Soft deletes the associated items
     await soft_delete_items(session, study_activity_id)
-
-    # Hard deletes the item contents
-    await hard_delete_items_contents(session, study_activity_id)
 
     # Soft deletes the activity
     study_activity.is_deleted = True
