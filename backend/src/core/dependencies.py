@@ -48,51 +48,11 @@ async def get_current_user(
         raise ExceptionAuthentication_401()
 
     # Fetches user
-    query = (
-        select(User, CheckIn)
-        .select_from(User)
-        .outerjoin(CheckIn)
-        .where(User.id == validated_contents.sub)
-        .order_by(col(CheckIn.time).desc())
-        .limit(1)
-    )
-    row = (await session.execute(query)).first()
-    if row is None:
+    query = select(User).where(User.id == validated_contents.sub)
+    user = (await session.execute(query)).scalars().first()
+
+    if user is None:
         raise ExceptionAuthentication_401()
-
-    # Updates login status
-    user, last_check_in = row
-    assert isinstance(user, User)
-    assert isinstance(last_check_in, CheckIn | None)
-
-    now = datetime.now(timezone.utc)
-
-    # If user has never logged in or didn't log in today
-    if last_check_in is None or last_check_in.time.date() < now.date():
-        # If user has never logged in
-        if last_check_in is None:
-            user.login_streak = 1
-            user.longest_login_streak = 1
-        else:
-            time_between = now.date() - last_check_in.time.date()
-
-            # If user last logged in yesterday
-            if time_between == timedelta(days=1):
-                user.login_streak += 1
-                if user.login_streak > user.longest_login_streak:
-                    user.longest_login_streak = user.login_streak
-
-            # If user didn't log in yesterday
-            elif time_between > timedelta(days=1):
-                user.login_streak = 1
-
-        new_check_in = CheckIn(
-            time=now,
-            user=user,
-        )
-
-        session.add(new_check_in)
-        await session.commit()
 
     return user
 
