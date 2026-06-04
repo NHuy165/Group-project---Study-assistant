@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Optional
 
 from pydantic import BeforeValidator
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
@@ -73,6 +73,6 @@ class Document(DocumentBase, table=True):
     document_chunks: list["DocumentChunk"] = Relationship(
         back_populates="document", cascade_delete=True
     )
-    document_analysis: "DocumentAnalysis" = Relationship(
+    document_analysis: Optional["DocumentAnalysis"] = Relationship(
         back_populates="document", cascade_delete=True
     )

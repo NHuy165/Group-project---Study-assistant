@@ -1,5 +1,6 @@
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlmodel import col, delete, select
 
 from backend.src.exceptions.core import (
@@ -99,6 +100,40 @@ async def read_all_documents(
     documents = (await session.execute(query)).scalars().all()
 
     return list(documents)
+
+
+async def read_document_complete(
+    session: AsyncSession, interaction: Interaction, document_id: int
+) -> tuple[Document, DocumentAnalysis | None]:
+    query = query = (
+        select(Document)
+        .where(
+            Document.interaction_id == interaction.id,
+            Document.id == document_id,
+        )
+        .options(
+            selectinload(Document.document_analysis).selectinload(  # type: ignore
+                DocumentAnalysis.material_recommendations  # type: ignore
+            )
+        )  # type: ignore
+        .options(
+            selectinload(Document.document_analysis).selectinload(  # type: ignore
+                DocumentAnalysis.question_recommendations  # type: ignore
+            )
+        )
+    )
+    document = (await session.execute(query)).scalars().first()
+
+    if document is None:
+        raise ExceptionNotFound_404(
+            "Document",
+            {
+                "id": document_id,
+                "interaction_id": interaction.id,
+            },
+        )
+
+    return document, document.document_analysis
 
 
 # ----- UPDATE ----- #
