@@ -68,6 +68,27 @@ async def read_all_documents(
     return documents_output
 
 
+@router.get(
+    "/{interaction_id}/{document_id}",
+    response_model=tuple[DocumentOutput, DocumentAnalysisOutput | None],
+    responses={
+        401: Responses.RESPONSE_401_UNAUTHORIZED,
+        404: Responses.RESPONSE_404_NOT_FOUND,
+    },
+)
+async def read_document_complete(
+    user: UserDep,
+    session: SessionDep,
+    interaction: InteractionDep,
+    document_id: int,
+):
+    """
+    Reads all documents in an interaction.
+    """
+    result = await document.read_document_complete(session, interaction, document_id)
+    return result
+
+
 # ----- UPDATE ----- #
 
 
