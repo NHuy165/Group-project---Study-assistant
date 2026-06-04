@@ -6,7 +6,7 @@ from fastapi import Depends, Path
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 from backend.src.core.config import settings
 from backend.src.core.database import get_async_session
@@ -16,6 +16,7 @@ from backend.src.exceptions.core import (
 )
 from backend.src.models_schema.auth.auth import TokenData
 from backend.src.models_schema.interaction.interaction import Interaction
+from backend.src.models_schema.user.check_in import CheckIn
 from backend.src.models_schema.user.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
@@ -46,27 +47,12 @@ async def get_current_user(
     except ValidationError:
         raise ExceptionAuthentication_401()
 
-    user = await session.get(User, validated_contents.sub)
+    # Fetches user
+    query = select(User).where(User.id == validated_contents.sub)
+    user = (await session.execute(query)).scalars().first()
 
-    # User not found failure
     if user is None:
         raise ExceptionAuthentication_401()
-
-    now = datetime.now(timezone.utc)
-
-    if user.last_logged_in_at is None:
-        user.login_streak = 1
-        user.longest_login_streak = 1
-    else:
-        if now.date() - user.last_logged_in_at.date() == timedelta(days=1):
-            user.login_streak += 1
-            if user.login_streak > user.longest_login_streak:
-                user.longest_login_streak = user.login_streak
-
-        elif now.date() - user.last_logged_in_at.date() > timedelta(days=1):
-            user.login_streak = 1
-
-    user.last_logged_in_at = now
 
     return user
 

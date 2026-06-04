@@ -232,6 +232,7 @@ save_mapper = {
 
 
 async def create_study_activity(
+    user: User,
     session: AsyncSession,
     interaction: Interaction,
     study_activity_input: StudyActivityInput,
@@ -257,6 +258,7 @@ async def create_study_activity(
         interaction=interaction,
         raw_prompt=rewritten_prompt,
         embedded_prompt=embedded_prompt,
+        document_id=study_activity_input.document_id,
     )
     formatted_chunks = chunks_formatter(document_chunks)
 
@@ -275,6 +277,7 @@ async def create_study_activity(
         json_schema=json_schema,
         subject_type=study_activity_input.subject_type,
         activity_format=study_activity_input.activity_format,
+        personal_information=user.description,
     )
 
     final_prompt = study_activity_augmentation(params)
@@ -789,6 +792,7 @@ async def submit_exercise_activity(
         interaction=interaction,
         raw_prompt=prompt_for_retrieval,
         embedded_prompt=embedded_prompt,
+        document_id=None,
     )
 
     await session.commit()  # Temporary close

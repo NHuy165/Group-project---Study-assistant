@@ -8,8 +8,10 @@ from backend.src.models_schema.miscellaneous.enums import DocumentType, SubjectT
 from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
+    from backend.src.models_schema.document.document_analysis import DocumentAnalysis
     from backend.src.models_schema.document.document_chunk import DocumentChunk
     from backend.src.models_schema.interaction.interaction import Interaction
+
 
 # ----- BASE ----- #
 
@@ -65,8 +67,12 @@ class Document(DocumentBase, table=True):
         ),
     ]
     type: DocumentType
+    text: str
 
     interaction: "Interaction" = Relationship(back_populates="documents")
     document_chunks: list["DocumentChunk"] = Relationship(
+        back_populates="document", cascade_delete=True
+    )
+    document_analysis: "DocumentAnalysis" = Relationship(
         back_populates="document", cascade_delete=True
     )

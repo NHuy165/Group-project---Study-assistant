@@ -17,7 +17,7 @@ class LLMResponseBase(SQLModel):
 
 
 class LLMResponseInput(LLMResponseBase):
-    pass
+    document_id: int | None = None
 
 
 # ----- OUTPUT ----- #

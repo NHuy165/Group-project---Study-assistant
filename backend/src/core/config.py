@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     MODEL_IN_USE_REWRITE_PROMPT: str
     MODEL_IN_USE_GENERATE_MATERIAL: str
     MODEL_IN_USE_GRADE_ANSWERS: str
+    MODEL_IN_USE_GENERATE_DOCUMENT_ANALYSIS: str
 
     # ** Google ** #
     EMBED_MODEL_GOOGLE: str

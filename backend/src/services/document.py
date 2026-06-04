@@ -11,6 +11,7 @@ from backend.src.models_schema.document.document import (
     DocumentInput,
     DocumentUpdate,
 )
+from backend.src.models_schema.document.document_analysis import DocumentAnalysis
 from backend.src.models_schema.interaction.interaction import Interaction
 from backend.src.models_schema.miscellaneous.enums import DocumentType
 from backend.src.models_schema.user.user import User
@@ -23,11 +24,12 @@ from backend.src.RAG.chunking.text import TextExtractor
 
 
 async def save_document(
+    user: User,
     session: AsyncSession,
     file: UploadFile,
     interaction: Interaction,
     document_input: DocumentInput,
-) -> Document:
+) -> tuple[Document, DocumentAnalysis | None]:
 
     # Verifies document type and picks extractor
     EXTRACTORS: dict[DocumentType, type[DocumentExtractor]] = {
@@ -68,12 +70,14 @@ async def save_document(
         page_starts_at=page_starts_at,
         type=selected_type,
         subject_type=document_input.subject_type,
+        text="",  # Dummy text, will get updated in extract function
     )  # type: ignore
 
     session.add(document)
 
     # Saves document contents
-    await selected_extractor.extract(
+    document_analysis = await selected_extractor.extract(
+        user=user,
         session=session,
         file=file,
         document=document,
@@ -82,7 +86,7 @@ async def save_document(
     await session.commit()
     # await session.refresh(document)
 
-    return document
+    return document, document_analysis
 
 
 # ----- READ ----- #

@@ -1,5 +1,4 @@
 import asyncio
-from abc import abstractmethod
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,9 +6,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.src.core.ai_api import GlobalAPI
 from backend.src.exceptions.core import ExceptionRequestValidation_400
 from backend.src.models_schema.document.document import Document
+from backend.src.models_schema.document.document_analysis import DocumentAnalysis
 from backend.src.models_schema.document.document_chunk import DocumentChunk
 from backend.src.models_schema.miscellaneous.enums import DocumentType
-from backend.src.RAG.chunking.base import DocumentExtractor, smart_splitter
+from backend.src.models_schema.RAG.augmentation import DocumentAnalysisParams
+from backend.src.models_schema.user.user import User
+from backend.src.RAG.augmentation.core.specific_augmentations import (
+    document_analysis_augmentation,
+)
+from backend.src.RAG.chunking.base import (
+    DocumentExtractor,
+    save_document_analysis,
+    smart_splitter,
+)
 
 
 class TextExtractor(DocumentExtractor):
@@ -44,8 +53,8 @@ class TextExtractor(DocumentExtractor):
 
     @classmethod
     async def extract(
-        cls, session: AsyncSession, file: UploadFile, document: Document
-    ) -> None:
+        cls, user: User, session: AsyncSession, file: UploadFile, document: Document
+    ) -> DocumentAnalysis | None:
         # Reads the file
         text_bytes = await file.read()
         try:
@@ -57,6 +66,8 @@ class TextExtractor(DocumentExtractor):
 
         if len(contents.strip()) == 0:
             return
+
+        document.text = contents
 
         def process():
             # Staging data
@@ -82,10 +93,25 @@ class TextExtractor(DocumentExtractor):
 
         prepared_chunks, chunk_metadata = await asyncio.to_thread(process)
 
+        # Runs tasks in parallel
         if prepared_chunks:
-            # Mass awaiting
-            vectors = await GlobalAPI.mass_embed(prepared_chunks)
+            # Defines tasks
+            embed_task = GlobalAPI.mass_embed(prepared_chunks)
 
+            params = DocumentAnalysisParams(
+                prompt=contents,
+                name=document.name,
+                subject_type=document.subject_type,
+                document_type=document.type,
+                personal_information=user.description,
+            )
+            final_prompt = document_analysis_augmentation(params)
+            analysis_task = GlobalAPI.generate_document_analysis(final_prompt)
+
+            # Calls LLM
+            vectors, analysis = await asyncio.gather(embed_task, analysis_task)
+
+            # Saves the vectors
             embedded_chunks = [
                 DocumentChunk(
                     content_original=metadata["content"],
@@ -97,3 +123,10 @@ class TextExtractor(DocumentExtractor):
             ]
 
             session.add_all(embedded_chunks)
+
+            # Saves the analysis
+            document_analysis = save_document_analysis(session, analysis)
+
+            document.document_analysis = document_analysis
+
+            return document_analysis

@@ -34,7 +34,7 @@ async def create_llm_response(
     Receives a user prompt and returns the model's answer. Conversations (prompts and answers) belong to an interaction.
     """
     llm_response_output = await llm_response.create_llm_response(
-        session, llm_response_input, interaction
+        user, session, llm_response_input, interaction
     )
 
     return llm_response_output

@@ -45,6 +45,7 @@ async def create_study_activity(
     Tạo một dạng tài liệu tùy vào các yêu cầu trong request.
     """
     return await study_activity.create_study_activity(
+        user,
         session,
         interaction,
         study_activity_input,
