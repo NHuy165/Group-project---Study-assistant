@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import and_, col, or_, select
 
 from backend.src.core.config import settings
-from backend.src.models_schema.document_chunk import DocumentChunk
+from backend.src.models_schema.document.document_chunk import DocumentChunk
 
 
 async def neighbouring_chunks(

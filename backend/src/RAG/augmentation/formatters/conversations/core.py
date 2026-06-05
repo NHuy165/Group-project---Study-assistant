@@ -1,10 +1,10 @@
 from typing import Iterable
 
-from backend.src.models_schema.llm_response import LLMResponse
+from backend.src.models_schema.llm_response.llm_response import LLMResponse
 
 
 def singular_conversation_formatter(index: int, conversation: LLMResponse) -> str:
-    return f"""Conversation {index}:
+    return f"""Conversation #{index}:
 User query: {conversation.prompt}
 Model answer: {conversation.answer}
 """

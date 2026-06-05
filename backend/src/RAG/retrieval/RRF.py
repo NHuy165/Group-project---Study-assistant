@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from backend.src.core.config import settings
-from backend.src.models_schema.document_chunk import DocumentChunk
+from backend.src.models_schema.document.document_chunk import DocumentChunk
 
 
 def RRF(
