@@ -1,44 +1,53 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import * as api from '../api/documentsApi';
 
 export const useLearningPath = () => {
+  const params = useParams();
+  
   const [isGeneratingPath, setIsGeneratingPath] = useState(false);
   const [pathData, setPathData] = useState(null);
 
   const generateLearningPath = async (documentId, documentName) => {
+    // Đảm bảo bắt được Interaction ID dù cho React Router có bị ảnh hưởng bởi lớp Portal
+    const interactionId = params.interactionId || window.location.pathname.split('/')[2];
+    
+    if (!interactionId || !documentId) return;
+
     setIsGeneratingPath(true);
     setPathData(null); 
     
     try {
-      // TƯƠNG LAI: Gọi API thật truyền documentId xuống BE
-      // const response = await api.generateLearningPath(documentId);
+      const responseData = await api.readDocumentComplete(interactionId, documentId);
       
-      // HIỆN TẠI: Giả lập chờ 3 giây
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Bóc tách dữ liệu AI nằm lẫn trong mảng
+      let actualData = responseData.data || responseData;
+      let aiData = null;
       
-      const mockMarkdownResponse = `
-### Lộ trình học cho tài liệu: **${documentName}** 🚀
+      if (Array.isArray(actualData)) {
+        // Tìm phần tử chứa Lộ trình AI
+        aiData = actualData.find(item => item.summary || item.material_recommendations);
+      } else {
+        aiData = actualData.summary ? actualData : null;
+      }
 
-Dựa vào nội dung tài liệu bé vừa chọn, Cú Mèo gợi ý lộ trình sau:
-
-#### **Ngày 1: Khám phá kiến thức**
-* Đọc lướt qua các khái niệm chính trong 3 trang đầu.
-* Đánh dấu lại những từ khóa hoặc công thức bé chưa hiểu rõ.
-
-#### **Ngày 2: Thực hành & Vận dụng**
-* Trả lời các câu hỏi / bài tập ở cuối tài liệu.
-* Nhờ Cú Mèo (ở khung chat) giải thích những phần còn vướng mắc.
-
-#### **Ngày 3: Ôn tập & Mở rộng**
-* Tạo một bản đồ tư duy (Mindmap) tóm tắt lại toàn bộ tài liệu.
-* Làm một bài Quiz nhanh để kiểm tra trí nhớ.
-
-*Cú Mèo tin bé sẽ chinh phục tài liệu này rất dễ dàng! ❤️*
-      `;
-      setPathData(mockMarkdownResponse);
+      if (aiData) {
+        setPathData(aiData);
+      } else {
+        setPathData(null);
+        alert("⏳ Cú Mèo đang bắt đầu đọc tài liệu này ở hậu trường. Bé hãy đợi vài phút rồi mở lại nhé!");
+      }
 
     } catch (error) {
-      console.error("Lỗi tạo lộ trình:", error);
-      setPathData("❌ Rất tiếc, Cú Mèo đang gặp sự cố khi đọc tài liệu này. Bé thử lại sau nhé!");
+      console.error("Lỗi khi tải dữ liệu phân tích:", error);
+      setPathData(null); 
+      
+      // 🎯 LỖI SỐ 3: Bắt trúng tim đen lỗi 400 (Backend chưa xử lý xong)
+      if (error.response && error.response.status === 400) {
+         alert("⏳ Cú Mèo đang mải miết đọc và tóm tắt tài liệu bé vừa tải lên. Bé đợi khoảng 1-2 phút rồi bấm lại nhé!");
+      } else {
+         alert("❌ Ối, kết nối bị gián đoạn mất rồi. Bé hãy thử F5 lại trang xem sao!");
+      }
     } finally {
       setIsGeneratingPath(false);
     }

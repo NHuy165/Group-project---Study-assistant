@@ -18,11 +18,14 @@ export const readQuizzes = async (interactionId) => {
 };
 
 export const createQuiz = async (interactionId, data) => {
+  const documentId = data.document_id || 0; // 🎯 Lấy document_id
+
   const payload = {
     prompt: data.prompt || "",
-    subject_type: data.subjectType,
+    subject_type: data.subjectType || data.subject_type,
     activity_type: "EXERCISE",
     activity_format: "MULTIPLE_CHOICE_QUESTIONS",
+    document_id: documentId // 🎯 Đẩy vào body
   };
 
   const response = await axiosClient.post(

@@ -10,8 +10,8 @@ export const useDocuments = (interactionId) => {
 
     const handleStartEdit = (doc) => {
         setEditingID(doc.id);
-        const dotIndex = doc.name.lastIndexOf('.');
-        const baseName = dotIndex !== -1 ? doc.name.substring(0, dotIndex) : doc.name;
+        const dotIndex = doc.name?.lastIndexOf('.') ?? -1;
+        const baseName = dotIndex !== -1 ? doc.name.substring(0, dotIndex) : (doc.name || "");
         setDocumentName(baseName);
     };
 
@@ -23,20 +23,11 @@ export const useDocuments = (interactionId) => {
         let newName = doc.name;
         let newSubject = doc.subject_type;
 
-        // Trạng thái 1: Sửa từ Modal (Có truyền object updates { name, subject_type })
         if (updates && typeof updates === 'object') {
-            if (updates.name && updates.name !== doc.name) {
-                newName = updates.name;
-                payload.name = newName;
-            }
-            if (updates.subject_type && updates.subject_type !== doc.subject_type) {
-                newSubject = updates.subject_type;
-                payload.subject_type = newSubject;
-            }
-        } 
-        // Trạng thái 2: Sửa tên nhanh bằng cách nhấn Enter ở Sidebar (Sử dụng State documentName)
-        else {
-            const dotIndex = doc.name.lastIndexOf('.');
+            if (updates.name && updates.name !== doc.name) payload.name = updates.name;
+            if (updates.subject_type && updates.subject_type !== doc.subject_type) payload.subject_type = updates.subject_type;
+        } else {
+            const dotIndex = doc.name?.lastIndexOf('.') ?? -1;
             const ext = dotIndex !== -1 ? doc.name.substring(dotIndex) : '';
             if (documentName.trim()) {
                 newName = documentName.trim() + ext;
@@ -44,60 +35,78 @@ export const useDocuments = (interactionId) => {
             }
         }
 
-        // Nếu không có gì thay đổi thì đóng chế độ Edit và thoát
-        if (Object.keys(payload).length === 0) {
-            return setEditingID(null);
-        }
+        if (Object.keys(payload).length === 0) return setEditingID(null);
 
         try {
-            // Cập nhật UI ngay lập tức (Optimistic UI)
             setDocuments((prev) => prev.map((d) => d.id === id ? { ...d, ...payload } : d));
             setEditingID(null);
-            
-            // Gọi API cập nhật ngầm
             await api.updateDocument(id, payload);
         } catch (err) { 
             console.error("Lỗi cập nhật tài liệu:", err);
-            readDocuments(); // Nếu API lỗi thì reset lại danh sách cho chắc
+            readDocuments();
         }
     };
 
     const uploadMultipleFiles = async (fileItems) => {
-        // 1. Tạo danh sách file "ảo" hiển thị UI trạng thái "isUploading" ngay lập tức
-        const tempDocs = fileItems.map((item, index) => ({ 
+        // 🎯 ĐẶT GIỚI HẠN DUNG LƯỢNG Ở FRONTEND (Ví dụ: 20MB = 20 * 1024 * 1024 bytes)
+        const MAX_FILE_SIZE = 20 * 1024 * 1024; 
+
+        const validFiles = [];
+        const oversizedFiles = [];
+
+        // Kiểm tra từng file trước khi đưa vào hàng đợi
+        fileItems.forEach(item => {
+            if (item.file.size > MAX_FILE_SIZE) {
+                oversizedFiles.push(item);
+            } else {
+                validFiles.push(item);
+            }
+        });
+
+        // Cảnh báo thân thiện nếu có file quá nặng
+        if (oversizedFiles.length > 0) {
+            const fileNames = oversizedFiles.map(f => f.file.name).join(', ');
+            alert(`❌ File quá lớn (vượt quá 20MB): ${fileNames}.\n\nCú Mèo không vác nổi đâu, bé hãy cắt nhỏ file PDF ra hoặc chọn file nhẹ hơn nhé!`);
+            
+            // Nếu không có file nào hợp lệ thì dừng luôn
+            if (validFiles.length === 0) return; 
+        }
+
+        // Bắt đầu quy trình upload với các file hợp lệ (validFiles)
+        const tempDocs = validFiles.map((item, index) => ({ 
             id: `temp-${Date.now()}-${index}`, 
-            name: item.file.name, 
-            subject_type: item.subject_type, // Lưu môn học tạm thời để hiển thị UI
-            isUploading: true 
+            name: item.file?.name || "Đang tải...", 
+            subject_type: item.subject_type,
+            isUploading: true,
+            created_at: new Date().toISOString() 
         }));
         
-        // Thêm các file mới vào ĐẦU danh sách
         setDocuments(prev => [...tempDocs, ...prev]);
 
-        // 2. Chạy tải lên SONG SONG tất cả các file cùng một lúc (All at once)
         await Promise.all(
-            fileItems.map(async (item, index) => {
+            validFiles.map(async (item, index) => {
                 const tempId = tempDocs[index].id;
                 
                 try {
-                    // Đóng gói input riêng cho từng file (bao gồm tên và môn học)
                     const documentInput = {
                         name: item.file.name,
-                        subject_type: item.subject_type // <-- Lấy đúng môn học bé đã chọn cho file này
+                        subject_type: item.subject_type
                     };
 
-                    const newDoc = await api.saveDocument(interactionId, item.file, documentInput);
+                    const response = await api.saveDocument(interactionId, item.file, documentInput);
                     
-                    // Cập nhật lại UI khi file NÀY tải xong (thay thế file ảo bằng file thật từ server)
-                    setDocuments(prev => prev.map(d => 
-                        d.id === tempId ? newDoc : d
-                    ));
+                    let actualData = response;
+                    if (response && response.data) actualData = response.data;
+                    let newDoc = Array.isArray(actualData) ? actualData[0] : actualData;
+                    
+                    if (!newDoc || !newDoc.name) {
+                        newDoc = { ...newDoc, id: newDoc?.id || tempId, name: item.file.name, created_at: new Date().toISOString() };
+                    }
+                    
+                    setDocuments(prev => prev.map(d => d.id === tempId ? newDoc : d));
                 } catch (err) { 
-                    console.error(`Lỗi tải lên file ${item.file.name}:`, err);
-                    // Nếu file này lỗi, cập nhật trạng thái isError = true để UI chuyển màu đỏ
-                    setDocuments(prev => prev.map(d => 
-                        d.id === tempId ? { ...d, isUploading: false, isError: true } : d
-                    )); 
+                    console.error(`Lỗi tải lên file ${item.file?.name}:`, err);
+                    setDocuments(prev => prev.map(d => d.id === tempId ? { ...d, isUploading: false, isError: true } : d)); 
                 }
             })
         );
@@ -105,7 +114,7 @@ export const useDocuments = (interactionId) => {
 
     const readDocuments = useCallback(async () => {
         if (!interactionId) return;
-        setIsLoading(true); // Nhớ bật loading
+        setIsLoading(true);
         try {
             const data = await api.readDocuments(interactionId);
             setDocuments(data);
@@ -117,43 +126,25 @@ export const useDocuments = (interactionId) => {
     }, [interactionId]);
 
     useEffect(() => { 
-        // Dọn dẹp danh sách cũ ngay lập tức khi ID thay đổi để tránh hiển thị nhầm
         setDocuments([]); 
         setSelectedDocIds([]);
-        
-        if (interactionId) {
-            readDocuments(); 
-        }
+        if (interactionId) readDocuments(); 
     }, [interactionId, readDocuments]);
 
-    // CHỈNH SỬA: Hàm xóa file hoàn chỉnh
     const deleteDocument = async (id) => {
         try {
-            // 1. Cập nhật UI ngay lập tức (xóa khỏi danh sách)
             setDocuments((prev) => prev.filter(doc => doc.id !== id));
-            
-            // 2. Nếu file này đang được tích chọn để chat, thì bỏ chọn luôn
             setSelectedDocIds((prev) => prev.filter(docId => docId !== id));
-
-            // 3. Gọi API để xóa dưới database
             await api.deleteDocument(id);
         } catch (err) {
             console.error("Lỗi khi xóa tài liệu:", err);
-            // Nếu gọi API lỗi, tự động tải lại danh sách file cho chắc ăn
             readDocuments();
         }
     };
 
     return { 
-        documents, 
-        selectedDocIds, 
-        editingID, 
-        documentName, 
-        setDocumentName, 
+        documents, selectedDocIds, editingID, documentName, setDocumentName, 
         handleDocCheck: (id) => setSelectedDocIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]),
-        handleStartEdit, 
-        updateDocument, 
-        uploadMultipleFiles, 
-        deleteDocument // Đã thay thế hàm gọi API trực tiếp bằng hàm tự viết ở trên
+        handleStartEdit, updateDocument, uploadMultipleFiles, deleteDocument
     };
 };

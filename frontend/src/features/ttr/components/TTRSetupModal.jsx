@@ -13,18 +13,21 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit, managerError, clearMa
   const [content, setContent] = useState('');
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
-  const [subject, setSubject] = useState('MATHS'); // [MỚI] State môn học mặc định Toán
+  const [subject, setSubject] = useState('MATHS'); 
+  
+  // 🎯 Mặc định là thấp nhất hết
   const [mode, setMode] = useState('normal'); 
   const [difficulty, setDifficulty] = useState('easy'); 
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(5); // Giảm số câu để AI dễ xử lý hơn
 
-  // Reset form khi mở lại Modal
   useEffect(() => { 
     if (isOpen) { 
       setContent(''); 
       setSelectedPrompts([]); 
       setErrorMsg(''); 
       setSubject('MATHS');
+      setMode('normal');
+      setDifficulty('easy');
     } 
   }, [isOpen]);
 
@@ -39,39 +42,51 @@ const handleSubmit = (e) => {
 
     const finalContent = [content.trim(), ...selectedPrompts].filter(Boolean).join('\n\n');
     
-    // Cấu hình linh hoạt mọi độ khó
+    // Default cho easy
     let minBlank = 1; let maxBlank = 2;
-    if (difficulty === 'medium') { minBlank = 3; maxBlank = 4; }
-    if (difficulty === 'hard') { minBlank = 5; maxBlank = 6; }
+    if (difficulty === 'medium') { minBlank = 2; maxBlank = 3; }
+    if (difficulty === 'hard') { minBlank = 3; maxBlank = 4; }
 
     const isEnglish = subject === 'ENGLISH';
 
-    const finalPrompt = isEnglish ? `
-      Task: Create exactly ${questionCount} Gap Fill sentences about "${finalContent}".
-
-      STRICT RULES (SYSTEM WILL CRASH IF YOU DISOBEY):
-      1. Each sentence MUST contain ${minBlank} to ${maxBlank} "[BLANK]" placeholders.
-      2. KEEP the exact string "[BLANK]". DO NOT fill in the answers. DO NOT use underscores.
-      3. DO NOT number the sentences (no 1., 2.). 
-      4. DO NOT write any introduction or greetings.
-      5. Output one sentence per line.
-
-      Correct Example format:
-      The [BLANK] is running across the [BLANK].
-      I want to pet a [BLANK] because it is very cute.
-          ` : `
-      Nhiệm vụ: Tạo đúng ${questionCount} câu hỏi điền từ (Gap Fill) chủ đề "${finalContent}".
-
-      QUY ĐỊNH BẮT BUỘC (HỆ THỐNG SẼ LỖI NẾU LÀM SAI):
-      1. Mỗi câu PHẢI chứa từ ${minBlank} đến ${maxBlank} chữ "[BLANK]".
-      2. GIỮ NGUYÊN chữ "[BLANK]" trong câu. TUYỆT ĐỐI KHÔNG điền đáp án.
-      3. KHÔNG đánh số thứ tự (không dùng 1. 2.). KHÔNG có câu chào hỏi hay mở bài.
-      4. Mỗi câu nằm trên 1 dòng.
-
-      Ví dụ đúng định dạng:
-      Con [BLANK] là loài động vật sống ở [BLANK].
-      Bầu trời màu [BLANK] và có những đám mây [BLANK].
-    `;
+    // 🎯 PROMPT MỚI: Ép AI trả về cấu trúc khớp 100% với GapFillSchema của Backend
+    const finalPrompt = isEnglish 
+      ? `
+        Create ${questionCount} gap-fill sentences about "${finalContent}".
+        Return ONLY a raw JSON object string. NO markdown, NO conversational text.
+        Structure:
+        {
+          "items": [
+            {
+              "text": "Sentence using [BLANK] as placeholder",
+              "corrects": ["answer1", "answer2"],
+              "distractors": ["wrong1", "wrong2"]
+            }
+          ]
+        }
+        RULES:
+        1. Use [BLANK] as the placeholder. 
+        2. 'corrects' must be a list of strings [ "answer" ].
+        3. 'distractors' must be a list of strings [ "wrong" ].
+      ` 
+      : `
+        Tạo chính xác ${questionCount} câu điền vào chỗ trống về chủ đề "${finalContent}".
+        Trả về DUY NHẤT một đối tượng JSON thô (raw). KHÔNG dùng markdown. KHÔNG kèm lời thoại.
+        Cấu trúc:
+        {
+          "items": [
+            {
+              "text": "Câu sử dụng [BLANK] làm ký tự đại diện",
+              "corrects": ["đáp_án_1", "đáp_án_2"],
+              "distractors": ["từ_sai_1", "từ_sai_2"]
+            }
+          ]
+        }
+        QUY TẮC:
+        1. Sử dụng [BLANK] làm ký tự đại diện cho chỗ trống.
+        2. 'corrects' là danh sách chuỗi (ví dụ: ["từ"]).
+        3. 'distractors' là danh sách chuỗi các từ sai.
+      `;
 
     console.log("Subject đang gửi đi:", subject);
     onSubmit({ prompt: finalPrompt.trim(), gameMode: mode, subjectType: subject });
