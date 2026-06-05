@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,9 +35,9 @@ from backend.src.RAG.augmentation.formatters.purpose_built.study_assessment impo
 
 
 async def create_study_assessment(
-    user: User, session: AsyncSession
+    user: User, session: AsyncSession, day_overwrite: date | None
 ) -> StudyAssessment | None:
-    today = datetime.now(timezone.utc).date()
+    today = day_overwrite if day_overwrite else datetime.now(timezone.utc).date()
 
     # Checks for last log in before today
     query_last_check_in = (

@@ -1,9 +1,10 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter
 from sqlmodel import Field
 
-from backend.src.core.dependencies import SessionDep, UserDep
+from backend.src.core.dependencies import DayOverwriteDep, SessionDep, UserDep
 from backend.src.exceptions.core import Responses
 from backend.src.models_schema.miscellaneous.enums import AggregateTarget
 from backend.src.models_schema.study_progress.assessment import StudyAssessmentOutput
@@ -25,10 +26,12 @@ router = APIRouter()
 async def create_study_assessment(
     user: UserDep,
     session: SessionDep,
+    day_overwrite: DayOverwriteDep,
 ):
     result = await study_progress.create_study_assessment(
         user,
         session,
+        day_overwrite,
     )
 
     return result
