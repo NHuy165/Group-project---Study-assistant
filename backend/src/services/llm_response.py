@@ -33,7 +33,7 @@ async def create_llm_response(
 ) -> LLMResponse:
     # Gets past conversations
     past_conversations = await read_llm_responses(
-        session, interaction, settings.N_PAST_CONVERSATIONS
+        session, interaction, settings.DEFAULT_N_PAST_CONVERSATIONS
     )
 
     await session.commit()  # Temporary close
