@@ -38,6 +38,4 @@ class DocumentAnalysisParams(AugmentationParams):
 
 class StudyAssessmentParams(BaseModel):
     personal_information: str
-    context_documents: str
-    context_study_activities: str
-    context_conversations: str
+    context_events: str

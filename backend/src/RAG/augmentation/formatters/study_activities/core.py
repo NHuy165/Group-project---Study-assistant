@@ -1,44 +1,21 @@
 from typing import Any, Callable, Iterable
 
-from backend.src.models_schema.activity.exercise_item import ExerciseItem
-from backend.src.models_schema.activity.review_item import ReviewItem
 from backend.src.models_schema.activity.study_activity import StudyActivity
 from backend.src.models_schema.miscellaneous.enums import (
-    ReviewItemContentType,
     StudyActivityFormat,
 )
-
-
-def MCQ_item_formatter(item: ExerciseItem) -> str:
-    return f"""Question: {item.question}
-Choices:
-{"\n".join(item_content.content for item_content in item.contents)}
-Student answer was: {"Correct" if item.user_score > 0 else "Wrong"}
-LLM grader's assessment: {item.explanation}
-"""
-
-
-def open_ended_item_formatter(item: ExerciseItem) -> str:
-    return f"""Question: {item.question}
-Student answer: {item.attempt}
-Student score (graded by the LLM grader): {item.user_score} out of {item.max_score}
-LLM grader's assessment: {item.explanation}
-"""
-
-
-def flashcard_item_formatter(item: ReviewItem) -> str:
-    return f"""
-Flashcard front content: {[item_content.content for item_content in item.contents if item_content.type == ReviewItemContentType.FLASHCARDS_FRONT][0]}
-Flashcard back content: {[item_content.content for item_content in item.contents if item_content.type == ReviewItemContentType.FLASHCARDS_BACK][0]}
-"""
-
-
-def gap_fill_item_formatter(item: ReviewItem) -> str:
-    return f"""
-Gap fill blank-filled text: {[item_content.content for item_content in item.contents if item_content.type == ReviewItemContentType.GAP_FILL_TEXT][0]}
-Gap fill correct answers (in the correct order based on the black-filled text): {" - ".join([item_content.content for item_content in item.contents if item_content.type == ReviewItemContentType.GAP_FILL_CORRECT])}
-Gap fill incorrect answers (surplus distractors): {", ".join([item_content.content for item_content in item.contents if item_content.type == ReviewItemContentType.GAP_FILL_DISTRACTOR])} 
-"""
+from backend.src.RAG.augmentation.formatters.study_activities.flashcard_item import (
+    flashcard_item_formatter,
+)
+from backend.src.RAG.augmentation.formatters.study_activities.gap_fill_item import (
+    gap_fill_item_formatter,
+)
+from backend.src.RAG.augmentation.formatters.study_activities.MCQ_item import (
+    MCQ_item_formatter,
+)
+from backend.src.RAG.augmentation.formatters.study_activities.open_ended_item import (
+    open_ended_item_formatter,
+)
 
 
 def singular_study_activity_formatter(index: int, study_activity: StudyActivity) -> str:
@@ -49,7 +26,8 @@ def singular_study_activity_formatter(index: int, study_activity: StudyActivity)
         StudyActivityFormat.GAP_FILL: gap_fill_item_formatter,
     }
 
-    return f"""Study activity #{index}:
+    return f"""Study activity #{index} (created at {study_activity.created_at}, in interaction #{study_activity.interaction_id}):
+Study activity submission time (only applied to exercises): {study_activity.submitted_at}
 Study activity format: {study_activity.activity_format}
 Study activity subject type: {study_activity.subject_type}
 Study activity contents:

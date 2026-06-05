@@ -4,7 +4,7 @@ from backend.src.models_schema.document.document import Document
 
 
 def singular_document_formatter(index: int, document: Document) -> str:
-    return f"""Document #{index}:
+    return f"""Document #{index} (created at {document.created_at}, in interaction #{document.interaction_id}):
 Document name: {document.name} (provided by the user and therefore subjective)
 Document subject type: {document.subject_type} (provided by the user and therefore subjective)
 Document type: {document.type}
