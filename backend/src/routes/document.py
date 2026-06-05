@@ -83,7 +83,7 @@ async def read_document_complete(
     document_id: int,
 ):
     """
-    Reads all documents in an interaction.
+    Reads a document, together with the document analysis performed by the LLM.
     """
     result = await document.read_document_complete(session, interaction, document_id)
     return result

@@ -8,6 +8,7 @@ from backend.src.models_schema.miscellaneous.utils import beva_forbid_none
 
 if TYPE_CHECKING:
     from backend.src.models_schema.interaction.interaction import Interaction
+    from backend.src.models_schema.study_progress.assessment import StudyAssessment
     from backend.src.models_schema.user.check_in import CheckIn
 
 # ----- BASE ----- #
@@ -76,3 +77,4 @@ class User(UserBase, table=True):
 
     interactions: list["Interaction"] = Relationship(back_populates="user")
     check_ins: list["CheckIn"] = Relationship(back_populates="user")
+    assessments: list["StudyAssessment"] = Relationship(back_populates="user")

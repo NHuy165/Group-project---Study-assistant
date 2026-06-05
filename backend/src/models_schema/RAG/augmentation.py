@@ -7,13 +7,13 @@ class AugmentationParams(BaseModel):
 
 class AnswerGenerationParams(AugmentationParams):
     context_conversations: str
-    context_document: str
+    context_chunks: str
     personal_information: str
 
 
 class StudyActivityParams(AugmentationParams):
     context_conversations: str
-    context_document: str
+    context_chunks: str
     subject_type: str
     json_schema: str
     activity_format: str
@@ -26,7 +26,7 @@ class PromptRewriteParams(AugmentationParams):
 
 class GradingParams(AugmentationParams):
     creation_prompt: str
-    context_document: str
+    context_chunks: str
 
 
 class DocumentAnalysisParams(AugmentationParams):
@@ -34,3 +34,10 @@ class DocumentAnalysisParams(AugmentationParams):
     subject_type: str
     document_type: str
     personal_information: str
+
+
+class StudyAssessmentParams(BaseModel):
+    personal_information: str
+    context_documents: str
+    context_study_activities: str
+    context_conversations: str

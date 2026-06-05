@@ -589,3 +589,9 @@ class GlobalAPI:
         return await cls.models[
             settings.MODEL_IN_USE_GENERATE_DOCUMENT_ANALYSIS
         ].generate_content(prompt, json_required=True)
+
+    @classmethod
+    async def generate_study_assessment(cls, prompt: str) -> str:
+        return await cls.models[
+            settings.MODEL_IN_USE_GENERATE_STUDY_ASSESSMENT
+        ].generate_content(prompt)
