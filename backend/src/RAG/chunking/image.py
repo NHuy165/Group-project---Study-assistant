@@ -1,9 +1,12 @@
 import asyncio
 
 from fastapi import UploadFile
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.ai_api import GlobalAPI
+from backend.src.core.config import settings
+from backend.src.exceptions.core import ExceptionLLMError_502
 from backend.src.models_schema.document.document import Document
 from backend.src.models_schema.document.document_analysis import DocumentAnalysis
 from backend.src.models_schema.document.document_chunk import DocumentChunk
@@ -64,10 +67,26 @@ class ImageExtractor(DocumentExtractor):
             personal_information=user.description,
         )
         final_prompt = document_analysis_augmentation(params)
-        analysis_task = GlobalAPI.generate_document_analysis(final_prompt)
+        
+        async def perform_analysis() -> DocumentAnalysis:
+            i_retry = 0
+            while True:
+                analysis = await GlobalAPI.generate_document_analysis(final_prompt)
 
+                try:
+                    document_analysis = save_document_analysis(session, analysis)
+                    return document_analysis
+                except ValidationError as e:
+                    i_retry += 1
+                    if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
+                        raise ExceptionLLMError_502(
+                            f"Incorrect content format. Details: {e}"
+                        )
+                        
+        analysis_task = perform_analysis()
+                        
         # Calls LLM
-        vector, analysis = await asyncio.gather(embed_task, analysis_task)
+        vector, document_analysis = await asyncio.gather(embed_task, analysis_task)
 
         # Saves the vector
         prepared_chunk = DocumentChunk(
@@ -78,8 +97,6 @@ class ImageExtractor(DocumentExtractor):
         session.add(prepared_chunk)
 
         # Saves the analysis
-        document_analysis = save_document_analysis(session, analysis)
-
         document.document_analysis = document_analysis
 
         return document_analysis
