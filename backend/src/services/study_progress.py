@@ -9,6 +9,7 @@ from sqlmodel.sql.expression import Select
 from backend.src.core.ai_api import GlobalAPI
 from backend.src.core.config import settings
 from backend.src.core.dependencies import Interaction, User
+from backend.src.exceptions.core import ExceptionNotFound_404
 from backend.src.models_schema.activity.exercise_item import ExerciseItem
 from backend.src.models_schema.activity.review_item import ReviewItem
 from backend.src.models_schema.activity.study_activity import StudyActivity
@@ -295,7 +296,6 @@ async def get_study_progress(
 
     return result
 
-
 async def read_latest_study_assessment(
     user: User, session: AsyncSession
 ) -> StudyAssessment | None:
@@ -308,6 +308,25 @@ async def read_latest_study_assessment(
     result = (await session.execute(query)).scalars().first()
     return result
 
+async def read_study_assessment_by_date(
+    user: User, session: AsyncSession, specific_date: date
+) -> StudyAssessment:
+    query = (
+        select(StudyAssessment)
+        .where(StudyAssessment.user_id == user.id, StudyAssessment.assessment_of == specific_date)
+    )
+    result = (await session.execute(query)).scalars().first()
+    
+    if result is None:
+        raise ExceptionNotFound_404(
+            "StudyAssessment",
+            {
+                "user_id": user.id,
+                "assessment_of": str(specific_date),
+            },
+        )
+        
+    return result
 
 async def read_study_assessments(
     user: User, session: AsyncSession, offset: int | None, limit: int | None
