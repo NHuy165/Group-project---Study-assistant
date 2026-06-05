@@ -152,11 +152,11 @@ const FlashcardGenerator = ({
                 </div>
             )}
 
-            <div className="mb-8">
+            <div className="mb-4">
                 {createMode === 'ai' ? (
                     <>
                         <textarea
-                            className={`h-44 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.2rem] leading-relaxed outline-none transition-all custom-scrollbar ${
+                            className={`h-36 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.2rem] leading-relaxed outline-none transition-all custom-scrollbar ${
                                 isNight
                                     ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400'
                                     : 'border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:border-blue-500'
@@ -167,7 +167,7 @@ const FlashcardGenerator = ({
                             disabled={isCreatingWithAI}
                         />
 
-                        <div className="mt-5 flex flex-wrap gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2">
                             {SUGGESTED_PROMPTS.map((sample) => {
                                 const isSelected = selectedSamples.includes(sample);
 
@@ -217,7 +217,7 @@ const FlashcardGenerator = ({
                 )}
             </div>
 
-            <div className="mb-10 flex flex-col gap-6 md:flex-row">
+            <div className="mb-5 flex flex-col gap-4 md:flex-row">
                 <div className={`flex-1 rounded-3xl border-2 p-5 ${isNight ? 'border-gray-700 bg-gray-900/50' : 'border-gray-100 bg-gray-50'}`}>
                     <h4 className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-widest opacity-70">
                         📚 Chọn môn học:

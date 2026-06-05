@@ -69,7 +69,7 @@ export const getStudentAssessment = async () => {
         // const response = await axiosClient.get('/student/assessment');
         const response = {
             id: 1,
-            data: "No evaluation",
+            data: "No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation ",
         }
         // backend is expected to return a plain text string, but be tolerant
         const payload = response.data;
