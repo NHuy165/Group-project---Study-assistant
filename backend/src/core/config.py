@@ -48,7 +48,6 @@ class Settings(BaseSettings):
     EMBED_MODEL_GOOGLE: str
     VISION_MODEL_GOOGLE: str
     ANSWER_MODEL_GOOGLE: str
-    N_API_CALL_RETRIES: int
 
     # ** Ollama ** #
     OLLAMA_HOST: str
@@ -65,15 +64,16 @@ class Settings(BaseSettings):
     DEFAULT_CHUNK_OVERLAP: int
     DEFAULT_EMBED_DIMENSIONALITY_GOOGLE_OLLAMA: int
     DEFAULT_EMBED_DIMENSIONALITY_CLOUDFLARE: int
-    N_CHUNKS_RETRIEVED: int
-    N_PAST_CONVERSATIONS: int
-    N_CHUNKS_WINDOW: int
+    DEFAULT_N_CHUNKS_RETRIEVED: int
+    DEFAULT_N_PAST_CONVERSATIONS: int
+    DEFAULT_N_CHUNKS_WINDOW: int
+    DEFAULT_N_API_CALL_RETRIES: int
 
     # === Application Related === #
 
     # ** Study Activity ** #
     DEFAULT_EXERCISE_TOTAL_SCORE: float
-    N_GENERATION_RETRIES: int
+    DEFAULT_N_GENERATION_RETRIES: int
 
     # ** Study Assessment ** #
     DEFAULT_N_DOCUMENTS_FETCHED: int

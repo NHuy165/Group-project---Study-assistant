@@ -242,7 +242,7 @@ async def create_study_activity(
 
     # Gets past conversations
     past_conversations = await read_llm_responses(
-        session, interaction, settings.N_PAST_CONVERSATIONS
+        session, interaction, settings.DEFAULT_N_PAST_CONVERSATIONS
     )
     formatted_past_conversations = conversations_formatter(past_conversations)
 
@@ -318,7 +318,7 @@ async def create_study_activity(
 
         except (ExceptionLLMError_502, ValidationError) as e:
             i_retry += 1
-            if i_retry >= settings.N_GENERATION_RETRIES:
+            if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
                 if isinstance(e, ExceptionLLMError_502):
                     raise
                 else:
@@ -828,7 +828,7 @@ async def submit_exercise_activity(
         # Catches errors, if retry limit exceeded, throws a 502
         except (ExceptionLLMError_502, ValidationError) as e:
             i_retry += 1
-            if i_retry >= settings.N_GENERATION_RETRIES:
+            if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
                 if isinstance(e, ExceptionLLMError_502):
                     raise
                 else:

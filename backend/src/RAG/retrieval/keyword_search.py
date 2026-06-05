@@ -20,7 +20,7 @@ async def keyword_search(
         .join(Document)
         .where(Document.interaction_id == interaction.id)
         .order_by(col(DocumentChunk.content_original).op("<->")(raw_prompt))
-        .limit(settings.N_CHUNKS_RETRIEVED * 2)
+        .limit(settings.DEFAULT_N_CHUNKS_RETRIEVED * 2)
     )
 
     if document_id:
