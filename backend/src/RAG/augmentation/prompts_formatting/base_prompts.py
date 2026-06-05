@@ -196,7 +196,7 @@ This section provides the creation prompt that the student used to CREATE the qu
 {creation_prompt}
 
 === PROVIDED CONTEXT ===
-{context_document}
+{context_chunks}
 """
 
 MCQ_GRADING_BASE_PROMPT = """=== PURPOSE AND SCOPE ===
@@ -273,7 +273,7 @@ This section provides the creation prompt that the student used to CREATE the qu
 {creation_prompt}
 
 === PROVIDED CONTEXT ===
-{context_document}
+{context_chunks}
 """
 
 DOCUMENT_ANALYSIS_BASE_PROMPT = """=== PURPOSE AND SCOPE ===
