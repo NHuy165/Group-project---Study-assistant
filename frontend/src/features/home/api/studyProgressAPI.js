@@ -63,26 +63,23 @@ export const fetchTotalExercisesCount = async () => {
     return await getStudyProgress('COUNT_ITEM', payload);
 };
 
-// Lấy đánh giá học sinh
-export const getStudentAssessment = async () => {
-    try {
-        // const response = await axiosClient.get('/student/assessment');
-        const response = {
-            id: 1,
-            data: "No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation No evaluation ",
-        }
-        // backend is expected to return a plain text string, but be tolerant
-        const payload = response.data;
-        if (typeof payload === 'string') return payload;
-        // common alternative shapes
-        if (payload && typeof payload === 'object') {
-            if (typeof payload.text === 'string') return payload.text;
-            if (typeof payload.message === 'string') return payload.message;
-        }
-        // fallback to JSON string
-        return JSON.stringify(payload);
-    } catch (err) {
-        console.error('Error fetching student assessment:', err);
-        throw err;
-    }
+// Tạo đánh giá học sinh
+export const createStudentAssessment = async () => {
+    const response = await axiosClient.post('/study-progress/study-assessment');
+    return response.data
+}
+
+// Lấy đánh giá học sinh mới nhất
+export const readLatestStudentAssessment = async () => {
+    const response = await axiosClient.get('/study-progress/study-assessment/latest');
+    return response.data
+}
+
+// Lấy đánh giá học sinh theo điều kiện
+export const readStudentAssessment = async (limit, offset) => {
+    const response = await axiosClient.get('/study-progress/study-assessment', {
+        params: {limit: limit,
+                offset: offset}
+    });
+    return response.data
 }
