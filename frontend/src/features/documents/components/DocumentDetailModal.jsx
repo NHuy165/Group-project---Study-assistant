@@ -210,10 +210,42 @@ export const DocumentDetailModal = ({
                                 {/* 🎯 GỌI HÀM TẠO BÀI TẬP Ở ĐÂY */}
                                 <button
                                   onClick={() => {
-                                    onClose(); 
+                                    onClose();
                                     if (onAutoGenerate) {
-                                      // 🎯 Gắn thêm document.id vào cuối
-                                      onAutoGenerate(item.activity_format, item.prompt, item.subject_type || document.subject_type, document.id);
+                                      const subjectType = item.subject_type || document.subject_type || 'MATHS';
+
+                                      if (item.activity_format === 'GAP_FILL') {
+                                        // 🎯 Build prompt TTR chuẩn: 5-10 câu, 1-2 ô trống/câu, mode normal (mặc định)
+                                        const questionCount = 8; // giữa 5-10
+                                        const ttrPrompt = `
+Create exactly ${questionCount} gap-fill (cloze) problems about the following topic: "${item.prompt}".
+
+Return ONLY a raw JSON object. No markdown, no code blocks, no explanation — just the JSON.
+
+Required JSON structure:
+{
+  "activity_items": [
+    {
+      "text": "Sentence with $!BLANK!$ placeholder",
+      "corrects": ["correct_word_1"],
+      "distractors": ["wrong1", "wrong2"]
+    }
+  ]
+}
+
+STRICT RULES:
+1. The ONLY blank placeholder allowed is $!BLANK!$ — do NOT use [BLANK], ___, or any other format.
+2. Each "text" must contain BETWEEN 1 AND 2 blanks (i.e. 1–2 occurrences of $!BLANK!$). "corrects" MUST EXACTLY MATCH the number of $!BLANK!$ in "text", in order.
+3. Each "text" should be 2–3 sentences max (4 sentences absolute maximum).
+4. "distractors" should be 2 words that are semantically similar to the correct answers but wrong.
+5. Blanked-out words must be key concepts — important terms the student needs to memorize.
+6. ${subjectType === 'ENGLISH' ? 'Write ALL content in English.' : subjectType === 'VIETNAMESE' ? 'Viết toàn bộ nội dung bằng tiếng Việt.' : 'Viết toàn bộ nội dung bằng tiếng Việt, dùng thuật ngữ toán học chuẩn.'}
+                                        `.trim();
+
+                                        onAutoGenerate('GAP_FILL', ttrPrompt, subjectType, document.id);
+                                      } else {
+                                        onAutoGenerate(item.activity_format, item.prompt, subjectType, document.id);
+                                      }
                                     }
                                   }}
                                   className="w-full mt-4 text-center py-2.5 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all border-none cursor-pointer shadow-md"

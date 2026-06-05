@@ -49,44 +49,33 @@ const handleSubmit = (e) => {
 
     const isEnglish = subject === 'ENGLISH';
 
-    // 🎯 PROMPT MỚI: Ép AI trả về cấu trúc khớp 100% với GapFillSchema của Backend
-    const finalPrompt = isEnglish 
-      ? `
-        Create ${questionCount} gap-fill sentences about "${finalContent}".
-        Return ONLY a raw JSON object string. NO markdown, NO conversational text.
-        Structure:
-        {
-          "items": [
-            {
-              "text": "Sentence using [BLANK] as placeholder",
-              "corrects": ["answer1", "answer2"],
-              "distractors": ["wrong1", "wrong2"]
-            }
-          ]
-        }
-        RULES:
-        1. Use [BLANK] as the placeholder. 
-        2. 'corrects' must be a list of strings [ "answer" ].
-        3. 'distractors' must be a list of strings [ "wrong" ].
-      ` 
-      : `
-        Tạo chính xác ${questionCount} câu điền vào chỗ trống về chủ đề "${finalContent}".
-        Trả về DUY NHẤT một đối tượng JSON thô (raw). KHÔNG dùng markdown. KHÔNG kèm lời thoại.
-        Cấu trúc:
-        {
-          "items": [
-            {
-              "text": "Câu sử dụng [BLANK] làm ký tự đại diện",
-              "corrects": ["đáp_án_1", "đáp_án_2"],
-              "distractors": ["từ_sai_1", "từ_sai_2"]
-            }
-          ]
-        }
-        QUY TẮC:
-        1. Sử dụng [BLANK] làm ký tự đại diện cho chỗ trống.
-        2. 'corrects' là danh sách chuỗi (ví dụ: ["từ"]).
-        3. 'distractors' là danh sách chuỗi các từ sai.
-      `;
+    // Số distractor tăng theo độ khó
+    const distractorCount = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
+
+    const finalPrompt = `
+Create exactly ${questionCount} gap-fill (cloze) problems about the following topic: "${finalContent}".
+
+Return ONLY a raw JSON object. No markdown, no code blocks, no explanation — just the JSON.
+
+Required JSON structure:
+{
+  "activity_items": [
+    {
+      "text": "Sentence with $!BLANK!$ placeholder",
+      "corrects": ["correct_word_1"],
+      "distractors": ["wrong1", "wrong2"]
+    }
+  ]
+}
+
+STRICT RULES:
+1. The ONLY blank placeholder allowed is $!BLANK!$ — do NOT use [BLANK], ___, or any other format.
+2. Each "text" should be 2–3 sentences max (4 sentences absolute maximum).
+3. Each "text" must contain BETWEEN ${minBlank} AND ${maxBlank} blanks (i.e. ${minBlank}–${maxBlank} occurrences of $!BLANK!$). "corrects" must contain the words that fill those blanks IN ORDER. The number of words in "corrects" MUST EXACTLY MATCH the number of $!BLANK!$ in "text".
+4. "distractors" should be ${distractorCount} words that are semantically similar to the correct answers but wrong.
+5. Blanked-out words must be key concepts — important terms the student needs to memorize.
+6. ${subject === 'ENGLISH' ? 'Write ALL content in English.' : subject === 'VIETNAMESE' ? 'Viết toàn bộ nội dung bằng tiếng Việt.' : 'Viết toàn bộ nội dung bằng tiếng Việt, dùng thuật ngữ toán học chuẩn.'}
+    `;
 
     console.log("Subject đang gửi đi:", subject);
     onSubmit({ prompt: finalPrompt.trim(), gameMode: mode, subjectType: subject });
