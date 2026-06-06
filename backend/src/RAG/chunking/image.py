@@ -1,12 +1,9 @@
 import asyncio
 
 from fastapi import UploadFile
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.ai_api import GlobalAPI
-from backend.src.core.config import settings
-from backend.src.exceptions.core import ExceptionLLMError_502
 from backend.src.models_schema.document.document import Document
 from backend.src.models_schema.document.document_analysis import DocumentAnalysis
 from backend.src.models_schema.document.document_chunk import DocumentChunk
@@ -19,7 +16,6 @@ from backend.src.RAG.augmentation.core.specific_augmentations import (
 from backend.src.RAG.chunking.base import (
     DocumentExtractor,
     analysis_task_generator,
-    save_document_analysis,
 )
 
 
@@ -72,7 +68,7 @@ class ImageExtractor(DocumentExtractor):
         )
         final_prompt = document_analysis_augmentation(params)
 
-        analysis_task = analysis_task_generator(session, final_prompt)
+        analysis_task = analysis_task_generator(session, final_prompt, document)
 
         # Calls LLM
         vector, document_analysis = await asyncio.gather(embed_task, analysis_task)

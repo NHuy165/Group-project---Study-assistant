@@ -49,11 +49,16 @@ class DocumentExtractor(ABC):
 def save_document_analysis(
     session: AsyncSession,
     analysis: str,
+    document: Document,
 ) -> DocumentAnalysis:
     """
     Validates and saves the document analysis.
     """
     validated_analysis = DocumentAnalysisSchema.model_validate_json(analysis)
+
+    # Automatic subject type filling
+    if validated_analysis.subject_type_overwrite and document.subject_type is None:
+        document.subject_type = validated_analysis.subject_type
 
     material_recommendations = []
     for material_recommendation_schema in validated_analysis.material_recommendations:
@@ -83,7 +88,9 @@ def save_document_analysis(
 
 
 def analysis_task_generator(
-    session: AsyncSession, final_prompt: str
+    session: AsyncSession,
+    final_prompt: str,
+    document: Document,
 ) -> CoroutineType[Any, Any, DocumentAnalysis]:
     """
     Generates an "analysis_task" (a Couroutine), ready to be awaited.
@@ -97,7 +104,7 @@ def analysis_task_generator(
             )
 
             try:
-                document_analysis = save_document_analysis(session, analysis)
+                document_analysis = save_document_analysis(session, analysis, document)
                 return document_analysis
             except ValidationError as e:
                 i_retry += 1

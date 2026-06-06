@@ -31,7 +31,7 @@ class GradingParams(AugmentationParams):
 
 class DocumentAnalysisParams(AugmentationParams):
     name: str
-    subject_type: str
+    subject_type: str | None
     document_type: str
     personal_information: str
 

@@ -22,7 +22,6 @@ from backend.src.RAG.augmentation.core.specific_augmentations import (
 from backend.src.RAG.chunking.base import (
     DocumentExtractor,
     analysis_task_generator,
-    save_document_analysis,
     smart_splitter,
 )
 
@@ -33,6 +32,8 @@ class TextExtractor(DocumentExtractor):
         # === Content type === #
         if file.content_type is None:
             return False
+
+        print(file.content_type)
 
         is_text = (
             file.content_type.startswith("text/")
@@ -47,11 +48,17 @@ class TextExtractor(DocumentExtractor):
         header = file.file.read(512)
         file.file.seek(0)
 
+        print(header)
+
         if not header:
             return False
 
+        if b"\x00" in header:
+            return False
+
         try:
-            header.decode("utf-8")
+            test_chunk = header[:-4] if len(header) > 4 else header
+            test_chunk.decode("utf-8")
             return True
 
         except UnicodeDecodeError:
@@ -113,7 +120,7 @@ class TextExtractor(DocumentExtractor):
             )
             final_prompt = document_analysis_augmentation(params)
 
-            analysis_task = analysis_task_generator(session, final_prompt)
+            analysis_task = analysis_task_generator(session, final_prompt, document)
 
             # Calls LLM
             vectors, document_analysis = await asyncio.gather(embed_task, analysis_task)
