@@ -1,35 +1,57 @@
 import { useState, useEffect } from 'react';
-import { createStudentAssessment, readLatestStudentAssessment, readStudentAssessment } from '../api/studyProgressAPI';
+import { 
+    createStudentAssessment, 
+    readLatestStudentAssessment, 
+    readStudentAssessment,
+    readStudentAssessmentByDay 
+} from '../api/studyProgressAPI';
 
 export const useEvaluation = (autoFetch = false) => {
-    const [assessment, setAssessment] = useState(null);
-    const [history, setHistory] = useState([]);
-    const [totalHistory, setTotalHistory] = useState(0); // Để tính toán tổng số trang
+    const [todayAssessment, setTodayAssessment] = useState(null);
+    const [historyList, setHistoryList] = useState([]);
+    const [totalHistory, setTotalHistory] = useState(0);
+    const [detailAssessment, setDetailAssessment] = useState(null);
+    
     const [isLoading, setIsLoading] = useState(false);
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
+    
     const [error, setError] = useState(null);
+    const [detailError, setDetailError] = useState(null);
 
-    // 1. Tự động gọi hoặc kích hoạt kiểm tra / tạo đánh giá khi vào Homepage
+    // CHỈNH SỬA BÓC TÁCH: Nhận diện chính xác Mảng chứa Object từ API filter theo ngày đổ về
+    const normalizeText = (data) => {
+        if (data == null) return '';
+        if (typeof data === 'string') return data;
+        
+        // 1. Nếu là Mảng (Do Backend trả về mảng phần tử khi filter theo ?date=)
+        if (Array.isArray(data)) {
+            if (data.length === 0) return '';
+            const firstItem = data[0];
+            return firstItem.content || firstItem.assessment || JSON.stringify(firstItem);
+        }
+        
+        // 2. Nếu là Đối tượng Single Object
+        if (typeof data === 'object') {
+            return data.content || data.assessment || JSON.stringify(data);
+        }
+        return String(data);
+    };
+
+    // Tác vụ 1: Lấy hoặc tạo đánh giá hôm nay
     const fetchAssessment = async () => {
         setIsLoading(true);
         setError(null);
         try {
             const data = await createStudentAssessment();
-            // Nếu BE trả về null (vì hôm qua đã có đánh giá rồi), ta chủ động đi tìm cái latest cũ
             if (!data) {
                 const latestData = await readLatestStudentAssessment();
-                const text = latestData == null ? '' : (typeof latestData === 'string' ? latestData : JSON.stringify(latestData));
-                setAssessment(text);
-                return text;
+                setTodayAssessment(normalizeText(latestData));
+                return;
             }
-            
-            const text = typeof data === 'string' ? data : JSON.stringify(data);
-            setAssessment(text);
-            return text;
+            setTodayAssessment(normalizeText(data));
         } catch (err) {
-            console.error('Lỗi khi tạo/load đánh giá học sinh:', err);
+            console.error('Lỗi khi load đánh giá hôm nay:', err);
             setError(err);
-            setAssessment(null);
-            return null;
         } finally {
             setIsLoading(false);
         }
@@ -41,59 +63,71 @@ export const useEvaluation = (autoFetch = false) => {
         }
     }, [autoFetch]);
 
-    // 2. Lấy đánh giá gần nhất (Phòng trường hợp UI cần gọi riêng)
-    const readLatestAssessment = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await readLatestStudentAssessment();
-            const text = data == null ? 'Chưa có đánh giá nào trước đây.' : (typeof data === 'string' ? data : JSON.stringify(data));
-            setAssessment(text);
-            return text;
-        } catch (err) {
-            console.error('Lỗi khi load đánh giá mới nhất:', err);
-            setError(err);
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // 3. Lấy lịch sử đánh giá phân trang (mỗi lần 10 items)
-    const readHistory = async (limit = 10, offset = 0) => {
+    // Tác vụ 2: Tải danh sách lịch sử nhật ký (Mảng danh sách lớn)
+    const readHistory = async (limit, offset) => {
         setIsLoading(true);
         setError(null);
         try {
             const response = await readStudentAssessment(limit, offset);
-            
-            // Tùy theo cấu trúc API back-end trả về:
-            // Case A: Nếu BE trả về trực tiếp mảng: [...đánh giá]
             if (Array.isArray(response)) {
-                setHistory(response);
-                // Nếu BE không trả về total, tạm thời tăng dần hoặc xử lý render nút Next/Prev dựa vào length
-                setTotalHistory(offset + response.length + (response.length === limit ? 1 : 0));
-            } 
-            // Case B: Nếu BE trả dạng object chuẩn: { data: [...], total: 35 }
-            else if (response && Array.isArray(response.data)) {
-                setHistory(response.data);
-                setTotalHistory(response.total || 0);
+                setHistoryList(response);
+                setTotalHistory(response.length);
+            } else if (response && Array.isArray(response.data)) {
+                setHistoryList(response.data);
+                setTotalHistory(response.total || response.data.length);
+            } else if (response) {
+                const possibleArray = response.results || response.items || [];
+                setHistoryList(Array.isArray(possibleArray) ? possibleArray : [response]);
+                setTotalHistory(1);
             }
         } catch (err) {
-            console.error('Lỗi khi tải lịch sử đánh giá:', err);
+            console.error('Lỗi khi tải lịch sử:', err);
             setError(err);
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Tác vụ 3: Truy vấn chi tiết theo ngày
+    const readDetailByDay = async (dateStr) => {
+        if (!dateStr) {
+            setDetailError(new Error("Không tìm thấy thông tin ngày đánh giá hợp lệ."));
+            return;
+        }
+        setIsDetailLoading(true);
+        setDetailError(null);
+        setDetailAssessment(null); // Clear data cũ
+        try {
+            const data = await readStudentAssessmentByDay(dateStr);
+            const parsedText = normalizeText(data);
+            
+            // Kiểm tra chuỗi text sau chuẩn hóa có thực sự tồn tại nội dung không
+            if (!parsedText || parsedText.trim() === "" || parsedText === "undefined") {
+                setDetailError(new Error("Không có dữ liệu"));
+            } else {
+                setDetailAssessment(parsedText); // Lưu chuỗi text Markdown sạch vào State
+            }
+        } catch (err) {
+            console.error('Lỗi khi tải chi tiết theo ngày:', err);
+            setDetailError(err);
+        } finally {
+            setIsDetailLoading(false);
+        }
+    };
+
     return { 
-        assessment, 
-        history, 
+        todayAssessment, 
+        historyList, 
         totalHistory, 
+        detailAssessment,
+        setDetailAssessment,
         isLoading, 
+        isDetailLoading,
         error, 
+        detailError,
+        setDetailError,
         fetchAssessment, 
-        readLatestAssessment, 
-        readHistory 
+        readHistory,
+        readDetailByDay 
     };
 };

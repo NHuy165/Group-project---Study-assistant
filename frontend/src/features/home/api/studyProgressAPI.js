@@ -66,20 +66,37 @@ export const fetchTotalExercisesCount = async () => {
 // Tạo đánh giá học sinh
 export const createStudentAssessment = async () => {
     const response = await axiosClient.post('/study-progress/study-assessment');
-    return response.data
-}
+    return response.data;
+};
 
 // Lấy đánh giá học sinh mới nhất
 export const readLatestStudentAssessment = async () => {
     const response = await axiosClient.get('/study-progress/study-assessment/latest');
-    return response.data
-}
+    return response.data;
+};
 
-// Lấy đánh giá học sinh theo điều kiện
+// Lấy danh sách đánh giá (Chỉ truyền limit/offset khi có giá trị thực tế, không truyền bừa số 0)
 export const readStudentAssessment = async (limit, offset) => {
+    const config = {};
+    
+    // Tạo đối tượng params động
+    const params = {};
+    if (typeof limit === 'number' && limit > 0) params.limit = limit;
+    if (typeof offset === 'number' && offset > 0) params.offset = offset;
+    
+    // Nếu có tham số cấu hình thì mới đính kèm vào request
+    if (Object.keys(params).length > 0) {
+        config.params = params;
+    }
+
+    const response = await axiosClient.get('/study-progress/study-assessment/', config);
+    return response.data;
+};
+
+// Lấy chi tiết đánh giá học sinh theo ngày
+export const readStudentAssessmentByDay = async (dateStr) => {
     const response = await axiosClient.get('/study-progress/study-assessment', {
-        params: {limit: limit,
-                offset: offset}
+        params: { date: dateStr }
     });
-    return response.data
-}
+    return response.data;
+};
