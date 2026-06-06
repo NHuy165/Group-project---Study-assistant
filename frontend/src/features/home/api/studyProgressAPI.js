@@ -96,7 +96,7 @@ export const readStudentAssessment = async (limit, offset) => {
 // Lấy chi tiết đánh giá học sinh theo ngày
 export const readStudentAssessmentByDay = async (dateStr) => {
     const response = await axiosClient.get('/study-progress/study-assessment', {
-        params: { date: dateStr }
+        params: { specific_date: dateStr }
     });
     return response.data;
 };

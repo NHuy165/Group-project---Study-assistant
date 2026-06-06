@@ -45,27 +45,25 @@ const EvaluationWindow = ({
   const [activeTab, setActiveTab] = useState('today'); 
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedDateLabel, setSelectedDateLabel] = useState('');
-  const [customDate, setCustomDate] = useState(''); // State chỉ giữ giá trị text của ô input
+  const [customDate, setCustomDate] = useState(''); // State lưu trữ chuỗi text tạm thời của ô nhập ngày
   const ITEMS_PER_PAGE = 10;
 
   const totalPages = Math.ceil(totalHistory / ITEMS_PER_PAGE) || 1;
 
-  // Thực hiện kích hoạt gửi API tìm kiếm thực tế
+  // HÀM CHẶN LỖI 0002: Chỉ khi bấm nút Tìm hoặc gõ Enter mới thực thi gửi API lên Backend
   const executeSearch = (dateVal) => {
     if (!dateVal) return;
     const [year, month, day] = dateVal.split('-');
-    if (!year || !month || !day || year.length < 4) return; // Chặn các năm không hợp lệ kiểu 0002
+    if (!year || !month || !day || year.length < 4) return; // Chặn các năm chưa nhập đủ 4 ký tự
 
     setSelectedDateLabel(`${day}/${month}/${year}`);
     onFetchDetail(dateVal);
   };
 
-  // Chỉ cập nhật text khi học sinh đang gõ, CHƯA kích hoạt gọi API
   const handleCustomDateChange = (e) => {
-    setCustomDate(e.target.value);
+    setCustomDate(e.target.value); // Chỉ cập nhật giá trị text hiển thị, chưa gọi API
   };
 
-  // Hỗ trợ nhấn Enter ngay trên ô nhập để tìm kiếm nhanh
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       executeSearch(customDate);
@@ -102,7 +100,7 @@ const EvaluationWindow = ({
             onResetDetail(); 
             setCustomDate(''); 
             setCurrentPage(1); 
-            onFetchHistory(); 
+            onFetchHistory(ITEMS_PER_PAGE, 0); 
           }}
         >
           Lịch sử ({totalHistory})
@@ -148,7 +146,7 @@ const EvaluationWindow = ({
                   </div>
                 ) : (isDetailLoading || detailAssessment || detailError) ? (
                   
-                  /* MÀN HÌNH XEM CHI TIẾT HOẶC ĐANG TẢI CHI TIẾT (Đã sửa logic rẽ nhánh số 1) */
+                  /* MÀN HÌNH CHI TIẾT (Được tách riêng luồng hiển thị chuẩn chỉnh số 1) */
                   <div className="flex flex-col h-full flex-1 justify-between">
                     <div className="flex flex-col">
                       <button 
@@ -183,9 +181,9 @@ const EvaluationWindow = ({
 
                 ) : (
                   
-                  /* MÀN HÌNH DANH SÁCH CHÍNH (Chỉ hiện khi không xem chi tiết) */
+                  /* MÀN HÌNH DANH SÁCH CHÍNH (Chỉ hiện khi học sinh ở ngoài danh mục gốc) */
                   <div className="flex flex-col flex-1">
-                    {/* Ô Tra cứu ngày có nút bấm chặn lỗi gõ năm */}
+                    {/* Thanh tìm kiếm ngày thủ công độc lập */}
                     <div className="mb-4 bg-white p-3 rounded-xl border border-gray-100 shadow-xs flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">🔍 Tra cứu nhanh theo ngày</label>
                       <div className="flex gap-2">
@@ -206,7 +204,7 @@ const EvaluationWindow = ({
                       </div>
                     </div>
 
-                    {/* Bảng danh sách các ngày đổ từ API */}
+                    {/* Danh sách các ngày nhận từ mảng Backend đổ về */}
                     <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[220px]">
                       <p className="text-[11px] font-bold text-gray-400 px-1 mb-1">Hoặc chọn từ danh sách lịch sử:</p>
                       {historyList.length > 0 ? (
