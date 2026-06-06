@@ -21,6 +21,7 @@ from backend.src.RAG.augmentation.core.specific_augmentations import (
 )
 from backend.src.RAG.chunking.base import (
     DocumentExtractor,
+    analysis_task_generator,
     save_document_analysis,
     smart_splitter,
 )
@@ -111,23 +112,8 @@ class TextExtractor(DocumentExtractor):
                 personal_information=user.description,
             )
             final_prompt = document_analysis_augmentation(params)
-            
-            async def perform_analysis() -> DocumentAnalysis:
-                i_retry = 0
-                while True:
-                    analysis = await GlobalAPI.generate_document_analysis(final_prompt)
 
-                    try:
-                        document_analysis = save_document_analysis(session, analysis)
-                        return document_analysis
-                    except ValidationError as e:
-                        i_retry += 1
-                        if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
-                            raise ExceptionLLMError_502(
-                                f"Incorrect content format. Details: {e}"
-                            )
-                            
-            analysis_task = perform_analysis()
+            analysis_task = analysis_task_generator(session, final_prompt)
 
             # Calls LLM
             vectors, document_analysis = await asyncio.gather(embed_task, analysis_task)

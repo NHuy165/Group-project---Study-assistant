@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import model_validator
-from sqlmodel import SQLModel
+from sqlmodel import Field, SQLModel
 
 from backend.src.exceptions.core import ExceptionLLMError_502
 from backend.src.models_schema.activity.llm_request_json_schema import (
@@ -27,16 +27,8 @@ class StudyActivityValidationBase(SQLModel):
 
 class MCQItemSchema(SQLModel):
     question: str
-    answers: list[str]
-    correct: int
-
-    @model_validator(mode="after")
-    def validate_output(self):
-        if len(self.answers) != 4 or self.correct not in (0, 1, 2, 3):
-            raise ExceptionLLMError_502("Incorrect number of choices.")
-        elif self.correct not in (0, 1, 2, 3):
-            raise ExceptionLLMError_502("Incorrect correct answer indexing.")
-        return self
+    answers: Annotated[list[str], Field(min_length=4, max_length=4)]
+    correct: Annotated[int, Field(ge=0, le=3)]
 
 
 class MCQSchema(StudyActivityValidationBase):
@@ -115,8 +107,15 @@ class OpenEndedGradedItemSchema(GradedItemSchema):
 
 
 class OpenEndedGradedSchema(GradedSchema):
-    grading_input: OpenEndedForGradingSchema
     grading_results: list[OpenEndedGradedItemSchema]
+
+
+class OpenEndedGradedCrossValidation(OpenEndedGradedSchema):
+    """
+    Cross validates the graded results with the inputs.
+    """
+
+    grading_input: OpenEndedForGradingSchema
 
     @model_validator(mode="after")
     def validate_output(self):
@@ -148,8 +147,15 @@ class MCQGradedItemSchema(GradedItemSchema):
 
 
 class MCQGradedSchema(GradedSchema):
-    grading_input: MCQForGradingSchema
     grading_results: list[MCQGradedItemSchema]
+
+
+class MCQGradedCrossValidation(MCQGradedSchema):
+    """
+    Cross validates the graded results with the inputs.
+    """
+
+    grading_input: MCQForGradingSchema
 
     @model_validator(mode="after")
     def validate_output(self):
