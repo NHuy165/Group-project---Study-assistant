@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING, Annotated
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from backend.src.models_schema.activity.study_activity import StudyActivityInput
-from backend.src.models_schema.llm_response.llm_response import LLMResponseInput
 from backend.src.models_schema.miscellaneous.enums import (
     StudyActivityFormat,
     SubjectType,
@@ -123,6 +121,8 @@ class DocumentAnalysisOutput(DocumentAnalysisBase):
 
 
 class DocumentAnalysisSchema(DocumentAnalysisBase):
+    subject_type: SubjectType
+    subject_type_overwrite: bool
     material_recommendations: list[MaterialRecommendationSchema]
     question_recommendations: list[QuestionRecommendationSchema]
 

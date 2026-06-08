@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
-from typing import Annotated, Any, Sequence
+import asyncio
+from datetime import date, datetime, timezone
+from tabnanny import check
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -9,6 +11,7 @@ from sqlmodel.sql.expression import Select
 from backend.src.core.ai_api import GlobalAPI
 from backend.src.core.config import settings
 from backend.src.core.dependencies import Interaction, User
+from backend.src.exceptions.core import ExceptionNotFound_404
 from backend.src.models_schema.activity.exercise_item import ExerciseItem
 from backend.src.models_schema.activity.review_item import ReviewItem
 from backend.src.models_schema.activity.study_activity import StudyActivity
@@ -27,50 +30,14 @@ from backend.src.models_schema.user.check_in import CheckIn
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     study_assessment_augmentation,
 )
-from backend.src.RAG.augmentation.formatters.documents.core import documents_formatter
-from backend.src.RAG.augmentation.formatters.study_activities.core import (
-    study_activities_formatter,
+from backend.src.RAG.augmentation.formatters.purpose_built.study_assessment import (
+    progress_formatter,
 )
-from backend.src.services.llm_response import conversations_formatter
 
 # ----- CREATE ----- #
 
 
-async def create_study_assessment(
-    user: User, session: AsyncSession
-) -> StudyAssessment | None:
-    today = datetime.now(timezone.utc).date()
-
-    # Checks for last log in before today
-    query_last_check_in = (
-        select(CheckIn)
-        .where(CheckIn.user_id == user.id, CheckIn.time < today)
-        .order_by(col(CheckIn.time).desc())
-        .limit(1)
-    )
-    last_check_in = (await session.execute(query_last_check_in)).scalars().first()
-
-    # If user has never logged in
-    if last_check_in is None:
-        return None
-
-    # If user has logged in before
-
-    # If the last date the user logged in before today already has an accessment
-    query_last_study_assessment = select(StudyAssessment).where(
-        StudyAssessment.user_id == user.id,
-        StudyAssessment.assessment_of == last_check_in.time,
-    )
-
-    last_study_assessment = (
-        (await session.execute(query_last_study_assessment)).scalars().first()
-    )
-
-    if last_study_assessment is not None:
-        return None
-
-    # If the last date the user logged in before today does not have an accessment yet, generate an assessment
-
+async def create_study_assessment_prompt(user: User, session, day: date) -> str:
     # === Fetches data === #
 
     # Fetches documents
@@ -79,14 +46,13 @@ async def create_study_assessment(
         .join(Interaction)
         .where(
             Interaction.user_id == user.id,
-            func.cast(Document.created_at, Date) == last_check_in.time,  # type: ignore
+            func.cast(Document.created_at, Date) == day,  # type: ignore
         )
         .order_by(col(Document.created_at).desc())
         .limit(settings.DEFAULT_N_DOCUMENTS_FETCHED)
         .options(selectinload(Document.document_analysis))  # type: ignore
     )
     fetched_documents = (await session.execute(query_fetched_documents)).scalars().all()
-    formatted_documents = documents_formatter(fetched_documents)
 
     # Fetches LLM responses
     query_fetched_llm_responses = (
@@ -94,7 +60,7 @@ async def create_study_assessment(
         .join(Interaction)
         .where(
             Interaction.user_id == user.id,
-            func.cast(col(LLMResponse.created_at), Date) == last_check_in.time,
+            func.cast(col(LLMResponse.created_at), Date) == day,
         )
         .order_by(col(LLMResponse.created_at).desc())
         .limit(settings.DEFAULT_N_LLM_RESPONSES_FETCHED)
@@ -102,7 +68,7 @@ async def create_study_assessment(
     fetched_llm_responses = (
         (await session.execute(query_fetched_llm_responses)).scalars().all()
     )
-    formatted_llm_responses = conversations_formatter(fetched_llm_responses)
+    # formatted_llm_responses = conversations_formatter(fetched_llm_responses)
 
     # Fetches study activities
     query_fetched_study_activities = (
@@ -110,12 +76,15 @@ async def create_study_assessment(
         .join(Interaction)
         .where(
             Interaction.user_id == user.id,
-            func.cast(col(StudyActivity.created_at), Date) == last_check_in.time,
+            func.cast(col(StudyActivity.created_at), Date) == day,
             or_(
                 StudyActivity.activity_type == StudyActivityType.REVIEW,
                 and_(
                     StudyActivity.activity_type == StudyActivityType.EXERCISE,
-                    StudyActivity.is_submitted == True,
+                    or_(
+                        StudyActivity.is_submitted == True,
+                        StudyActivity.is_deleted == False,
+                    ),
                 ),
             ),
         )
@@ -135,34 +104,70 @@ async def create_study_assessment(
     fetched_study_activities = (
         (await session.execute(query_fetched_study_activities)).scalars().all()
     )
-    formatted_study_activities = study_activities_formatter(fetched_study_activities)
 
     # === Augmentation === #
+    all_events = (
+        list(fetched_documents)
+        + list(fetched_llm_responses)
+        + list(fetched_study_activities)
+    )
+    all_events.sort(key=lambda event: event.created_at)
+    formatted_events = progress_formatter(all_events)
 
     params = StudyAssessmentParams(
         personal_information=user.description,
-        context_documents=formatted_documents,
-        context_study_activities=formatted_study_activities,
-        context_conversations=formatted_llm_responses,
+        context_events=formatted_events,
     )
     final_prompt = study_assessment_augmentation(params)
 
-    # === Generation and saving === #
+    return final_prompt
 
-    assessment = await GlobalAPI.generate_study_assessment(final_prompt)
 
-    # Saving response
-    study_assessment = StudyAssessment(
-        assessment_of=last_check_in.time,
-        content=assessment,
-        user=user,
-    )  # type: ignore
+async def create_study_assessment(
+    user: User, session: AsyncSession, day_overwrite: date | None
+) -> StudyAssessment | None:
+    today = day_overwrite if day_overwrite else datetime.now(timezone.utc).date()
 
-    session.add(study_assessment)
+    # Checks check ins without assessment
+    query_last_check_in = (
+        select(CheckIn)
+        .outerjoin(
+            StudyAssessment,
+            col(CheckIn.time) == col(StudyAssessment.assessment_of),
+        )
+        .where(
+            CheckIn.user_id == user.id,
+            CheckIn.time < today,
+            col(StudyAssessment.id).is_(None),
+        )
+        .order_by(col(CheckIn.time).desc())
+    )
+    check_ins_without_assessment = (
+        (await session.execute(query_last_check_in)).scalars().all()
+    )
+
+    # Creates assessments
+    final_prompts = [
+        await create_study_assessment_prompt(user, session, check_in.time)
+        for check_in in check_ins_without_assessment
+    ]
+
+    assessment_tasks = [
+        GlobalAPI.generate_study_assessment(final_prompt)
+        for final_prompt in final_prompts
+    ]
+
+    study_assessment_texts = await asyncio.gather(*assessment_tasks)
+
+    study_assessments = [
+        StudyAssessment(assessment_of=check_in.time, content=text, user=user)  # type: ignore
+        for check_in, text in zip(check_ins_without_assessment, study_assessment_texts)
+    ]
+
+    session.add_all(study_assessments)
     await session.commit()
-    # await session.refresh(llm_response)
 
-    return study_assessment
+    return study_assessments[0] if study_assessments else None
 
 
 # ----- READ ----- #
@@ -307,6 +312,27 @@ async def read_latest_study_assessment(
         .limit(1)
     )
     result = (await session.execute(query)).scalars().first()
+    return result
+
+
+async def read_study_assessment_by_date(
+    user: User, session: AsyncSession, specific_date: date
+) -> StudyAssessment:
+    query = select(StudyAssessment).where(
+        StudyAssessment.user_id == user.id,
+        StudyAssessment.assessment_of == specific_date,
+    )
+    result = (await session.execute(query)).scalars().first()
+
+    if result is None:
+        raise ExceptionNotFound_404(
+            "StudyAssessment",
+            {
+                "user_id": user.id,
+                "assessment_of": str(specific_date),
+            },
+        )
+
     return result
 
 

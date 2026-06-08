@@ -1,10 +1,15 @@
 import asyncio
 
 from fastapi import UploadFile
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.ai_api import GlobalAPI
-from backend.src.exceptions.core import ExceptionRequestValidation_400
+from backend.src.core.config import settings
+from backend.src.exceptions.core import (
+    ExceptionLLMError_502,
+    ExceptionRequestValidation_400,
+)
 from backend.src.models_schema.document.document import Document
 from backend.src.models_schema.document.document_analysis import DocumentAnalysis
 from backend.src.models_schema.document.document_chunk import DocumentChunk
@@ -16,7 +21,7 @@ from backend.src.RAG.augmentation.core.specific_augmentations import (
 )
 from backend.src.RAG.chunking.base import (
     DocumentExtractor,
-    save_document_analysis,
+    analysis_task_generator,
     smart_splitter,
 )
 
@@ -27,6 +32,8 @@ class TextExtractor(DocumentExtractor):
         # === Content type === #
         if file.content_type is None:
             return False
+
+        print(file.content_type)
 
         is_text = (
             file.content_type.startswith("text/")
@@ -41,11 +48,17 @@ class TextExtractor(DocumentExtractor):
         header = file.file.read(512)
         file.file.seek(0)
 
+        print(header)
+
         if not header:
             return False
 
+        if b"\x00" in header:
+            return False
+
         try:
-            header.decode("utf-8")
+            test_chunk = header[:-4] if len(header) > 4 else header
+            test_chunk.decode("utf-8")
             return True
 
         except UnicodeDecodeError:
@@ -106,10 +119,11 @@ class TextExtractor(DocumentExtractor):
                 personal_information=user.description,
             )
             final_prompt = document_analysis_augmentation(params)
-            analysis_task = GlobalAPI.generate_document_analysis(final_prompt)
+
+            analysis_task = analysis_task_generator(session, final_prompt, document)
 
             # Calls LLM
-            vectors, analysis = await asyncio.gather(embed_task, analysis_task)
+            vectors, document_analysis = await asyncio.gather(embed_task, analysis_task)
 
             # Saves the vectors
             embedded_chunks = [
@@ -125,8 +139,6 @@ class TextExtractor(DocumentExtractor):
             session.add_all(embedded_chunks)
 
             # Saves the analysis
-            document_analysis = save_document_analysis(session, analysis)
-
             document.document_analysis = document_analysis
 
             return document_analysis

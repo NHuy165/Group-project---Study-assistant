@@ -20,7 +20,7 @@ async def vector_search(
         .join(Document)
         .where(Document.interaction_id == interaction.id)
         .order_by(DocumentChunk.content_embedded.cosine_distance(embedded_prompt))  # type: ignore
-        .limit(settings.N_CHUNKS_RETRIEVED * 2)
+        .limit(settings.DEFAULT_N_CHUNKS_RETRIEVED * 2)
         # .options(selectinload(DocumentChunk.document))  # type: ignore
     )
 

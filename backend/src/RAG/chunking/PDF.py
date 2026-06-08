@@ -8,9 +8,6 @@ from backend.src.core.ai_api import GlobalAPI
 from backend.src.models_schema.document.document import Document
 from backend.src.models_schema.document.document_analysis import (
     DocumentAnalysis,
-    DocumentAnalysisSchema,
-    MaterialRecommendation,
-    QuestionRecommendation,
 )
 from backend.src.models_schema.document.document_chunk import DocumentChunk
 from backend.src.models_schema.miscellaneous.enums import DocumentType
@@ -21,7 +18,7 @@ from backend.src.RAG.augmentation.core.specific_augmentations import (
 )
 from backend.src.RAG.chunking.base import (
     DocumentExtractor,
-    save_document_analysis,
+    analysis_task_generator,
     smart_splitter,
 )
 
@@ -114,10 +111,11 @@ class PdfExtractor(DocumentExtractor):
                 personal_information=user.description,
             )
             final_prompt = document_analysis_augmentation(params)
-            analysis_task = GlobalAPI.generate_document_analysis(final_prompt)
+
+            analysis_task = analysis_task_generator(session, final_prompt, document)
 
             # Calls LLM
-            vectors, analysis = await asyncio.gather(embed_task, analysis_task)
+            vectors, document_analysis = await asyncio.gather(embed_task, analysis_task)
 
             # Saves the vectors
             embedded_chunks = [
@@ -134,8 +132,6 @@ class PdfExtractor(DocumentExtractor):
             session.add_all(embedded_chunks)
 
             # Saves the analysis
-            document_analysis = save_document_analysis(session, analysis)
-
             document.document_analysis = document_analysis
 
             return document_analysis

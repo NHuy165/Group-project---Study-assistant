@@ -13,7 +13,10 @@ from backend.src.models_schema.user.user import User
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     document_analysis_augmentation,
 )
-from backend.src.RAG.chunking.base import DocumentExtractor, save_document_analysis
+from backend.src.RAG.chunking.base import (
+    DocumentExtractor,
+    analysis_task_generator,
+)
 
 
 class ImageExtractor(DocumentExtractor):
@@ -64,10 +67,11 @@ class ImageExtractor(DocumentExtractor):
             personal_information=user.description,
         )
         final_prompt = document_analysis_augmentation(params)
-        analysis_task = GlobalAPI.generate_document_analysis(final_prompt)
+
+        analysis_task = analysis_task_generator(session, final_prompt, document)
 
         # Calls LLM
-        vector, analysis = await asyncio.gather(embed_task, analysis_task)
+        vector, document_analysis = await asyncio.gather(embed_task, analysis_task)
 
         # Saves the vector
         prepared_chunk = DocumentChunk(
@@ -78,8 +82,6 @@ class ImageExtractor(DocumentExtractor):
         session.add(prepared_chunk)
 
         # Saves the analysis
-        document_analysis = save_document_analysis(session, analysis)
-
         document.document_analysis = document_analysis
 
         return document_analysis

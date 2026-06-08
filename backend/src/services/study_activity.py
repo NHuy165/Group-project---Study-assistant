@@ -29,9 +29,11 @@ from backend.src.models_schema.activity.llm_return_json_schema import (
     GapFillSchema,
     GradedItemSchema,
     GradedSchema,
+    MCQGradedCrossValidation,
     MCQGradedSchema,
     MCQSchema,
     OpenEndedCreationSchema,
+    OpenEndedGradedCrossValidation,
     OpenEndedGradedSchema,
     StudyActivityValidationBase,
 )
@@ -143,11 +145,20 @@ def save_open_ended(
     # Begins saving
     exercise_items = []
     for item in activity_data.activity_items:
+        # Saves item contents
+        exercise_item_content = [
+            ExerciseItemContent(
+                content=item.correct,
+                type=ExerciseItemContentType.OPEN_ENDED_CORRECT,
+                is_correct=True,
+            )
+        ]
+
         # Saves item
         exercise_item = ExerciseItem(
             max_score=question_score,
             question=item.question,
-            contents=[],
+            contents=exercise_item_content,
         )
 
         exercise_items.append(exercise_item)
@@ -242,7 +253,7 @@ async def create_study_activity(
 
     # Gets past conversations
     past_conversations = await read_llm_responses(
-        session, interaction, settings.N_PAST_CONVERSATIONS
+        session, interaction, settings.DEFAULT_N_PAST_CONVERSATIONS
     )
     formatted_past_conversations = conversations_formatter(past_conversations)
 
@@ -286,7 +297,9 @@ async def create_study_activity(
     while True:
         try:
             # Generation
-            generated_activity = await GlobalAPI.generate_material(final_prompt)
+            generated_activity = await GlobalAPI.generate_material(
+                final_prompt, response_validator
+            )
 
             # Validates content from model
             validated_activity = response_validator.model_validate_json(
@@ -318,7 +331,7 @@ async def create_study_activity(
 
         except (ExceptionLLMError_502, ValidationError) as e:
             i_retry += 1
-            if i_retry >= settings.N_GENERATION_RETRIES:
+            if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
                 if isinstance(e, ExceptionLLMError_502):
                     raise
                 else:
@@ -756,22 +769,28 @@ async def submit_exercise_activity(
             type[ForGradingSchema],
             Callable[[AugmentationParams], str],
             type[GradedSchema],
+            type[GradedSchema],
         ],
     ] = {
         StudyActivityFormat.OPEN_ENDED: (
             OpenEndedForGradingSchema,
             open_ended_grading_augmentation,
             OpenEndedGradedSchema,
+            OpenEndedGradedCrossValidation,
         ),
         StudyActivityFormat.MULTIPLE_CHOICE_QUESTIONS: (
             MCQForGradingSchema,
             mcq_grading_augmentation,
             MCQGradedSchema,
+            MCQGradedCrossValidation,
         ),
     }
-    (exercise_work_schema, grading_augmentation, graded_schema) = (
-        GRADING_CONFIGURATIONS[study_activity.activity_format]
-    )
+    (
+        exercise_work_schema,
+        grading_augmentation,
+        graded_schema,
+        cross_validation_schema,
+    ) = GRADING_CONFIGURATIONS[study_activity.activity_format]
 
     # ++ Preparing the json input ++ #
 
@@ -814,13 +833,13 @@ async def submit_exercise_activity(
     while True:
         # API call
         try:
-            grading_results = await GlobalAPI.grade_answers(final_prompt)
+            grading_results = await GlobalAPI.grade_answers(final_prompt, graded_schema)
             grading_results_python: dict = json.loads(grading_results)
             grading_results_python.update(
                 {"grading_input": exercise_works.model_dump()}
             )
 
-            validated_grading_results = graded_schema.model_validate(
+            validated_grading_results = cross_validation_schema.model_validate(
                 grading_results_python
             )
             break
@@ -828,7 +847,7 @@ async def submit_exercise_activity(
         # Catches errors, if retry limit exceeded, throws a 502
         except (ExceptionLLMError_502, ValidationError) as e:
             i_retry += 1
-            if i_retry >= settings.N_GENERATION_RETRIES:
+            if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
                 if isinstance(e, ExceptionLLMError_502):
                     raise
                 else:
