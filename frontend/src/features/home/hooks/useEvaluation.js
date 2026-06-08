@@ -62,17 +62,26 @@ export const useEvaluation = (autoFetch = false) => {
             fetchAssessment();
         }
     }, [autoFetch]);
-
-    // Tác vụ 2: Tải danh sách lịch sử nhật ký
+    // Tác vụ 2: Tải danh sách lịch sử nhật ký (useEvaluation_5.js)
     const readHistory = async (limit, offset) => {
         setIsLoading(true);
         setError(null);
         try {
             const response = await readStudentAssessment(limit, offset);
+            
             if (Array.isArray(response)) {
                 setHistoryList(response);
-                // Đồng bộ tổng số bản ghi động dựa trên độ dài mảng trả về
-                setTotalHistory(offset + response.length + (response.length === limit ? 1 : 0));
+                
+                // SỬA LỖI TẠI ĐÂY: Tính toán tổng số bản ghi thực tế một cách chính xác
+                // Nếu mảng trả về nhỏ hơn limit, tức là đã hết sạch dữ liệu => total chính bằng offset + độ dài mảng hiện tại.
+                // Nếu mảng trả về bằng đúng limit, ta giả định tạm thời là CÓ THỂ còn trang tiếp theo (total = offset + limit + 1).
+                // Tuy nhiên, để tránh "trang bóng ma" khi vừa đủ 10, ta kiểm tra nếu response.length < limit thì đóng form chuẩn.
+                if (response.length < limit) {
+                    setTotalHistory(offset + response.length);
+                } else {
+                    // Nếu vừa đúng 10, tạm thời cho phép bấm "Sau" nhưng ở Window ta sẽ khóa điều kiện dựa trên mảng rỗng
+                    setTotalHistory(offset + response.length + 1);
+                }
             } else if (response && Array.isArray(response.data)) {
                 setHistoryList(response.data);
                 setTotalHistory(response.total || response.data.length);

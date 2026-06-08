@@ -45,23 +45,24 @@ const EvaluationWindow = ({
   const [activeTab, setActiveTab] = useState('today'); 
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedDateLabel, setSelectedDateLabel] = useState('');
-  const [customDate, setCustomDate] = useState(''); // State lưu trữ chuỗi text tạm thời của ô nhập ngày
+  const [customDate, setCustomDate] = useState(''); 
   const ITEMS_PER_PAGE = 10;
 
+  // Tính toán tổng số trang dựa trên tổng số bản ghi từ Backend
   const totalPages = Math.ceil(totalHistory / ITEMS_PER_PAGE) || 1;
 
-  // HÀM CHẶN LỖI 0002: Chỉ khi bấm nút Tìm hoặc gõ Enter mới thực thi gửi API lên Backend
+  // Xử lý gửi tra cứu ngày lên backend (dùng param specific_date chuẩn của bạn)
   const executeSearch = (dateVal) => {
     if (!dateVal) return;
     const [year, month, day] = dateVal.split('-');
-    if (!year || !month || !day || year.length < 4) return; // Chặn các năm chưa nhập đủ 4 ký tự
+    if (!year || !month || !day || year.length < 4) return;
 
     setSelectedDateLabel(`${day}/${month}/${year}`);
     onFetchDetail(dateVal);
   };
 
   const handleCustomDateChange = (e) => {
-    setCustomDate(e.target.value); // Chỉ cập nhật giá trị text hiển thị, chưa gọi API
+    setCustomDate(e.target.value);
   };
 
   const handleKeyDown = (e) => {
@@ -73,7 +74,7 @@ const EvaluationWindow = ({
   return (
     <div className="w-[360px] h-[500px] bg-white shadow-2xl rounded-2xl border border-gray-100 flex flex-col overflow-hidden text-gray-800 animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white font-semibold flex items-center justify-between shadow-md">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white font-semibold flex items-center justify-between shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           <span>Cố vấn Học tập AI</span>
@@ -86,7 +87,7 @@ const EvaluationWindow = ({
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-gray-200 bg-gray-50 text-xs font-medium">
+      <div className="flex border-b border-gray-200 bg-gray-50 text-xs font-medium flex-shrink-0">
         <button 
           className={`flex-1 py-2.5 text-center transition-colors ${activeTab === 'today' ? 'border-b-2 border-blue-600 text-blue-600 font-bold bg-white' : 'text-gray-500 hover:text-gray-700'}`} 
           onClick={() => { setActiveTab('today'); onResetDetail(); }}
@@ -108,7 +109,7 @@ const EvaluationWindow = ({
       </div>
 
       {/* Body Content */}
-      <div className="flex-1 p-4 bg-gray-50 flex flex-col justify-between overflow-hidden">
+      <div className="flex-1 p-3 bg-gray-50 flex flex-col justify-between overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center h-full">
             <div className="flex space-x-1.5 p-3 bg-white rounded-xl shadow-sm">
@@ -118,11 +119,11 @@ const EvaluationWindow = ({
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto mb-2 pr-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             
             {/* TAB 1: Hôm nay */}
             {activeTab === 'today' && (
-              <div className="h-full flex flex-col">
+              <div className="flex-1 overflow-y-auto pr-0.5 flex flex-col">
                 {data && data.trim() !== "" ? (
                   <div className="bg-white text-gray-700 p-4 rounded-xl shadow-sm border border-gray-100 mb-auto">
                     <FormatMarkdown text={data} />
@@ -138,27 +139,50 @@ const EvaluationWindow = ({
 
             {/* TAB 2: Lịch sử */}
             {activeTab === 'history' && (
-              <div className="h-full flex flex-col flex-1">
+              <div className="flex-1 flex flex-col overflow-hidden">
                 
+                {/* Ô TRA CỨU THEO NGÀY: Luôn ở trên cùng */}
+                {(!detailAssessment && !detailError && !isDetailLoading) && (
+                  <div className="mb-2 bg-white p-2 rounded-xl border border-gray-100 shadow-xs flex flex-col gap-1 flex-shrink-0">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-0.5">🔍 Tra cứu nhanh theo ngày</label>
+                    <div className="flex gap-1.5">
+                      <input 
+                        type="date" 
+                        value={customDate}
+                        onChange={handleCustomDateChange}
+                        onKeyDown={handleKeyDown}
+                        className="flex-1 p-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 focus:outline-none focus:border-blue-500 bg-gray-50/50"
+                      />
+                      <button
+                        onClick={() => executeSearch(customDate)}
+                        disabled={!customDate}
+                        className="px-3 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:scale-100 transition-all"
+                      >
+                        Tìm
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {error ? (
                   <div className="text-center text-red-500 my-auto px-4 text-xs font-medium py-16">
                     ⚠️ Không thể tải danh sách lịch sử.
                   </div>
                 ) : (isDetailLoading || detailAssessment || detailError) ? (
                   
-                  /* MÀN HÌNH CHI TIẾT (Được tách riêng luồng hiển thị chuẩn chỉnh số 1) */
-                  <div className="flex flex-col h-full flex-1 justify-between">
-                    <div className="flex flex-col">
+                  /* MÀN HÌNH CHI TIẾT */
+                  <div className="flex-1 flex flex-col overflow-hidden justify-between animate-fade-in">
+                    <div className="flex flex-col flex-shrink-0">
                       <button 
                         onClick={() => {
                           onResetDetail();
                           setCustomDate(''); 
                         }} 
-                        className="flex items-center gap-1 text-xs text-blue-600 font-semibold mb-3 hover:underline w-fit"
+                        className="flex items-center gap-1 text-xs text-blue-600 font-semibold mb-2 hover:underline w-fit"
                       >
                         ← Quay lại danh sách chính
                       </button>
-                      <div className="bg-indigo-50 text-[11px] font-bold text-indigo-700 px-2.5 py-1 rounded-md mb-2 w-fit">
+                      <div className="bg-indigo-50 text-[10px] font-bold text-indigo-700 px-2 py-0.5 rounded mb-1 w-fit">
                         Ngày: {selectedDateLabel}
                       </div>
                     </div>
@@ -173,7 +197,7 @@ const EvaluationWindow = ({
                         ⚠️ Không tìm thấy đánh giá chi tiết cho ngày này.
                       </div>
                     ) : (
-                      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 overflow-y-auto max-h-[300px] flex-1">
+                      <div className="bg-white p-3 rounded-xl border border-gray-100 overflow-y-auto flex-1 text-gray-700">
                         <FormatMarkdown text={detailAssessment} />
                       </div>
                     )}
@@ -181,36 +205,15 @@ const EvaluationWindow = ({
 
                 ) : (
                   
-                  /* MÀN HÌNH DANH SÁCH CHÍNH (Chỉ hiện khi học sinh ở ngoài danh mục gốc) */
-                  <div className="flex flex-col flex-1">
-                    {/* Thanh tìm kiếm ngày thủ công độc lập */}
-                    <div className="mb-4 bg-white p-3 rounded-xl border border-gray-100 shadow-xs flex flex-col gap-1.5">
-                      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">🔍 Tra cứu nhanh theo ngày</label>
-                      <div className="flex gap-2">
-                        <input 
-                          type="date" 
-                          value={customDate}
-                          onChange={handleCustomDateChange}
-                          onKeyDown={handleKeyDown}
-                          className="flex-1 p-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 focus:outline-none focus:border-blue-500 bg-gray-50/50"
-                        />
-                        <button
-                          onClick={() => executeSearch(customDate)}
-                          disabled={!customDate}
-                          className="px-3.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:scale-100 transition-all"
-                        >
-                          Tìm
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Danh sách các ngày nhận từ mảng Backend đổ về */}
-                    <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[220px]">
-                      <p className="text-[11px] font-bold text-gray-400 px-1 mb-1">Hoặc chọn từ danh sách lịch sử:</p>
+                  /* MÀN HÌNH DANH SÁCH CHÍNH: MỞ ĐỒNG THỜI THANH TRƯỢT VÀ CHUYỂN TRANG */
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <p className="text-[10px] font-bold text-gray-400 px-0.5 mb-1 flex-shrink-0">Chọn từ danh sách dưới đây:</p>
+                    
+                    {/* BẬT THANH TRƯỢT: max-h-[220px] giới hạn chiều cao và overflow-y-auto mở thanh cuộn dọc */}
+                    <div className="flex-1 flex flex-col gap-1 overflow-y-auto max-h-[225px] pr-1 scrollbar-thin">
                       {historyList.length > 0 ? (
                         historyList.map((item, idx) => {
                           const assessmentOfQuery = item.assessment_of || '';
-                          
                           let dateDisplay = 'Không rõ ngày';
                           if (assessmentOfQuery) {
                             const [year, month, day] = assessmentOfQuery.split('-');
@@ -224,20 +227,20 @@ const EvaluationWindow = ({
                                 setSelectedDateLabel(dateDisplay);
                                 onFetchDetail(assessmentOfQuery); 
                               }}
-                              className="bg-white p-3 rounded-xl border border-gray-100 shadow-xs hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all flex justify-between items-center"
+                              className="bg-white px-2.5 py-2 rounded-lg border border-gray-100 shadow-xs hover:border-blue-300 hover:bg-blue-50/20 cursor-pointer transition-all flex justify-between items-center flex-shrink-0"
                             >
-                              <div className="flex flex-col gap-0.5">
-                                <span className="font-semibold text-xs text-gray-700">
-                                  📑 Nhật ký đánh giá #{((currentPage - 1) * ITEMS_PER_PAGE) + idx + 1}
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <span className="font-semibold text-xs text-gray-700 flex-shrink-0">
+                                  📑 Nhật ký #{((currentPage - 1) * ITEMS_PER_PAGE) + idx + 1}
                                 </span>
-                                <span className="text-[11px] text-gray-400">{dateDisplay}</span>
+                                <span className="text-[11px] text-gray-400 truncate">— {dateDisplay}</span>
                               </div>
-                              <span className="text-blue-500 text-xs font-medium">Xem →</span>
+                              <span className="text-blue-500 text-[11px] font-medium flex-shrink-0">Xem →</span>
                             </div>
                           );
                         })
                       ) : (
-                        <div className="text-center text-gray-400 py-8 text-xs my-auto">Chưa có lịch sử đánh giá nào.</div>
+                        <div className="text-center text-gray-400 py-12 text-xs my-auto">Chưa có lịch sử đánh giá nào.</div>
                       )}
                     </div>
                   </div>
@@ -247,9 +250,9 @@ const EvaluationWindow = ({
           </div>
         )}
 
-        {/* PHÂN TRANG */}
+        {/* PHÂN TRANG (EvaluationWindow_5.jsx) */}
         {activeTab === 'history' && !detailAssessment && !detailError && !isDetailLoading && !loading && !error && totalPages > 1 && (
-          <div className="flex justify-between items-center border-t border-gray-200 pt-3 bg-gray-50 text-xs">
+          <div className="flex justify-between items-center border-t border-gray-200 pt-2 bg-gray-50 text-xs flex-shrink-0">
             <button 
               disabled={currentPage === 1} 
               onClick={() => { 
@@ -257,19 +260,20 @@ const EvaluationWindow = ({
                 setCurrentPage(nextPage); 
                 onFetchHistory(ITEMS_PER_PAGE, (nextPage - 1) * ITEMS_PER_PAGE); 
               }} 
-              className="px-2.5 py-1.5 rounded bg-white border border-gray-200 font-medium disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:bg-gray-50"
+              className="px-2 py-1 rounded bg-white border border-gray-200 font-medium disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Trước
             </button>
             <span className="text-gray-500 font-medium text-[11px]">Trang {currentPage} / {totalPages}</span>
             <button 
-              disabled={currentPage === totalPages} 
+              // CHẶN TRANG BÓNG MA: Nếu mảng hiện tại không đủ 10 phần tử, chắc chắn không còn trang kế tiếp để bấm
+              disabled={currentPage === totalPages || historyList.length < ITEMS_PER_PAGE} 
               onClick={() => { 
                 const nextPage = Math.min(currentPage + 1, totalPages); 
                 setCurrentPage(nextPage); 
                 onFetchHistory(ITEMS_PER_PAGE, (nextPage - 1) * ITEMS_PER_PAGE); 
               }} 
-              className="px-2.5 py-1.5 rounded bg-white border border-gray-200 font-medium disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:bg-gray-50"
+              className="px-2 py-1 rounded bg-white border border-gray-200 font-medium disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Sau
             </button>
