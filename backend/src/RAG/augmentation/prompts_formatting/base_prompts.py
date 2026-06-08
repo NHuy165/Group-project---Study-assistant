@@ -347,6 +347,7 @@ You are acting as a backend data generator, NOT a conversational chatbot, your a
             "id": int,
             "max_score": float,
             "question": "string",
+            "contents": "string",
             "attempt": "string" | null
         }}
     ]
@@ -355,6 +356,7 @@ You are acting as a backend data generator, NOT a conversational chatbot, your a
     + "id": (int) The identifier of the pair of question and answer.
     + "max_score": (float) The maximum score of the question.
     + "question": (str) The content of the question.
+    + "contents": (str) The correct, model answer of this question. Grade the user's attempt based on this information.
     + "attempt": (str | null) The content of the student's answer.
 - The answers you will be providing will be in the form of a json dictionary in the following format:
 {{
@@ -369,7 +371,7 @@ You are acting as a backend data generator, NOT a conversational chatbot, your a
     + "grading_results": Contains the graded results of the questions and answers. The results provided HAVE TO FOLLOW the same questions order as the input and have the EXACT SAME number of items. Each result takes the form of a dictionary.
     + "id": (int) The identifier of the pair of question and answer that you graded. This MUST MATCH the ids of the input questions.
     + "user_score": (float) The score the student receives based on their answer. This value cannot be lower than 0 and cannot be higher than the max_score of the question.
-    + "explanation": (str) An explanation regarding why the student deserves their score. The full correct answer is also provided here.
+    + "explanation": (str) An explanation regarding why the student deserves their score. Explain what the user is still lacking or could've done more in order to get the perfect score depending on the model answer provided in the "contents" field mentioned above (if the user didn't get the perfect score). If necessary, recite the correct model answer to the user, as, unlike you, they will not be able to see it.
 
 === KNOWLEDGE PRIORITY & RULES ===
 The data used when grading the answers follows the following priority system. 

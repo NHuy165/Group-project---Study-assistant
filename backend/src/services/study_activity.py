@@ -145,11 +145,20 @@ def save_open_ended(
     # Begins saving
     exercise_items = []
     for item in activity_data.activity_items:
+        # Saves item contents
+        exercise_item_content = [
+            ExerciseItemContent(
+                content=item.correct,
+                type=ExerciseItemContentType.OPEN_ENDED_CORRECT,
+                is_correct=True,
+            )
+        ]
+
         # Saves item
         exercise_item = ExerciseItem(
             max_score=question_score,
             question=item.question,
-            contents=[],
+            contents=exercise_item_content,
         )
 
         exercise_items.append(exercise_item)

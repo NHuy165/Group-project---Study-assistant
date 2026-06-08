@@ -40,6 +40,7 @@ class MCQSchema(StudyActivityValidationBase):
 
 class OpenEndedItemSchema(SQLModel):
     question: str
+    correct: str
 
 
 class OpenEndedCreationSchema(StudyActivityValidationBase):
