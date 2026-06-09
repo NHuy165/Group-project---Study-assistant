@@ -2,11 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../components/theme/ThemeWrapper'; 
 import ErrorBanner from '../../../components/ErrorBanner';
 
-const SUGGESTED_PROMPTS = [
-  "Tóm tắt định luật bảo toàn năng lượng.", 
-  "Ôn tập chương 2 môn Khoa học.", 
-  "Từ vựng tiếng Anh chủ đề Động vật."
-];
+import { TTR_SAMPLE_PROMPTS } from '../constants';
+
 
 export const TTRSetupModal = ({ isOpen, onClose, onSubmit, managerError, clearManagerError }) => {
   const { isNight } = useTheme();
@@ -20,6 +17,14 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit, managerError, clearMa
   const [difficulty, setDifficulty] = useState('easy'); 
   const [questionCount, setQuestionCount] = useState(5); // Giảm số câu để AI dễ xử lý hơn
 
+  const [suggestedPrompts, setSuggestedPrompts] = useState([]);
+  const refreshPrompts = () => {
+    const shuffled = [...TTR_SAMPLE_PROMPTS].sort(() => 0.5 - Math.random());
+    const count = Math.floor(Math.random() * 2) + 3; // 3 hoặc 4
+    setSuggestedPrompts(shuffled.slice(0, count));
+  };
+
+
   useEffect(() => { 
     if (isOpen) { 
       setContent(''); 
@@ -28,6 +33,7 @@ export const TTRSetupModal = ({ isOpen, onClose, onSubmit, managerError, clearMa
       setSubject('MATHS');
       setMode('normal');
       setDifficulty('easy');
+      refreshPrompts();
     } 
   }, [isOpen]);
 
@@ -113,13 +119,25 @@ STRICT RULES:
                 isNight ? 'border-gray-600 bg-[#2d3540] focus:border-purple-500 text-white placeholder-gray-400' : 'border-gray-300 bg-gray-50 focus:border-purple-600 text-gray-800'
               }`}
             />
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-black uppercase opacity-60">Gợi ý từ Cú Mèo:</h4>
+              <button type="button" onClick={refreshPrompts} className="text-[10px] font-bold text-blue-500 hover:underline">
+                  Đổi gợi ý khác
+              </button>
+          </div>
+
             <div className="flex flex-wrap gap-2 mt-3">
-              {SUGGESTED_PROMPTS.map((p, i) => (
+              {suggestedPrompts.map((p, i) => ( // Dùng suggestedPrompts thay vì SUGGESTED_PROMPTS
                 <button key={i} type="button" onClick={() => togglePrompt(p)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                    selectedPrompts.includes(p) ? 'bg-purple-600 border-purple-700 text-white' : (isNight ? 'bg-[#2d3540] border-gray-600 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700')
-                  }`}>{p}</button>
+                    selectedPrompts.includes(p) 
+                      ? 'bg-purple-600 border-purple-700 text-white shadow-md shadow-purple-500/20' 
+                      : (isNight ? 'bg-[#2d3540] border-gray-600 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700')
+                  }`}>
+                  {p}
+                </button>
               ))}
+              
             </div>
             {errorMsg && <p className="mt-3 text-red-500 text-xs font-bold animate-bounce">{errorMsg}</p>}
           </div>

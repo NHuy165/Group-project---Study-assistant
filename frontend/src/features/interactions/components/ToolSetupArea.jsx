@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { BookOpenText, Target, MagicWand, X, Sparkle, WarningCircle, Trash } from "@phosphor-icons/react";
+
+// 1. Import danh sách từ constants
+import { QUIZ_SAMPLE_PROMPTS, ESSAY_SAMPLE_PROMPTS } from '../constants';
 
 export const ToolSetupArea = ({
   toolId,
@@ -12,17 +15,26 @@ export const ToolSetupArea = ({
 }) => {
   const { isNight } = useTheme();
   
-  // States
   const [userInput, setUserInput] = useState("");
   const [subject, setSubject] = useState("VIETNAMESE");
   const [selectedSamples, setSelectedSamples] = useState([]);
+  
+  // 2. State lưu danh sách gợi ý ngẫu nhiên
+  const [suggestedPrompts, setSuggestedPrompts] = useState([]);
 
-  // Dữ liệu mẫu tùy theo tool
-  const samples = useMemo(() => {
-    if (toolId === 'essay') {
-      return ["Kể về một kỷ niệm đáng nhớ", "Nêu cảm nghĩ về mẹ", "Miêu tả một con vật bé yêu thích"];
-    }
-    return ["Ôn tập kiến thức vừa học", "Câu hỏi trắc nghiệm nhanh", "Thử thách tư duy"];
+  // Hàm random 3-4 prompt
+  const refreshPrompts = (type) => {
+    const list = type === 'essay' ? ESSAY_SAMPLE_PROMPTS : QUIZ_SAMPLE_PROMPTS;
+    const shuffled = [...list].sort(() => 0.5 - Math.random());
+    const count = Math.floor(Math.random() * 2) + 3; // Lấy 3 hoặc 4
+    setSuggestedPrompts(shuffled.slice(0, count));
+  };
+
+  // 3. Tự động làm mới khi toolId thay đổi
+  useEffect(() => {
+    refreshPrompts(toolId);
+    setSelectedSamples([]); 
+    setUserInput("");
   }, [toolId]);
 
   const toolInfo = useMemo(() => {
@@ -33,7 +45,6 @@ export const ToolSetupArea = ({
     }
   }, [toolId]);
 
-  // Logic cộng dồn Prompt
   const handleToggleSample = (sample) => {
     if (onClearError) onClearError();
     setSelectedSamples(prev => 
@@ -46,84 +57,57 @@ export const ToolSetupArea = ({
   const handleConfirm = () => {
     if (!isFormValid) return;
     if (onClearError) onClearError();
-    // Gộp prompt: Input + Các sample đã chọn
     const finalPrompt = [userInput.trim(), ...selectedSamples].filter(Boolean).join(". ");
     onConfirm({ subject, prompt: finalPrompt });
   };
 
   return (
-    
     <div className={`absolute inset-0 z-[50] flex flex-col items-center justify-center p-6 backdrop-blur-md animate-in fade-in zoom-in duration-300 rounded-[2.5rem] ${isNight ? 'bg-black/60' : 'bg-white/40'}`}>
-      
-      {/* THẺ CARD TRONG SUỐT (GLASSMORPHISM) */}
-      <div className={`relative w-full max-w-[800px] rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl border transition-all ${
-        isNight 
-          ? "bg-[#1e293b]/90 border-white/10 text-gray-100" 
-          : "bg-white/90 border-white/40 text-gray-800"
-      }`}>
+      <div className={`relative w-full max-w-[800px] rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.2)] backdrop-blur-xl border transition-all ${isNight ? "bg-[#1e293b]/90 border-white/10 text-gray-100" : "bg-white/90 border-white/40 text-gray-800"}`}>
         
-        {/* Nút X đóng nhanh */}
         <button onClick={onCancel} className="absolute right-8 top-8 text-gray-400 hover:text-red-500 transition-all hover:rotate-90 z-10">
           <X size={28} weight="bold" />
         </button>
 
         <header className="flex items-center gap-4 mb-8">
-          <div className={`p-4 rounded-2xl ${isNight ? 'bg-gray-800/80' : 'bg-gray-100'} shadow-sm`}>
-            {toolInfo.icon}
-          </div>
+          <div className={`p-4 rounded-2xl ${isNight ? 'bg-gray-800/80' : 'bg-gray-100'} shadow-sm`}>{toolInfo.icon}</div>
           <div>
-            <h2 className={`text-3xl font-black tracking-tight ${isNight ? 'text-blue-400' : 'text-blue-600'}`}>
-              {toolInfo.title}
-            </h2>
+            <h2 className={`text-3xl font-black tracking-tight ${isNight ? 'text-blue-400' : 'text-blue-600'}`}>{toolInfo.title}</h2>
             <p className="text-sm font-bold opacity-60">Cú Mèo sẽ dựa vào đây để ra đề cho bé</p>
           </div>
         </header>
 
-        {/* VÙNG NHẬP LIỆU CHÍNH */}
         <div className="mb-8">
-          <div className="relative">
-            <textarea
-              className={`w-full h-44 p-6 rounded-[2rem] border-2 text-[1.2rem] leading-relaxed outline-none transition-all resize-none custom-scrollbar ${
-                isNight 
-                  ? "bg-gray-900/50 border-gray-700 focus:border-blue-400 text-white placeholder-gray-600" 
-                  : "bg-white border-gray-200 focus:border-blue-500 text-gray-800 placeholder-gray-400"
-              }`}
-              placeholder="Nhập yêu cầu của bé hoặc dán văn bản vào đây..."
-              value={userInput}
-              onChange={(e) => {
-                if (onClearError) onClearError();
-                setUserInput(e.target.value);
-              }}
-            />
-            {userInput && (
-              <button 
-                onClick={() => setUserInput("")}
-                className="absolute right-4 top-4 p-2 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
-              >
-                <Trash size={16} weight="bold" />
-              </button>
-            )}
-          </div>
+          <textarea
+            className={`w-full h-44 p-6 rounded-[2rem] border-2 text-[1.2rem] leading-relaxed outline-none transition-all resize-none custom-scrollbar ${isNight ? "bg-gray-900/50 border-gray-700 focus:border-blue-400 text-white" : "bg-white border-gray-200 focus:border-blue-500 text-gray-800"}`}
+            placeholder="Nhập yêu cầu của bé hoặc dán văn bản vào đây..."
+            value={userInput}
+            onChange={(e) => { if (onClearError) onClearError(); setUserInput(e.target.value); }}
+          />
           
-          {/* CÁC CHIP GỢI Ý (MULTIPLE SELECT) */}
-          <div className="flex flex-wrap gap-2 mt-5">
-            {samples.map(sample => {
-              const isSelected = selectedSamples.includes(sample);
-              return (
-                <button 
-                  key={sample}
-                  onClick={() => handleToggleSample(sample)}
-                  className={`px-4 py-2 text-sm font-bold rounded-xl border-2 transition-all flex items-center gap-2 ${
-                    isSelected
-                      ? "bg-blue-500 border-blue-400 text-white shadow-lg shadow-blue-500/30 -translate-y-1"
-                      : (isNight ? "bg-gray-800/50 border-gray-700 text-gray-400 hover:bg-gray-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100")
-                  }`}
-                >
-                  {isSelected && <Sparkle size={14} weight="fill" className="animate-pulse" />}
-                  {sample}
-                </button>
-              );
-            })}
+          {/* 4. Hiển thị Suggested Prompts thay cho biến samples tĩnh cũ */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-3">
+               <h4 className="text-xs font-black uppercase opacity-60">Gợi ý từ Cú Mèo:</h4>
+               <button onClick={() => refreshPrompts(toolId)} className="text-[10px] font-bold text-blue-500 hover:underline">
+                 Đổi gợi ý khác
+               </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {suggestedPrompts.map(sample => {
+                const isSelected = selectedSamples.includes(sample);
+                return (
+                  <button 
+                    key={sample}
+                    onClick={() => handleToggleSample(sample)}
+                    className={`px-4 py-2 text-sm font-bold rounded-xl border-2 transition-all flex items-center gap-2 ${isSelected ? "bg-blue-500 border-blue-400 text-white shadow-lg shadow-blue-500/30 -translate-y-1" : (isNight ? "bg-gray-800/50 border-gray-700 text-gray-400" : "bg-white border-gray-200 text-gray-600")}`}
+                  >
+                    {isSelected && <Sparkle size={14} weight="fill" className="animate-pulse" />}
+                    {sample}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
