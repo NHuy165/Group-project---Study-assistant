@@ -1,12 +1,9 @@
 import asyncio
 
 from fastapi import UploadFile
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.ai_api import GlobalAPI
-from backend.src.core.config import settings
-from backend.src.exceptions.core import ExceptionLLMError_502
 from backend.src.models_schema.document.document import Document
 from backend.src.models_schema.document.document_analysis import DocumentAnalysis
 from backend.src.models_schema.document.document_chunk import DocumentChunk
@@ -16,7 +13,10 @@ from backend.src.models_schema.user.user import User
 from backend.src.RAG.augmentation.core.specific_augmentations import (
     document_analysis_augmentation,
 )
-from backend.src.RAG.chunking.base import DocumentExtractor, save_document_analysis
+from backend.src.RAG.chunking.base import (
+    DocumentExtractor,
+    analysis_task_generator,
+)
 
 
 class ImageExtractor(DocumentExtractor):
@@ -42,7 +42,12 @@ class ImageExtractor(DocumentExtractor):
 
     @classmethod
     async def extract(
-        cls, user: User, session: AsyncSession, file: UploadFile, document: Document
+        cls,
+        user: User,
+        session: AsyncSession,
+        file: UploadFile,
+        document: Document,
+        subject_type_overwrite: bool,
     ) -> DocumentAnalysis:
         # Reads the image using the model
         image_description = await GlobalAPI.caption_image(file)
@@ -67,24 +72,11 @@ class ImageExtractor(DocumentExtractor):
             personal_information=user.description,
         )
         final_prompt = document_analysis_augmentation(params)
-        
-        async def perform_analysis() -> DocumentAnalysis:
-            i_retry = 0
-            while True:
-                analysis = await GlobalAPI.generate_document_analysis(final_prompt)
 
-                try:
-                    document_analysis = save_document_analysis(session, analysis)
-                    return document_analysis
-                except ValidationError as e:
-                    i_retry += 1
-                    if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
-                        raise ExceptionLLMError_502(
-                            f"Incorrect content format. Details: {e}"
-                        )
-                        
-        analysis_task = perform_analysis()
-                        
+        analysis_task = analysis_task_generator(
+            session, final_prompt, document, subject_type_overwrite
+        )
+
         # Calls LLM
         vector, document_analysis = await asyncio.gather(embed_task, analysis_task)
 

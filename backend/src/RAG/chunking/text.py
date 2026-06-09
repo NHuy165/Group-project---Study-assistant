@@ -21,7 +21,7 @@ from backend.src.RAG.augmentation.core.specific_augmentations import (
 )
 from backend.src.RAG.chunking.base import (
     DocumentExtractor,
-    save_document_analysis,
+    analysis_task_generator,
     smart_splitter,
 )
 
@@ -32,6 +32,8 @@ class TextExtractor(DocumentExtractor):
         # === Content type === #
         if file.content_type is None:
             return False
+
+        print(file.content_type)
 
         is_text = (
             file.content_type.startswith("text/")
@@ -46,11 +48,17 @@ class TextExtractor(DocumentExtractor):
         header = file.file.read(512)
         file.file.seek(0)
 
+        print(header)
+
         if not header:
             return False
 
+        if b"\x00" in header:
+            return False
+
         try:
-            header.decode("utf-8")
+            test_chunk = header[:-4] if len(header) > 4 else header
+            test_chunk.decode("utf-8")
             return True
 
         except UnicodeDecodeError:
@@ -58,7 +66,12 @@ class TextExtractor(DocumentExtractor):
 
     @classmethod
     async def extract(
-        cls, user: User, session: AsyncSession, file: UploadFile, document: Document
+        cls,
+        user: User,
+        session: AsyncSession,
+        file: UploadFile,
+        document: Document,
+        subject_type_overwrite: bool,
     ) -> DocumentAnalysis | None:
         # Reads the file
         text_bytes = await file.read()
@@ -111,23 +124,10 @@ class TextExtractor(DocumentExtractor):
                 personal_information=user.description,
             )
             final_prompt = document_analysis_augmentation(params)
-            
-            async def perform_analysis() -> DocumentAnalysis:
-                i_retry = 0
-                while True:
-                    analysis = await GlobalAPI.generate_document_analysis(final_prompt)
 
-                    try:
-                        document_analysis = save_document_analysis(session, analysis)
-                        return document_analysis
-                    except ValidationError as e:
-                        i_retry += 1
-                        if i_retry >= settings.DEFAULT_N_GENERATION_RETRIES:
-                            raise ExceptionLLMError_502(
-                                f"Incorrect content format. Details: {e}"
-                            )
-                            
-            analysis_task = perform_analysis()
+            analysis_task = analysis_task_generator(
+                session, final_prompt, document, subject_type_overwrite
+            )
 
             # Calls LLM
             vectors, document_analysis = await asyncio.gather(embed_task, analysis_task)

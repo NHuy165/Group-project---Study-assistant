@@ -71,7 +71,7 @@ async def save_document(
         page_starts_at=page_starts_at,
         type=selected_type,
         subject_type=document_input.subject_type,
-        text="",  # Dummy text, will get updated in extract function
+        text=None,  # Will get updated in extract function
     )  # type: ignore
 
     session.add(document)
@@ -82,6 +82,7 @@ async def save_document(
         session=session,
         file=file,
         document=document,
+        subject_type_overwrite=document_input.subject_type_overwrite,
     )
 
     await session.commit()

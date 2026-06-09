@@ -1,5 +1,6 @@
 from typing import Any
 
+from pydantic import model_validator
 from sqlmodel import SQLModel
 
 # ----- GRADING SCHEMAS ----- #
@@ -20,9 +21,20 @@ class ForGradingSchema(SQLModel):
 # === Open ended === #
 
 
+class OpenEndedForGradingItemContentSchema(SQLModel):
+    content: str
+
+
 class OpenEndedForGradingItemSchema(ForGradingItemSchema):
     max_score: float
     attempt: str | None
+    contents: list[OpenEndedForGradingItemContentSchema] | str
+
+    @model_validator(mode="after")
+    def reinitiate_contents(self):
+        if isinstance(self.contents, list):
+            self.contents = self.contents[0].content
+        return self
 
 
 class OpenEndedForGradingSchema(ForGradingSchema):
