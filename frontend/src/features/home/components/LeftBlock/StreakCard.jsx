@@ -2,8 +2,15 @@ import React from "react";
 import { useTheme } from "../../../../components/theme/ThemeWrapper";
 import robotPurple from "../../assets/robot-purple.png";
 
-export const StreakCard = ({ dayCount = 3 }) => {
+export const StreakCard = ({
+  currentStreak = 0,
+  longestStreak = 0,
+  isLoading = false,
+}) => {
   const { isNight } = useTheme();
+  const currentValue = isLoading ? "--" : currentStreak;
+  const longestValue = isLoading ? "--" : longestStreak;
+  const flameCount = isLoading ? 0 : Math.min(currentStreak, 5);
 
   // Outer card background: Changed to a solid dark color in night mode to match the notebook card
   const cardCls = isNight
@@ -11,17 +18,28 @@ export const StreakCard = ({ dayCount = 3 }) => {
     : "bg-white/60 border-white/60 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]";
 
   return (
-    <div className={`relative rounded-[2rem] p-4 border-2 w-full h-full flex flex-col items-center justify-center transition-all duration-500 text-center overflow-visible ${cardCls}`}>
-      
-      <img src={robotPurple} alt="Robot" className="absolute -left-4 -bottom-1 w-24 h-24 z-10 drop-shadow-xl hover:scale-110 transition-transform origin-bottom" />
-      
-      <div className="pl-12 w-full flex flex-col items-center">
-        <h3 className={`text-[13px] font-black leading-snug ${isNight ? "text-purple-300 drop-shadow-sm" : "text-[#5b21b6]"}`}>
-          Cố gắng mỗi ngày tiến bộ mỗi ngày! 
-        </h3>
+    <div
+      className={`relative rounded-[2rem] p-5 border-2 w-full h-full flex flex-col transition-all duration-500 text-center overflow-visible ${cardCls}`}
+    >
+      <div className="w-full flex flex-col items-center h-full">
+        <div className="flex items-center justify-center gap-1.5 w-full">
+          <h3
+            className={`text-[13px] font-black leading-snug ${isNight ? "text-purple-300 drop-shadow-sm" : "text-[#5b21b6]"}`}
+          >
+            Cố gắng mỗi ngày tiến bộ mỗi ngày!
+          </h3>
 
-        <p className={`text-[11.5px] font-semibold mt-1 ${isNight ? "text-gray-300" : "text-slate-500"}`}>
-          Bạn đã học được {dayCount} ngày rồi đấy!
+          <img
+            src={robotPurple}
+            alt="Robot"
+            className="w-8 h-8 shrink-0 drop-shadow-xl hover:scale-110 transition-transform origin-bottom"
+          />
+        </div>
+
+        <p
+          className={`text-[11.5px] font-semibold mt-1 ${isNight ? "text-gray-300" : "text-slate-500"}`}
+        >
+          Bạn đã học được {currentValue} ngày rồi đấy!
         </p>
 
         <div className="flex-1 min-h-2" />
@@ -86,7 +104,6 @@ export const StreakCard = ({ dayCount = 3 }) => {
           </div>
         </div>
       </div>
-      
     </div>
   );
 };

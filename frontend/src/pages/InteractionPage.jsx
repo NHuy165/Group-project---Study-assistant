@@ -103,7 +103,6 @@ export const InteractionPage = () => {
     isLoading,
     isCreatingWithAI,
     error,
-    loadFlashcardSets,
     createNewFlashcardSet,
     createEmptyFlashcardSet,
     removeFlashcardSet,
