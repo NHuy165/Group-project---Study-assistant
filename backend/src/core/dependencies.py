@@ -31,7 +31,7 @@ def day_overwrite(
     return overwritten_day if settings.DEV_MODE else None
 
 
-DayOverwriteDep = Annotated[date | None, Depends(day_overwrite)]
+DayOverwriteDep = Annotated[date, Depends(day_overwrite)]
 
 
 async def get_current_user(
