@@ -1,6 +1,7 @@
 fastapi[standard]>=0.135.0
 httpx
 
+
 # Database
 sqlmodel
 psycopg[binary]
@@ -11,6 +12,7 @@ pyjwt
 pwdlib[argon2]
 python-dotenv
 
+
 # AI and RAG
 google-genai
 google-api-core
@@ -18,3 +20,5 @@ ollama
 pypdf
 pgvector
 langchain-text-splitters
+
+debugpy

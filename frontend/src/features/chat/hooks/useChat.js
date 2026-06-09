@@ -16,7 +16,6 @@ export const useChat = (interactionId) => {
     const [error, setError] = useState(null);
     const [promptText, setPromptText] = useState('');
 
-    // ĐƯA readChat LÊN TRÊN CÙNG
     const readChat = useCallback(async () => {
         if (!interactionId) return;
         setIsLoading(true);
@@ -35,7 +34,6 @@ export const useChat = (interactionId) => {
         }
     }, [interactionId]);
 
-    // useEffect NẰM DƯỚI readChat SẼ KHÔNG BỊ LỖI NỮA
     useEffect(() => {
         setChatlog([]);
         setError(null);
@@ -45,8 +43,10 @@ export const useChat = (interactionId) => {
         }
     }, [interactionId, readChat]);
 
-    const askLLM = async () => {
-        const textToSubmit = promptText.trim();
+    // 🎯 SỬA CHỮA: Nhận trực tiếp văn bản và ID tài liệu từ ngoài vào
+    const askLLM = async (directText = null, documentId = null) => {
+        // Lấy text trực tiếp nếu có (Auto Chat), nếu không thì lấy từ ô nhập liệu
+        const textToSubmit = directText !== null ? directText.trim() : promptText.trim();
         
         if (!interactionId) {
             setError("Bé ơi, hãy chọn một cuộc trò chuyện trước khi hỏi nhé!");
@@ -56,20 +56,23 @@ export const useChat = (interactionId) => {
 
         setIsLoading(true);
         setError(null);
-        setPromptText('');
+        
+        // Chỉ dọn dẹp ô nhập liệu nếu người dùng tự chat tay
+        if (directText === null) setPromptText('');
 
         const userMsg = { role: "user", content: textToSubmit };
         setChatlog((prev) => [...prev, userMsg]);
 
         try {
-            const response = await api.askLLM(interactionId, textToSubmit);
+            // 🎯 GỌI API: Truyền documentId thẳng xuống file chatApi
+            const response = await api.askLLM(interactionId, textToSubmit, documentId);
             
             if (response && response.answer) {
                 setChatlog((prev) => [...prev, { role: "ai", content: response.answer }]); 
             }
             return response;
         } catch (err) {
-            setPromptText(textToSubmit);
+            if (directText === null) setPromptText(textToSubmit);
             setChatlog((prev) => prev.filter(msg => msg !== userMsg)); 
             setError(getErrorMessage(err.response?.status));
         } finally {
@@ -77,9 +80,5 @@ export const useChat = (interactionId) => {
         }
     };
 
-    return {
-        chatlog, isLoading, error, 
-        promptText, setPromptText,
-        readChat, askLLM
-    };
+    return { chatlog, isLoading, error, promptText, setPromptText, readChat, askLLM };
 };

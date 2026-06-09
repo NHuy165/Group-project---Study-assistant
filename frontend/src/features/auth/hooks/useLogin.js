@@ -1,6 +1,7 @@
 // src/features/auth/hooks/useLogin.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { loginUser } from "../api/authApi";
 
 export const useLogin = () => {
@@ -9,6 +10,7 @@ export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleEmailChange = (e) => {
     console.log(e.target.value);
@@ -34,17 +36,24 @@ export const useLogin = () => {
     const { onSuccess, onError } = callbacks;
 
     try {
-    // Bắt buộc đợi tối thiểu 2 giây để cún diễn nét thám tử
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Bắt buộc đợi tối thiểu 2 giây để cún diễn nét thám tử
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       const data = await loginUser(email, password);
-      localStorage.setItem('token', data.access_token);
+      localStorage.setItem("token", data.access_token);
+
+      // Ensure current-user query refetches with the new token
+      try {
+        queryClient.invalidateQueries(["current-user"]);
+      } catch (e) {
+        // ignore
+      }
 
       if (onSuccess) {
         // Nhường quyền điều hướng cho AuthPage để chạy animation cổng
         onSuccess();
       } else {
         // Fallback: navigate thẳng nếu dùng hook độc lập
-        navigate('/dashboard');
+        navigate("/dashboard");
       }
     } catch (err) {
       let errorMsg = "";
@@ -54,7 +63,9 @@ export const useLogin = () => {
       } else if (err.response && err.response.status === 422) {
         errorMsg = "Thông tin nhập vào chưa hợp lệ!";
       } else {
-        errorMsg = err?.response?.data?.detail || "Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.";
+        errorMsg =
+          err?.response?.data?.detail ||
+          "Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.";
       }
 
       setError(errorMsg);
@@ -68,9 +79,12 @@ export const useLogin = () => {
   };
 
   return {
-    email, setEmail,
-    password, setPassword,
-    isLoading, error,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isLoading,
+    error,
     handleSubmit,
     handleEmailChange,
     handlePasswordChange,

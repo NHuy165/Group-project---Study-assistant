@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 import { ThemeWrapper, useTheme } from "../../../components/theme/ThemeWrapper";
 
 // Tách phần nội dung ra riêng để có thể sử dụng hook useTheme() từ Context
-const InteractionContent = ({ children, onNewChat, headerTitle = "EduSpark", modals }) => {
+const InteractionContent = ({
+  children,
+  onNewChat,
+  headerTitle = "EduSpark",
+  modals,
+}) => {
   const { isNight } = useTheme(); // Lấy trạng thái từ ThemeWrapper
 
   // Adaptive colors
@@ -20,11 +25,8 @@ const InteractionContent = ({ children, onNewChat, headerTitle = "EduSpark", mod
         to="/dashboard"
         className="fixed left-8 top-5 z-50 text-4xl font-black tracking-tight drop-shadow-md transition-transform hover:scale-105 active:scale-95"
       >
-        <span className="text-meteor">
-          {headerTitle}.AI
-        </span>
+        <span className="text-meteor">{headerTitle}.AI</span>
       </Link>
-
 
       <main className="flex h-full w-full space-x-6 overflow-hidden">
         {children}

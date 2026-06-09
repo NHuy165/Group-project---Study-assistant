@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Cards, MagicWand, Sparkle, WarningCircle } from '@phosphor-icons/react';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
-import { SUBJECTS, SUGGESTED_PROMPTS } from '../constants';
+import { SUBJECTS, SAMPLE_PROMPTS } from '../constants';
+
+
 
 const FlashcardGenerator = ({
     isLoading,
@@ -11,6 +13,7 @@ const FlashcardGenerator = ({
     setPrompt,
     onCreateFlashcardSet,
     onCreateEmptyFlashcardSet,
+    closeAfterAiSubmit = false,
 }) => {
     const { isNight } = useTheme();
     const [createMode, setCreateMode] = useState('ai');
@@ -20,6 +23,16 @@ const FlashcardGenerator = ({
         name: '',
         description: '',
     });
+
+    const [suggestedPrompts, setSuggestedPrompts] = useState([]);
+    const refreshPrompts = () => {
+        const shuffled = [...SAMPLE_PROMPTS].sort(() => 0.5 - Math.random());
+        const count = Math.floor(Math.random() * 2) + 3;
+        setSuggestedPrompts(shuffled.slice(0, count));
+    };
+    useEffect(() => {
+        refreshPrompts();
+    }, []);
 
     const subjectLabel = useMemo(
         () => SUBJECTS.find((item) => item.id === subject)?.label,
@@ -60,10 +73,14 @@ const FlashcardGenerator = ({
         if (!isFormValid || isSubmitting) return;
 
         if (createMode === 'ai') {
-            const createdSet = await onCreateFlashcardSet({
+            const creationPromise = onCreateFlashcardSet({
                 prompt: finalPrompt,
                 subject_type: subject,
             });
+
+            if (closeAfterAiSubmit) return;
+
+            const createdSet = await creationPromise;
             if (createdSet) {
                 setPrompt('');
                 setSelectedSamples([]);
@@ -147,11 +164,11 @@ const FlashcardGenerator = ({
                 </div>
             )}
 
-            <div className="mb-8">
+            <div className="mb-4">
                 {createMode === 'ai' ? (
                     <>
                         <textarea
-                            className={`h-44 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.2rem] leading-relaxed outline-none transition-all custom-scrollbar ${
+                            className={`h-36 w-full resize-none rounded-[2rem] border-2 p-6 text-[1.2rem] leading-relaxed outline-none transition-all custom-scrollbar ${
                                 isNight
                                     ? 'border-gray-700 bg-gray-900/50 text-white placeholder-gray-600 focus:border-blue-400'
                                     : 'border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:border-blue-500'
@@ -161,11 +178,15 @@ const FlashcardGenerator = ({
                             onChange={(event) => setPrompt(event.target.value)}
                             disabled={isCreatingWithAI}
                         />
-
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-xs font-black uppercase opacity-60">Gợi ý từ Cú Mèo:</h4>
+                            <button type="button" onClick={refreshPrompts} className="text-[10px] font-bold text-blue-500 hover:underline">
+                                Đổi gợi ý khác
+                            </button>
+                        </div>
                         <div className="mt-5 flex flex-wrap gap-2">
-                            {SUGGESTED_PROMPTS.map((sample) => {
+                            {suggestedPrompts.map((sample) => {
                                 const isSelected = selectedSamples.includes(sample);
-
                                 return (
                                     <button
                                         key={sample}
@@ -212,7 +233,7 @@ const FlashcardGenerator = ({
                 )}
             </div>
 
-            <div className="mb-10 flex flex-col gap-6 md:flex-row">
+            <div className="mb-5 flex flex-col gap-4 md:flex-row">
                 <div className={`flex-1 rounded-3xl border-2 p-5 ${isNight ? 'border-gray-700 bg-gray-900/50' : 'border-gray-100 bg-gray-50'}`}>
                     <h4 className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-widest opacity-70">
                         📚 Chọn môn học:

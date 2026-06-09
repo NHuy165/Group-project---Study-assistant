@@ -2,29 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../components/theme/ThemeWrapper'; 
 import ErrorBanner from '../../../components/ErrorBanner';
 
-const SUGGESTED_PROMPTS = [
-  "Tóm tắt định luật bảo toàn năng lượng.", 
-  "Ôn tập chương 2 môn Khoa học.", 
-  "Từ vựng tiếng Anh chủ đề Động vật."
-];
+import { TTR_SAMPLE_PROMPTS } from '../constants';
+
 
 export const TTRSetupModal = ({ isOpen, onClose, onSubmit, managerError, clearManagerError }) => {
   const { isNight } = useTheme();
   const [content, setContent] = useState('');
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
-  const [subject, setSubject] = useState('MATHS'); // [MỚI] State môn học mặc định Toán
+  const [subject, setSubject] = useState('MATHS'); 
+  
+  // 🎯 Mặc định là thấp nhất hết
   const [mode, setMode] = useState('normal'); 
   const [difficulty, setDifficulty] = useState('easy'); 
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(5); // Giảm số câu để AI dễ xử lý hơn
 
-  // Reset form khi mở lại Modal
+  const [suggestedPrompts, setSuggestedPrompts] = useState([]);
+  const refreshPrompts = () => {
+    const shuffled = [...TTR_SAMPLE_PROMPTS].sort(() => 0.5 - Math.random());
+    const count = Math.floor(Math.random() * 2) + 3; // 3 hoặc 4
+    setSuggestedPrompts(shuffled.slice(0, count));
+  };
+
+
   useEffect(() => { 
     if (isOpen) { 
       setContent(''); 
       setSelectedPrompts([]); 
       setErrorMsg(''); 
       setSubject('MATHS');
+      setMode('normal');
+      setDifficulty('easy');
+      refreshPrompts();
     } 
   }, [isOpen]);
 
@@ -39,38 +48,39 @@ const handleSubmit = (e) => {
 
     const finalContent = [content.trim(), ...selectedPrompts].filter(Boolean).join('\n\n');
     
-    // Cấu hình linh hoạt mọi độ khó
+    // Default cho easy
     let minBlank = 1; let maxBlank = 2;
-    if (difficulty === 'medium') { minBlank = 3; maxBlank = 4; }
-    if (difficulty === 'hard') { minBlank = 5; maxBlank = 6; }
+    if (difficulty === 'medium') { minBlank = 2; maxBlank = 3; }
+    if (difficulty === 'hard') { minBlank = 3; maxBlank = 4; }
 
     const isEnglish = subject === 'ENGLISH';
 
-    const finalPrompt = isEnglish ? `
-      Task: Create exactly ${questionCount} Gap Fill sentences about "${finalContent}".
+    // Số distractor tăng theo độ khó
+    const distractorCount = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
 
-      STRICT RULES (SYSTEM WILL CRASH IF YOU DISOBEY):
-      1. Each sentence MUST contain ${minBlank} to ${maxBlank} "[BLANK]" placeholders.
-      2. KEEP the exact string "[BLANK]". DO NOT fill in the answers. DO NOT use underscores.
-      3. DO NOT number the sentences (no 1., 2.). 
-      4. DO NOT write any introduction or greetings.
-      5. Output one sentence per line.
+    const finalPrompt = `
+Create exactly ${questionCount} gap-fill (cloze) problems about the following topic: "${finalContent}".
 
-      Correct Example format:
-      The [BLANK] is running across the [BLANK].
-      I want to pet a [BLANK] because it is very cute.
-          ` : `
-      Nhiệm vụ: Tạo đúng ${questionCount} câu hỏi điền từ (Gap Fill) chủ đề "${finalContent}".
+Return ONLY a raw JSON object. No markdown, no code blocks, no explanation — just the JSON.
 
-      QUY ĐỊNH BẮT BUỘC (HỆ THỐNG SẼ LỖI NẾU LÀM SAI):
-      1. Mỗi câu PHẢI chứa từ ${minBlank} đến ${maxBlank} chữ "[BLANK]".
-      2. GIỮ NGUYÊN chữ "[BLANK]" trong câu. TUYỆT ĐỐI KHÔNG điền đáp án.
-      3. KHÔNG đánh số thứ tự (không dùng 1. 2.). KHÔNG có câu chào hỏi hay mở bài.
-      4. Mỗi câu nằm trên 1 dòng.
+Required JSON structure:
+{
+  "activity_items": [
+    {
+      "text": "Sentence with $!BLANK!$ placeholder",
+      "corrects": ["correct_word_1"],
+      "distractors": ["wrong1", "wrong2"]
+    }
+  ]
+}
 
-      Ví dụ đúng định dạng:
-      Con [BLANK] là loài động vật sống ở [BLANK].
-      Bầu trời màu [BLANK] và có những đám mây [BLANK].
+STRICT RULES:
+1. The ONLY blank placeholder allowed is $!BLANK!$ — do NOT use [BLANK], ___, or any other format.
+2. Each "text" should be 2–3 sentences max (4 sentences absolute maximum).
+3. Each "text" must contain BETWEEN ${minBlank} AND ${maxBlank} blanks (i.e. ${minBlank}–${maxBlank} occurrences of $!BLANK!$). "corrects" must contain the words that fill those blanks IN ORDER. The number of words in "corrects" MUST EXACTLY MATCH the number of $!BLANK!$ in "text".
+4. "distractors" should be ${distractorCount} words that are semantically similar to the correct answers but wrong.
+5. Blanked-out words must be key concepts — important terms the student needs to memorize.
+6. ${subject === 'ENGLISH' ? 'Write ALL content in English.' : subject === 'VIETNAMESE' ? 'Viết toàn bộ nội dung bằng tiếng Việt.' : 'Viết toàn bộ nội dung bằng tiếng Việt, dùng thuật ngữ toán học chuẩn.'}
     `;
 
     console.log("Subject đang gửi đi:", subject);
@@ -109,13 +119,25 @@ const handleSubmit = (e) => {
                 isNight ? 'border-gray-600 bg-[#2d3540] focus:border-purple-500 text-white placeholder-gray-400' : 'border-gray-300 bg-gray-50 focus:border-purple-600 text-gray-800'
               }`}
             />
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-black uppercase opacity-60">Gợi ý từ Cú Mèo:</h4>
+              <button type="button" onClick={refreshPrompts} className="text-[10px] font-bold text-blue-500 hover:underline">
+                  Đổi gợi ý khác
+              </button>
+          </div>
+
             <div className="flex flex-wrap gap-2 mt-3">
-              {SUGGESTED_PROMPTS.map((p, i) => (
+              {suggestedPrompts.map((p, i) => ( // Dùng suggestedPrompts thay vì SUGGESTED_PROMPTS
                 <button key={i} type="button" onClick={() => togglePrompt(p)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                    selectedPrompts.includes(p) ? 'bg-purple-600 border-purple-700 text-white' : (isNight ? 'bg-[#2d3540] border-gray-600 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700')
-                  }`}>{p}</button>
+                    selectedPrompts.includes(p) 
+                      ? 'bg-purple-600 border-purple-700 text-white shadow-md shadow-purple-500/20' 
+                      : (isNight ? 'bg-[#2d3540] border-gray-600 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700')
+                  }`}>
+                  {p}
+                </button>
               ))}
+              
             </div>
             {errorMsg && <p className="mt-3 text-red-500 text-xs font-bold animate-bounce">{errorMsg}</p>}
           </div>

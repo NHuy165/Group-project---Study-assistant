@@ -10,54 +10,117 @@ export const useDocuments = (interactionId) => {
 
     const handleStartEdit = (doc) => {
         setEditingID(doc.id);
-        const dotIndex = doc.name.lastIndexOf('.');
-        const baseName = dotIndex !== -1 ? doc.name.substring(0, dotIndex) : doc.name;
+        const dotIndex = doc.name?.lastIndexOf('.') ?? -1;
+        const baseName = dotIndex !== -1 ? doc.name.substring(0, dotIndex) : (doc.name || "");
         setDocumentName(baseName);
     };
 
-    const updateDocument = async (id, customFullName = null) => {
+    const updateDocument = async (id, updates = null) => {
         const doc = documents.find(d => d.id === id);
         if (!doc) return setEditingID(null);
 
-        const dotIndex = doc.name.lastIndexOf('.');
-        const ext = dotIndex !== -1 ? doc.name.substring(dotIndex) : '';
-        const newFullName = customFullName || (documentName.trim() ? documentName.trim() + ext : doc.name);
+        let payload = {};
+        let newName = doc.name;
 
-        if (!newFullName.trim() || newFullName === doc.name) {
-            return setEditingID(null);
+        if (updates && typeof updates === 'object') {
+            if (updates.name && updates.name !== doc.name) payload.name = updates.name;
+            
+            if (updates.hasOwnProperty('subject_type') && updates.subject_type !== doc.subject_type) {
+                 payload.subject_type = updates.subject_type;
+            }
+        } else {
+            const dotIndex = doc.name?.lastIndexOf('.') ?? -1;
+            const ext = dotIndex !== -1 ? doc.name.substring(dotIndex) : '';
+            if (documentName.trim()) {
+                newName = documentName.trim() + ext;
+                if (newName !== doc.name) payload.name = newName;
+            }
+        }
+
+        if (Object.keys(payload).length === 0) return setEditingID(null);
+
+        // 🎯 THÊM ĐOẠN NÀY: Ép luôn luôn có subject_type gửi lên Backend
+        // Tránh việc Backend báo lỗi 400 do thiếu trường dữ liệu
+        const apiPayload = { ...payload };
+        if (!apiPayload.hasOwnProperty('subject_type')) {
+            apiPayload.subject_type = ['MATHS', 'VIETNAMESE', 'ENGLISH'].includes(doc.subject_type) ? doc.subject_type : null;
         }
 
         try {
-            setDocuments((prev) => prev.map((d) => d.id === id ? { ...d, name: newFullName } : d));
+            // Cập nhật giao diện lập tức cho mượt
+            setDocuments((prev) => prev.map((d) => d.id === id ? { ...d, ...payload } : d));
             setEditingID(null);
-            await api.updateDocument(id, { name: newFullName });
+            
+            // Gửi apiPayload (chắc chắn luôn chứa subject_type) lên BE
+            await api.updateDocument(id, apiPayload);
         } catch (err) { 
-            // Xử lý lỗi (nếu cần)
+            console.error("Lỗi cập nhật tài liệu:", err);
+            readDocuments(); // Nếu BE báo lỗi, nó sẽ fetch lại data cũ (gây ra hiện tượng "giật")
         }
     };
 
-    const uploadMultipleFiles = async (files, input) => {
-        // 1. Đưa tất cả file vào danh sách hiển thị UI trạng thái "isUploading" ngay lập tức
-        const tempDocs = files.map((file, index) => ({ 
+    const uploadMultipleFiles = async (fileItems) => {
+        // 🎯 ĐẶT GIỚI HẠN DUNG LƯỢNG Ở FRONTEND (Ví dụ: 20MB = 20 * 1024 * 1024 bytes)
+        const MAX_FILE_SIZE = 20 * 1024 * 1024; 
+
+        const validFiles = [];
+        const oversizedFiles = [];
+
+        // Kiểm tra từng file trước khi đưa vào hàng đợi
+        fileItems.forEach(item => {
+            if (item.file.size > MAX_FILE_SIZE) {
+                oversizedFiles.push(item);
+            } else {
+                validFiles.push(item);
+            }
+        });
+
+        // Cảnh báo thân thiện nếu có file quá nặng
+        if (oversizedFiles.length > 0) {
+            const fileNames = oversizedFiles.map(f => f.file.name).join(', ');
+            alert(`❌ File quá lớn (vượt quá 20MB): ${fileNames}.\n\nCú Mèo không vác nổi đâu, bé hãy cắt nhỏ file PDF ra hoặc chọn file nhẹ hơn nhé!`);
+            
+            // Nếu không có file nào hợp lệ thì dừng luôn
+            if (validFiles.length === 0) return; 
+        }
+
+        // Bắt đầu quy trình upload với các file hợp lệ (validFiles)
+        const tempDocs = validFiles.map((item, index) => ({ 
             id: `temp-${Date.now()}-${index}`, 
-            name: file.name, 
-            isUploading: true 
+            name: item.file?.name || "Đang tải...", 
+            subject_type: item.subject_type,
+            isUploading: true,
+            created_at: new Date().toISOString() 
         }));
         
-        setDocuments(prev => [...prev, ...tempDocs]);
+        setDocuments(prev => [...tempDocs, ...prev]);
 
-        // 2. Chạy tải lên SONG SONG tất cả các file cùng một lúc (All at once)
         await Promise.all(
-            files.map(async (file) => {
+            validFiles.map(async (item, index) => {
+                const tempId = tempDocs[index].id;
+                
                 try {
-                    const newDoc = await api.saveDocument(interactionId, file, input);
-                    // Cập nhật lại UI khi file này tải xong
-                    setDocuments(prev => prev.map(d => 
-                        (d.isUploading && d.name === file.name) ? newDoc : d
-                    ));
+                    const documentInput = {
+                        name: item.file.name,
+                        subject_type: item.subject_type, // Có thể là undefined, null, hoặc 'MATHS'...
+                        // 🎯 Nếu undefined (Auto) -> true. Còn chọn Khác (null) hoặc 3 môn kia -> false
+                        subject_type_overwrite: item.subject_type === undefined ? true : false
+                    };
+
+                    const response = await api.saveDocument(interactionId, item.file, documentInput);
+                    
+                    let actualData = response;
+                    if (response && response.data) actualData = response.data;
+                    let newDoc = Array.isArray(actualData) ? actualData[0] : actualData;
+                    
+                    if (!newDoc || !newDoc.name) {
+                        newDoc = { ...newDoc, id: newDoc?.id || tempId, name: item.file.name, created_at: new Date().toISOString() };
+                    }
+                    
+                    setDocuments(prev => prev.map(d => d.id === tempId ? newDoc : d));
                 } catch (err) { 
-                    // Nếu file này lỗi, xóa file này khỏi danh sách đang tải
-                    setDocuments(prev => prev.filter(d => !(d.isUploading && d.name === file.name))); 
+                    console.error(`Lỗi tải lên file ${item.file?.name}:`, err);
+                    setDocuments(prev => prev.map(d => d.id === tempId ? { ...d, isUploading: false, isError: true } : d)); 
                 }
             })
         );
@@ -65,7 +128,7 @@ export const useDocuments = (interactionId) => {
 
     const readDocuments = useCallback(async () => {
         if (!interactionId) return;
-        setIsLoading(true); // Nhớ bật loading
+        setIsLoading(true);
         try {
             const data = await api.readDocuments(interactionId);
             setDocuments(data);
@@ -77,43 +140,25 @@ export const useDocuments = (interactionId) => {
     }, [interactionId]);
 
     useEffect(() => { 
-        // Dọn dẹp danh sách cũ ngay lập tức khi ID thay đổi để tránh hiển thị nhầm
         setDocuments([]); 
         setSelectedDocIds([]);
-        
-        if (interactionId) {
-            readDocuments(); 
-        }
+        if (interactionId) readDocuments(); 
     }, [interactionId, readDocuments]);
 
-    // CHỈNH SỬA: Hàm xóa file hoàn chỉnh
     const deleteDocument = async (id) => {
         try {
-            // 1. Cập nhật UI ngay lập tức (xóa khỏi danh sách)
             setDocuments((prev) => prev.filter(doc => doc.id !== id));
-            
-            // 2. Nếu file này đang được tích chọn để chat, thì bỏ chọn luôn
             setSelectedDocIds((prev) => prev.filter(docId => docId !== id));
-
-            // 3. Gọi API để xóa dưới database
             await api.deleteDocument(id);
         } catch (err) {
             console.error("Lỗi khi xóa tài liệu:", err);
-            // Nếu gọi API lỗi, tự động tải lại danh sách file cho chắc ăn
             readDocuments();
         }
     };
 
     return { 
-        documents, 
-        selectedDocIds, 
-        editingID, 
-        documentName, 
-        setDocumentName, 
+        documents, selectedDocIds, editingID, documentName, setDocumentName, 
         handleDocCheck: (id) => setSelectedDocIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]),
-        handleStartEdit, 
-        updateDocument, 
-        uploadMultipleFiles, 
-        deleteDocument // Đã thay thế hàm gọi API trực tiếp bằng hàm tự viết ở trên
+        handleStartEdit, updateDocument, uploadMultipleFiles, deleteDocument
     };
 };

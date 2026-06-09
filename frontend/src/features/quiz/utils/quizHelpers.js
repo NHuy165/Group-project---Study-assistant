@@ -84,6 +84,7 @@ export const transformExerciseItem = (item) => ({
   ),
   maxScore: roundToTwoDecimals(item.max_score),
   userScore: roundToTwoDecimals(item.user_score),
+  explanation: item.explanation ?? null,
   attemptId: parseAttempt(item.attempt),
   options: (item.contents || []).map((content) => ({
     id: content.id,
