@@ -6,7 +6,8 @@ import ReactMarkdown from 'react-markdown';
 const SUBJECTS = [
   { id: 'MATHS', label: 'Toán', emoji: '📐' },
   { id: 'VIETNAMESE', label: 'Tiếng Việt', emoji: '📖' },
-  { id: 'ENGLISH', label: 'Tiếng Anh', emoji: '🔤' }
+  { id: 'ENGLISH', label: 'Tiếng Anh', emoji: '🔤' },
+  { id: null, label: 'Khác', emoji: '📂' } 
 ];
 
 export const DocumentDetailModal = ({ 
@@ -17,29 +18,36 @@ export const DocumentDetailModal = ({
   const { isNight } = useTheme();
   
   const [tempName, setTempName] = useState("");
-  const [tempSubject, setTempSubject] = useState("");
+  
 
   const dotIndex = document?.name?.lastIndexOf('.') ?? -1;
   const baseName = dotIndex !== -1 ? document.name.substring(0, dotIndex) : (document?.name || "");
   const ext = dotIndex !== -1 ? document.name.substring(dotIndex) : "";
 
+  const currentSubjectMapped = ['MATHS', 'VIETNAMESE', 'ENGLISH'].includes(document.subject_type) ? document.subject_type : null;
+  
+  const [tempSubject, setTempSubject] = useState(currentSubjectMapped);
+
   useEffect(() => {
     if (document) {
       setTempName(baseName);
-      setTempSubject(document.subject_type || 'MATHS');
+      setTempSubject(currentSubjectMapped); // 🎯 Đồng bộ an toàn
     }
   }, [document, isOpen, baseName]);
 
-  if (!isOpen || !document) return null;
-
-  const isChanged = tempName.trim() !== baseName || tempSubject !== document.subject_type;
-  const isExpanded = isGeneratingPath || !!pathData;
-
+  const isChanged = tempName.trim() !== baseName || tempSubject !== currentSubjectMapped;
+  
   const handleSave = () => {
     const newFullName = tempName.trim() + ext;
     const updates = {};
+    
     if (tempName.trim() && newFullName !== document.name) updates.name = newFullName;
-    if (tempSubject !== document.subject_type) updates.subject_type = tempSubject;
+    
+    if (tempSubject !== currentSubjectMapped) {
+      // 🎯 Sẽ trực tiếp gán updates.subject_type = null nếu chọn Khác
+      updates.subject_type = tempSubject; 
+    }
+    
     if (Object.keys(updates).length > 0) onRename(document.id, updates); 
   };
 
@@ -92,19 +100,21 @@ export const DocumentDetailModal = ({
              </div>
              
              <div>
-               <label className={`text-[11px] font-extrabold uppercase mb-2 block ${isNight ? 'text-gray-500' : 'text-slate-500'}`}>Đổi môn học</label>
-               <div className="flex flex-col gap-2">
+               <label className={`text-[11px] font-extrabold uppercase mb-3 block ${isNight ? 'text-gray-500' : 'text-slate-500'}`}>Đổi môn học</label>
+               {/* 🎯 Redesign lại thành dạng Grid 2x2 cực kỳ gọn gàng */}
+               <div className="grid grid-cols-2 gap-3">
                  {SUBJECTS.map(sub => (
                    <button
                      key={sub.id}
                      onClick={() => setTempSubject(sub.id)}
-                     className={`flex items-center justify-start px-4 gap-3 py-3 rounded-xl text-sm font-bold transition-all ${
+                     className={`flex items-center justify-start px-4 gap-2.5 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
                        tempSubject === sub.id
-                         ? "bg-[#4ecdc4] text-white shadow-md shadow-[#4ecdc4]/30"
-                         : (isNight ? "bg-gray-800/80 text-gray-400 hover:bg-gray-700" : "bg-white text-slate-500 hover:bg-slate-200 border border-slate-200")
+                         ? `bg-[#4ecdc4]/10 border-[#4ecdc4] text-[#2ab7a8] shadow-[0_0_15px_rgba(78,205,196,0.15)]`
+                         : (isNight ? "bg-gray-800/80 border-gray-700 text-gray-400 hover:border-gray-500 hover:bg-gray-700" : "bg-white border-slate-100 text-slate-500 hover:border-slate-300 hover:bg-slate-50")
                      }`}
                    >
-                     <span className="text-xl shrink-0">{sub.emoji}</span> <span className="truncate">Môn {sub.label}</span>
+                     <span className="text-xl shrink-0 drop-shadow-sm">{sub.emoji}</span> 
+                     <span className="truncate">{sub.label}</span>
                    </button>
                  ))}
                </div>
@@ -212,7 +222,7 @@ export const DocumentDetailModal = ({
                                   onClick={() => {
                                     onClose();
                                     if (onAutoGenerate) {
-                                      const subjectType = item.subject_type || document.subject_type || 'MATHS';
+                                      const subjectType = item.subject_type || document.subject_type || null;
 
                                       if (item.activity_format === 'GAP_FILL') {
                                         // 🎯 Build prompt TTR chuẩn: 5-10 câu, 1-2 ô trống/câu, mode normal (mặc định)
@@ -239,7 +249,7 @@ STRICT RULES:
 3. Each "text" should be 2–3 sentences max (4 sentences absolute maximum).
 4. "distractors" should be 2 words that are semantically similar to the correct answers but wrong.
 5. Blanked-out words must be key concepts — important terms the student needs to memorize.
-6. ${subjectType === 'ENGLISH' ? 'Write ALL content in English.' : subjectType === 'VIETNAMESE' ? 'Viết toàn bộ nội dung bằng tiếng Việt.' : 'Viết toàn bộ nội dung bằng tiếng Việt, dùng thuật ngữ toán học chuẩn.'}
+6. ${subjectType === 'ENGLISH' ? 'Write ALL content in English.' : subjectType === 'VIETNAMESE' ? 'Viết toàn bộ nội dung bằng tiếng Việt.' : subjectType === 'MATHS' ? 'Viết toàn bộ nội dung bằng tiếng Việt, dùng thuật ngữ toán học chuẩn.' : 'Detect and use the same language as the source document.'}
                                         `.trim();
 
                                         onAutoGenerate('GAP_FILL', ttrPrompt, subjectType, document.id);

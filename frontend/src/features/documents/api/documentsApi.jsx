@@ -8,15 +8,22 @@ export const saveDocument = async (interactionId, file, documentInput) => {
     formData.append('file', file);
     
     const params = new URLSearchParams();
-    if (documentInput.name) params.append('name', documentInput.name);
-    if (documentInput.subject_type) params.append('subject_type', documentInput.subject_type);
+    if (documentInput.name) {
+        params.append('name', documentInput.name);
+    }
+    
+    // 🎯 CHỈ APPEND KHI subject_type CÓ GIÁ TRỊ THẬT
+    // Nếu nó là null, undefined hoặc chuỗi rỗng '', nó sẽ bị bỏ qua
+    if (documentInput.subject_type) {
+        params.append('subject_type', documentInput.subject_type);
+    }
 
     const response = await axiosClient.post(
         `${PATH}/${interactionId}/upload?${params.toString()}`, 
         formData, 
         {
             headers: { 'Content-Type': 'multipart/form-data' },
-            timeout: 60000 // Tăng timeout lên 60 giây để xử lý file lớn và thời gian phân tích lâu hơn của BE
+            timeout: 60000 
         }
     );
     return response.data;
@@ -36,6 +43,7 @@ export const readDocumentComplete = async (interactionId, documentId) => {
 
 // PATCH: parameter: documentId
 export const updateDocument = async (documentId, updateData) => {
+    // 🎯 Huy đã mở nhận null, ta truyền thẳng updateData chứa JS null qua luôn, không cắt xén gì nữa
     const response = await axiosClient.patch(`${PATH}/${documentId}`, updateData);
     return response.data;
 };

@@ -21,11 +21,15 @@ export const useDocuments = (interactionId) => {
 
         let payload = {};
         let newName = doc.name;
-        let newSubject = doc.subject_type;
 
         if (updates && typeof updates === 'object') {
             if (updates.name && updates.name !== doc.name) payload.name = updates.name;
-            if (updates.subject_type && updates.subject_type !== doc.subject_type) payload.subject_type = updates.subject_type;
+            
+            // 🎯 LỖI NGẦM TRƯỚC ĐÂY Ở ĐÂY: Phải dùng hasOwnProperty thay vì if (updates.subject_type)
+            // Vì nếu subject_type là null, if (null) sẽ sai, dẫn đến việc không cập nhật!
+            if (updates.hasOwnProperty('subject_type') && updates.subject_type !== doc.subject_type) {
+                 payload.subject_type = updates.subject_type;
+            }
         } else {
             const dotIndex = doc.name?.lastIndexOf('.') ?? -1;
             const ext = dotIndex !== -1 ? doc.name.substring(dotIndex) : '';
@@ -90,7 +94,8 @@ export const useDocuments = (interactionId) => {
                 try {
                     const documentInput = {
                         name: item.file.name,
-                        subject_type: item.subject_type
+                        subject_type: item.subject_type,
+                        auto_detect: item.subject_type === undefined
                     };
 
                     const response = await api.saveDocument(interactionId, item.file, documentInput);

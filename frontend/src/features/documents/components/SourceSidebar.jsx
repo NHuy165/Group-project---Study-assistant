@@ -6,7 +6,8 @@ const FILTER_TABS = [
   { id: 'ALL', label: 'Tất cả', emoji: '📚' },
   { id: 'MATHS', label: 'Toán', emoji: '📐' },
   { id: 'VIETNAMESE', label: 'T.Việt', emoji: '📖' },
-  { id: 'ENGLISH', label: 'T.Anh', emoji: '🔤' }
+  { id: 'ENGLISH', label: 'T.Anh', emoji: '🔤' },
+  { id: 'OTHER_TAB', label: 'Khác', emoji: '📂' }
 ];
 
 export const SourceSidebar = ({ 
@@ -28,6 +29,11 @@ export const SourceSidebar = ({
 
   const displayedDocuments = useMemo(() => {
     if (activeFilter === 'ALL') return sortedDocuments;
+    if (activeFilter === 'OTHER_TAB') {
+      // 🎯 Chặn đứng bằng mảng: Bất cứ gì không phải 3 môn này thì ném vào "Khác"
+      const mainSubjects = ['MATHS', 'VIETNAMESE', 'ENGLISH'];
+      return sortedDocuments.filter(doc => !mainSubjects.includes(doc.subject_type));
+    }
     return sortedDocuments.filter(doc => doc.subject_type === activeFilter);
   }, [sortedDocuments, activeFilter]);
 
@@ -52,13 +58,33 @@ export const SourceSidebar = ({
         </button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 shrink-0">
+      <div className={`flex w-full items-center p-1 rounded-2xl shrink-0 transition-colors ${
+        isNight ? "bg-gray-800/80 border border-gray-700/50" : "bg-slate-100/80 border border-slate-200/60"
+      }`}>
         {FILTER_TABS.map(tab => {
           const isActive = activeFilter === tab.id;
           return (
-            <button key={tab.id} onClick={() => setActiveFilter(tab.id)} title={tab.label} className={`group flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 ease-in-out cursor-pointer ${isActive ? "bg-[#bf94e4] text-white shadow-md shadow-[#bf94e4]/30 px-3.5 py-2.5" : (isNight ? "bg-gray-800/60 text-gray-400 hover:bg-gray-700 hover:text-gray-200 px-3 py-2.5" : "bg-white/50 text-slate-500 hover:bg-white hover:text-slate-800 px-3 py-2.5")}`}>
-              <span className="text-[15px] shrink-0 drop-shadow-sm">{tab.emoji}</span>
-              <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isActive ? "max-w-[80px] opacity-100 ml-1.5" : "max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100 group-hover:ml-1.5"}`}>{tab.label}</span>
+            <button 
+              key={tab.id} 
+              onClick={() => setActiveFilter(tab.id)} 
+              title={tab.label}
+              className={`group relative flex items-center justify-center h-[40px] rounded-xl transition-all duration-500 ease-out overflow-hidden ${
+                isActive 
+                  ? `flex-1 px-2 ${isNight ? "bg-gray-600 shadow-md text-white" : "bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#bf94e4]"}` 
+                  : `w-[40px] ${isNight ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-200/70"}`
+              }`}
+            >
+              <span className={`text-[16px] shrink-0 transition-transform duration-300 ${isActive ? "scale-110 drop-shadow-sm" : "group-hover:scale-110"}`}>
+                {tab.emoji}
+              </span>
+              
+              <div className={`transition-all duration-500 ease-out overflow-hidden whitespace-nowrap flex items-center ${
+                isActive ? "max-w-[80px] opacity-100 ml-1.5" : "max-w-0 opacity-0 ml-0"
+              }`}>
+                <span className="text-[12px] font-black tracking-wide">
+                  {tab.label}
+                </span>
+              </div>
             </button>
           )
         })}
