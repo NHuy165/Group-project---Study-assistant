@@ -24,14 +24,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
-def day_overwrite(overwritten_day: Annotated[date | None, Query()] = None) -> date | None:
+
+def day_overwrite(
+    overwritten_day: Annotated[date | None, Query()] = None,
+) -> date | None:
     return overwritten_day if settings.DEV_MODE else None
 
 
 DayOverwriteDep = Annotated[date, Depends(day_overwrite)]
 
+
 async def get_current_user(
-    session: SessionDep, token: Annotated[str, Depends(oauth2_scheme)], day_overwrite: DayOverwriteDep
+    session: SessionDep,
+    token: Annotated[str, Depends(oauth2_scheme)],
+    day_overwrite: DayOverwriteDep,
 ):
     # No token failure
     if token is None:
