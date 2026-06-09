@@ -399,6 +399,7 @@ export const InteractionPage = () => {
               initialSelectedSet={selectedFlashcardSet}
               onCreateFlashcardSet={createNewFlashcardSet}
               onCreateEmptyFlashcardSet={createEmptyFlashcardSet}
+              onFlashcardSetCreated={loadFlashcardSets}
               onClose={closeFlashcardPanel}
             />
           )}
@@ -488,7 +489,7 @@ export const InteractionPage = () => {
         }}
         onDeleteActivity={handleDeleteActivity}
         toolLoadingStates={toolLoadingStates}
-        isCreatingNewActivity={isCreatingNewActivity}
+        isCreatingNewActivity={isCreatingNewActivity || isCreatingWithAI}
 
         toolError={createToolError || testSidebarError}
         onClearToolError={() => {

@@ -54,6 +54,7 @@ import { GearSix } from "@phosphor-icons/react";
 import { FirstLoginDescriptionModal } from "../features/home/components/FirstLoginDescriptionModal";
 import { useFirstLoginDescriptionPrompt } from "../features/home/hooks/useFirstLoginDescriptionPrompt";
 import { getSidebarCardClasses } from "../features/home/utils/dropdownColor";
+import EvaluationBot from "../features/home/components/EvaluationBot";
 
 const HomeContent = () => {
   const { isNight } = useTheme();
@@ -81,6 +82,8 @@ const HomeContent = () => {
           />
         </aside>
       </div>
+      {/* Evaluation bot floating button */}
+      <EvaluationBot />
     </div>
   );
 };

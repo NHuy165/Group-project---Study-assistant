@@ -1,6 +1,7 @@
 fastapi[standard]>=0.135.0
 httpx
 
+
 # Database
 sqlmodel
 psycopg[binary]

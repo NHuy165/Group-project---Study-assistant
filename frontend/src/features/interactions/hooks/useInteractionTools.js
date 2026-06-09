@@ -36,7 +36,6 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
       const newQuiz = await createQuizMutate(interactionId, payload);
       console.log("[useInteractionTools] Created quiz:", newQuiz);
       if (newQuiz && newQuiz.id) {
-        setActiveToolSetup(null);
         if (onActivityCreated) onActivityCreated();
       } else {
         console.error(
@@ -69,14 +68,15 @@ export const useInteractionTools = (interactionId, onActivityCreated) => {
 
   const handleConfirmCreate = (setupData) => {
     if (activeToolSetup === "essay") {
+      setActiveToolSetup(null); // Đóng bảng setup ngay lập tức
       handleCreateEssay(setupData);
       return;
     }
     if (activeToolSetup === "quiz") {
+      setActiveToolSetup(null); // Đóng bảng setup ngay lập tức
       handleCreateQuiz(setupData);
       return;
     }
-    // Sau này bổ sung: if (activeToolSetup === 'quiz') { ... }
   };
 
   // 3. Gom trạng thái Loading của tất cả các nút lại thành 1 Object

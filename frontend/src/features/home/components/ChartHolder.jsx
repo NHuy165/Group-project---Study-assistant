@@ -18,11 +18,9 @@ export const ChartHolder = ({ listOfCharts, sidebarCardCls, isNight }) => {
     if (totalCount === 0) {
         return (
             <div className={`flex flex-col items-center justify-center text-center px-6 py-10 rounded-[1.5rem] shadow-sm border-2 transition-all ${sidebarCardCls}`}>
-                <p className={`text-sm font-medium ${isNight ? "text-slate-300" : "text-slate-600"}`}>
-                    <h1 className={`text-lg font-bold ${isNight ? "text-slate-200" : "text-slate-800"}`}>
-                        Bé hãy bắt đầu tạo câu hỏi đầu tiên để khám phá tiến độ học tập của mình nhé!
-                    </h1>
-                </p>
+                <h1 className={`text-lg font-bold ${isNight ? "text-slate-200" : "text-slate-800"}`}>
+                    Bé hãy bắt đầu tạo câu hỏi đầu tiên để khám phá tiến độ học tập của mình nhé!
+                </h1>
             </div>
         );
     }
