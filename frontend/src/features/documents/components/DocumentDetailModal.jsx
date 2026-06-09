@@ -50,7 +50,10 @@ export const DocumentDetailModal = ({
       updates.subject_type = tempSubject; 
     }
     
-    if (Object.keys(updates).length > 0) onRename(document.id, updates); 
+    if (Object.keys(updates).length > 0) {
+      onRename(document.id, updates); 
+      onClose();
+    }
   };
 
   const fileTypeDisplay = document.type || ext.replace('.', '').toUpperCase() || "FILE";

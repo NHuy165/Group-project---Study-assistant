@@ -25,8 +25,6 @@ export const useDocuments = (interactionId) => {
         if (updates && typeof updates === 'object') {
             if (updates.name && updates.name !== doc.name) payload.name = updates.name;
             
-            // 🎯 LỖI NGẦM TRƯỚC ĐÂY Ở ĐÂY: Phải dùng hasOwnProperty thay vì if (updates.subject_type)
-            // Vì nếu subject_type là null, if (null) sẽ sai, dẫn đến việc không cập nhật!
             if (updates.hasOwnProperty('subject_type') && updates.subject_type !== doc.subject_type) {
                  payload.subject_type = updates.subject_type;
             }
@@ -41,13 +39,23 @@ export const useDocuments = (interactionId) => {
 
         if (Object.keys(payload).length === 0) return setEditingID(null);
 
+        // 🎯 THÊM ĐOẠN NÀY: Ép luôn luôn có subject_type gửi lên Backend
+        // Tránh việc Backend báo lỗi 400 do thiếu trường dữ liệu
+        const apiPayload = { ...payload };
+        if (!apiPayload.hasOwnProperty('subject_type')) {
+            apiPayload.subject_type = ['MATHS', 'VIETNAMESE', 'ENGLISH'].includes(doc.subject_type) ? doc.subject_type : null;
+        }
+
         try {
+            // Cập nhật giao diện lập tức cho mượt
             setDocuments((prev) => prev.map((d) => d.id === id ? { ...d, ...payload } : d));
             setEditingID(null);
-            await api.updateDocument(id, payload);
+            
+            // Gửi apiPayload (chắc chắn luôn chứa subject_type) lên BE
+            await api.updateDocument(id, apiPayload);
         } catch (err) { 
             console.error("Lỗi cập nhật tài liệu:", err);
-            readDocuments();
+            readDocuments(); // Nếu BE báo lỗi, nó sẽ fetch lại data cũ (gây ra hiện tượng "giật")
         }
     };
 
