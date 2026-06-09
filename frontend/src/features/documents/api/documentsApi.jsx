@@ -12,8 +12,12 @@ export const saveDocument = async (interactionId, file, documentInput) => {
         params.append('name', documentInput.name);
     }
     
-    // 🎯 CHỈ APPEND KHI subject_type CÓ GIÁ TRỊ THẬT
-    // Nếu nó là null, undefined hoặc chuỗi rỗng '', nó sẽ bị bỏ qua
+    // 🎯 1. BẮT BUỘC gửi cờ subject_type_overwrite
+    // Ép sang chuỗi để truyền an toàn qua URL Query Params
+    params.append('subject_type_overwrite', String(documentInput.subject_type_overwrite));
+    
+    // 🎯 2. CHỈ truyền subject_type nếu là 3 môn chính ('MATHS', 'VIETNAMESE', 'ENGLISH')
+    // Nếu là null (Khác) hoặc undefined (Auto) thì lệnh if này sẽ false -> KHÔNG TRUYỀN VÀO
     if (documentInput.subject_type) {
         params.append('subject_type', documentInput.subject_type);
     }
@@ -46,6 +50,9 @@ export const updateDocument = async (documentId, updateData) => {
     // 🎯 Huy đã mở nhận null, ta truyền thẳng updateData chứa JS null qua luôn, không cắt xén gì nữa
     const response = await axiosClient.patch(`${PATH}/${documentId}`, updateData);
     return response.data;
+
+
+    
 };
 
 // DELETE: parameter: documentId

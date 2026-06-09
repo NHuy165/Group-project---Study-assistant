@@ -28,6 +28,8 @@ export const DocumentDetailModal = ({
   
   const [tempSubject, setTempSubject] = useState(currentSubjectMapped);
 
+  const isExpanded = isGeneratingPath || !!pathData;
+  
   useEffect(() => {
     if (document) {
       setTempName(baseName);
