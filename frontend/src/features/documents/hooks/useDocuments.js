@@ -94,8 +94,9 @@ export const useDocuments = (interactionId) => {
                 try {
                     const documentInput = {
                         name: item.file.name,
-                        subject_type: item.subject_type,
-                        auto_detect: item.subject_type === undefined
+                        subject_type: item.subject_type, // Có thể là undefined, null, hoặc 'MATHS'...
+                        // 🎯 Nếu undefined (Auto) -> true. Còn chọn Khác (null) hoặc 3 môn kia -> false
+                        subject_type_overwrite: item.subject_type === undefined ? true : false
                     };
 
                     const response = await api.saveDocument(interactionId, item.file, documentInput);
