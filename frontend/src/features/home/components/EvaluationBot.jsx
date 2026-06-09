@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EvaluationWindow from './EvaluationWindow';
 import { useEvaluation } from '../hooks/useEvaluation';
+import robotPurple from "../assets/robot-purple.png";
 
 const EvaluationBot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -114,7 +115,7 @@ const EvaluationBot = () => {
 
                     <img
                         alt="Robot AI"
-                        src="/src/features/home/assets/robot-purple.png"
+                        src={robotPurple}
                         onClick={handleToggleEvaluation}
                         className="relative w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform hover:scale-110 active:scale-95 border-2 border-white"
                     />
