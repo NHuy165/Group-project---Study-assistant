@@ -10,6 +10,7 @@ export interface QuizQuestion {
   question: string;
   maxScore: number;
   userScore: number;
+  explanation: string | null;
   attempt: string | null;
   options: QuizOption[];
 }

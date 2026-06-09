@@ -8,8 +8,14 @@ export const getAllStudyActivities = async (interactionId) => {
 };
 
 export const createStudyActivity = async (interactionId, payload) => {
+    // 🎯 Đảm bảo có document_id trong payload, nếu không có thì mặc định là 0
+    const finalPayload = {
+        ...payload,
+        document_id: payload.document_id || 0
+    };
+
     // Gọi POST /study-activity/{interaction_id}/create
-    const response = await axiosClient.post(`/study-activity/${interactionId}/create`, payload);
+    const response = await axiosClient.post(`/study-activity/${interactionId}/create`, finalPayload);
     return response.data;
 };
 

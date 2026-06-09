@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
-
 // ==========================================
 // 1. IMPORTS HOOKS
 // ==========================================
@@ -23,9 +22,6 @@ import { AddSourceModal } from "../features/documents/components/AddSourceModal"
 import { OpenEndedContainer } from "../features/open_ended/components/OpenEndedContainer";
 import { ToolSetupArea } from "../features/interactions/components/ToolSetupArea";
 
-import { useLearningPath } from "../features/documents/hooks/useLearningPath";
-import { LearningPathModal } from "../features/documents/components/LearningPathModal";
-
 import { TTRFeature } from "../features/ttr/index";
 import { TTRSetupModal } from "../features/ttr/components/TTRSetupModal";
 import {
@@ -33,9 +29,14 @@ import {
   fetchActivitiesByInteraction,
   deleteTTRActivity
 } from "../features/ttr/api/ttrApi";
+
+import { createStudyActivity } from "../features/open_ended/api/studyActivityApi";
 import { QuizPanel } from "../features/quiz/components";
+import { createFlashcard } from "../features/flashcard/api/flashcardAPI";
 
 import FlashcardPanel from "../features/flashcard/components/FlashcardPanel";
+
+
 
 export const InteractionPage = () => {
   const { interactionId } = useParams();
@@ -50,7 +51,6 @@ export const InteractionPage = () => {
   const [isFlashcardMode, setIsFlashcardMode] = useState(false);
   const [flashcardPanelMode, setFlashcardPanelMode] = useState('create');
   const [selectedFlashcardSet, setSelectedFlashcardSet] = useState(null);
-
 
   // State Tap To Review (TTR)
   const [isSetupOpen, setIsSetupOpen] = useState(false); 
@@ -71,6 +71,9 @@ export const InteractionPage = () => {
   // ==========================================
   // GỌI CÁC CUSTOM HOOKS
   // ==========================================
+
+  const [tempBackgroundTasks, setTempBackgroundTasks] = useState([]);
+  
   const { handleNewChatClick } = useInteractions();
 
   const {
@@ -86,15 +89,6 @@ export const InteractionPage = () => {
     deleteDocument,
     isLoading: isDocsLoading,
   } = useDocuments(interactionId);
-
-  const {
-    isPathModalOpen,
-    openPathModal,
-    closePathModal,
-    isGeneratingPath,
-    pathData,
-    generateLearningPath
-  } = useLearningPath(interactionId);
 
   const {
     chatlog,
@@ -113,6 +107,7 @@ export const InteractionPage = () => {
     createNewFlashcardSet,
     createEmptyFlashcardSet,
     removeFlashcardSet,
+    loadFlashcardSets
   } = useFlashcardSetManagement(interactionId);
 
   const { activities, fetchActivities, handleDeleteActivity } =
@@ -183,21 +178,79 @@ export const InteractionPage = () => {
       getActivityFormat(item) === "MULTIPLE_CHOICE_QUESTIONS",
   );
 
-  const handleCreateTTRBackground = (data) => {
-    const { prompt: finalPrompt, gameMode, subjectType } = data;
+  const displayedFlashcardSets = [
+    ...tempBackgroundTasks.filter((item) => item.activity_format === "FLASHCARDS"),
+    ...(flashcardSets || [])
+  ];
 
+  // 1. Hàm tự động dán câu hỏi ra Chat và gửi
+  const handleAutoChat = (text, documentId) => {
+    askLLM(text, documentId);
+  };
+
+  // 2. Hàm phân luồng tự động tạo mọi loại bài tập
+  const handleAutoGenerate = async (format, prompt, subjectType, documentId) => {
+    
+    // TTR đã có luồng xử lý riêng ở dưới nên cho qua
+    if (format === 'GAP_FILL') {
+      handleCreateTTRBackground({ prompt, gameMode: 'normal', subjectType, document_id: documentId });
+      return;
+    } 
+
+    // Bơm Fake Task vào danh sách để giao diện hiện trạng thái "Đang tạo..."
     const tempId = Date.now();
     const newTask = {
       id: tempId,
-      name: "Đang AI tạo bài...",
-      status: "loading",
+      name: "Cú Mèo AI đang tạo bài...",
+      status: "loading", // Cờ để Sidebar biết là đang loading
+      isNew: true,
+      activity_format: format,
+      activity_type: format === 'FLASHCARDS' ? 'REVIEW' : 'EXERCISE'
     };
+    setTempBackgroundTasks(prev => [newTask, ...prev]);
+
+    try {
+      if (format === 'FLASHCARDS') {
+        // GỌI THẲNG API CHO FLASHCARD VÀ CHẠY NGẦM
+        await createFlashcard(interactionId, { prompt, subject_type: subjectType, document_id: documentId });
+        loadFlashcardSets(); // Render lại mảng flashcards thật
+      } 
+      else if (format === 'MULTIPLE_CHOICE_QUESTIONS') {
+        // GỌI THẲNG API CHO QUIZ
+        await createStudyActivity(interactionId, {
+          prompt, subject_type: subjectType, activity_type: "EXERCISE", activity_format: "MULTIPLE_CHOICE_QUESTIONS", document_id: documentId
+        });
+        fetchActivities(); // Render lại mảng bài tập thật
+      } 
+      else if (format === 'OPEN_ENDED') {
+        // GỌI THẲNG API CHO TỰ LUẬN
+        await createStudyActivity(interactionId, {
+          prompt, subject_type: subjectType, activity_type: "EXERCISE", activity_format: "OPEN_ENDED", document_id: documentId
+        });
+        fetchActivities(); 
+      }
+    } catch (error) {
+      console.error(`Lỗi tạo ${format}:`, error);
+      alert("❌ Cú Mèo đang bị nghẽn mạng, chưa tạo được bài. Bé thử lại sau nhé!");
+    } finally {
+      // Dù thành công hay thất bại thì cũng xóa cái Fake Task đi
+      setTempBackgroundTasks(prev => prev.filter(t => t.id !== tempId));
+    }
+  };
+  
+  const handleCreateTTRBackground = (data) => {
+    const { prompt: finalPrompt, gameMode, subjectType, document_id } = data; // Bắt document_id
+
+    const tempId = Date.now();
+    const newTask = { id: tempId, name: "Đang AI tạo bài...", status: "loading" };
     setTtrTasks((prev) => [newTask, ...prev]);
     setIsSetupOpen(false);
 
+    // Đóng gói JSON y hệt ảnh Swagger bạn gửi
     const payload = { 
       prompt: finalPrompt,
-      subject_type: subjectType 
+      subject_type: subjectType,
+      document_id: document_id 
     };
 
     createTTRActivity(interactionId, payload)
@@ -301,14 +354,6 @@ export const InteractionPage = () => {
             }} 
           />
 
-          <LearningPathModal 
-            isOpen={isPathModalOpen}
-            onClose={closePathModal}
-            isLoading={isGeneratingPath}
-            pathContent={pathData}
-            onGenerate={generateLearningPath}
-          />
-
           {/* FIX ĐỒNG BỘ: Đưa ToolSetupArea vào khu vực modals dưới dạng Lớp phủ (Modal Overlay) */}
           {activeToolSetup && (
             <ToolSetupArea
@@ -366,7 +411,6 @@ export const InteractionPage = () => {
       <SourceSidebar
         documents={documents}
         isLoading={isDocsLoading}
-        onOpenPathModal={openPathModal}
         selectedDocIds={selectedDocIds}
         onAddClick={() => setIsModalOpen(true)}
         editingId={editingID}
@@ -380,6 +424,13 @@ export const InteractionPage = () => {
           setSelectedDoc(doc);
           setIsPreviewOpen(true);
         }}
+
+        onGenerateTTR={handleCreateTTRBackground}
+        onGenerateQuiz={handleConfirmCreate}
+
+        onAutoChat={handleAutoChat}
+        onAutoGenerate={handleAutoGenerate}
+
       />
 
       {/* 2. CỘT GIỮA - LUÔN LUÔN RENDER CHAT AREA ĐỂ GIỮ FORM CHO BACKGROUND ĐẰNG SAU */}
@@ -417,7 +468,7 @@ export const InteractionPage = () => {
         // Props Quiz
         quizActivities={quizActivities}
         // Props Flashcard
-        flashcardSets={flashcardSets}
+        flashcardSets={displayedFlashcardSets}
         onOpenFlashcardSet={openFlashcardSet}
         onDeleteFlashcardSet={removeFlashcardSet}
         onToolClick={(toolId) => {

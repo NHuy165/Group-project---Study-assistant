@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Cards, MagicWand, Sparkle, WarningCircle } from '@phosphor-icons/react';
 import { useTheme } from '../../../components/theme/ThemeWrapper';
-import { SUBJECTS, SUGGESTED_PROMPTS } from '../constants';
+import { SUBJECTS, SAMPLE_PROMPTS } from '../constants';
+
+
 
 const FlashcardGenerator = ({
     isLoading,
@@ -21,6 +23,16 @@ const FlashcardGenerator = ({
         name: '',
         description: '',
     });
+
+    const [suggestedPrompts, setSuggestedPrompts] = useState([]);
+    const refreshPrompts = () => {
+        const shuffled = [...SAMPLE_PROMPTS].sort(() => 0.5 - Math.random());
+        const count = Math.floor(Math.random() * 2) + 3;
+        setSuggestedPrompts(shuffled.slice(0, count));
+    };
+    useEffect(() => {
+        refreshPrompts();
+    }, []);
 
     const subjectLabel = useMemo(
         () => SUBJECTS.find((item) => item.id === subject)?.label,
@@ -166,11 +178,15 @@ const FlashcardGenerator = ({
                             onChange={(event) => setPrompt(event.target.value)}
                             disabled={isCreatingWithAI}
                         />
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            {SUGGESTED_PROMPTS.map((sample) => {
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-xs font-black uppercase opacity-60">Gợi ý từ Cú Mèo:</h4>
+                            <button type="button" onClick={refreshPrompts} className="text-[10px] font-bold text-blue-500 hover:underline">
+                                Đổi gợi ý khác
+                            </button>
+                        </div>
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {suggestedPrompts.map((sample) => {
                                 const isSelected = selectedSamples.includes(sample);
-
                                 return (
                                     <button
                                         key={sample}

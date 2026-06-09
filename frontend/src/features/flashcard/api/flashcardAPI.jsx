@@ -38,12 +38,14 @@ export const transformBackendFlashcards = (studyActivityComplete) => {
 export const createFlashcard = async (interactionId, promptData) => {
     const promptText = typeof promptData === 'object' ? promptData.prompt : promptData;
     const subjectType = typeof promptData === 'object' ? promptData.subject_type : undefined;
+    const documentId = typeof promptData === 'object' ? promptData.document_id : 0; // 🎯 Lấy document_id
 
     const payload = {
         prompt: promptText,
         activity_type: "REVIEW",
         activity_format: "FLASHCARDS",
         subject_type: subjectType,
+        document_id: documentId || 0 // 🎯 Đẩy vào body
     };
 
     const response = await axiosClient.post(

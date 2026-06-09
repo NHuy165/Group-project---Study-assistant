@@ -50,15 +50,16 @@ export const fetchStudyActivity = async (studyActivityId) => {
 };
 
 export const createTTRActivity = async (interactionId, payload) => {
-  // Quét cả 2 kiểu viết biến, nếu không có mới chịu thua về MATHS
   const finalSubject = payload.subject_type || payload.subjectType || "MATHS";
+  const documentId = payload.document_id || 0; // 🎯 Lấy document_id (mặc định 0)
 
   try {
     const response = await axiosClient.post(`${API_BASE_URL}/${interactionId}/create`, {
       prompt: payload.prompt,
       activity_type: "REVIEW", 
       activity_format: "GAP_FILL",
-      subject_type: finalSubject // Ép thẳng môn học vào đây
+      subject_type: finalSubject,
+      document_id: documentId // 🎯 Đẩy vào body
     }, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });

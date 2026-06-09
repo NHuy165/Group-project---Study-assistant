@@ -2,16 +2,17 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useTheme } from "../../../components/theme/ThemeWrapper"; 
 
+// 🎯 1. Đồng bộ 4 môn học (Thêm Khác)
 const SUBJECTS = [
   { id: 'MATHS', label: 'Toán', emoji: '📐' },
-  { id: 'LITERATURE', label: 'Tiếng Việt', emoji: '📖' },
-  { id: 'ENGLISH', label: 'Tiếng Anh', emoji: '🔤' }
+  { id: 'VIETNAMESE', label: 'Tiếng Việt', emoji: '📖' },
+  { id: 'ENGLISH', label: 'Tiếng Anh', emoji: '🔤' },
+  { id: null, label: 'Khác', emoji: '📂' } 
 ];
 
 export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
   const { isNight } = useTheme(); 
   
-  // State chứa mảng object: [{ file: File, subject: 'MATHS' }]
   const [fileItems, setFileItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0); 
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -50,8 +51,8 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length > 0) {
-      // Gán mặc định môn Toán cho mọi file mới chọn
-      const newItems = selectedFiles.map(f => ({ file: f, subject: 'MATHS' }));
+      // 🎯 2. Đổi 'MATHS' thành '' (Rỗng) để giao diện không chọn mặc định
+      const newItems = selectedFiles.map(f => ({ file: f, subject_type: undefined }));
       setFileItems((prev) => [...prev, ...newItems]);
       if (fileItems.length === 0) setCurrentIndex(0); 
     }
@@ -71,15 +72,18 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
     }
   };
 
-  // Cập nhật môn học chỉ cho file đang được chọn xem (currentIndex)
   const updateSubjectForCurrentFile = (subjectId) => {
-    setFileItems(prev => prev.map((item, idx) => 
-      idx === currentIndex ? { ...item, subject: subjectId } : item
-    ));
+    setFileItems(prev => prev.map((item, idx) => {
+      if (idx === currentIndex) {
+        // 🎯 3. Bấm lại môn đang chọn sẽ HỦY CHỌN (về rỗng)
+        return { ...item, subject_type: item.subject_type === subjectId ? undefined : subjectId };
+      }
+      return item;
+    }));
   };
 
   const handleAdd = () => {
-    // Truyền thẳng mảng fileItems đã được phân loại môn học
+    // Không cần delete hay xóa field nào nữa, ném nguyên cụm item qua cho useDocuments xử lý
     onAdd(fileItems); 
     setFileItems([]);
     setCurrentIndex(0);
@@ -203,7 +207,7 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                 
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 pb-2">
                   {fileItems.map((item, i) => {
-                    const subjectInfo = SUBJECTS.find(s => s.id === item.subject);
+                    const subjectInfo = SUBJECTS.find(s => s.id === item.subject_type);
                     return (
                       <div 
                         key={i} 
@@ -227,8 +231,9 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                               <span className={`text-[10px] font-semibold uppercase ${isNight ? 'text-gray-500' : 'text-slate-400'}`}>
                                 {(item.file.size / 1024 / 1024).toFixed(2)} MB
                               </span>
+                              {/* 🎯 5. Nhãn hiển thị Tự động nếu không có môn nào */}
                               <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wide ${isNight ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
-                                {subjectInfo?.label}
+                                {subjectInfo ? subjectInfo.label : 'TỰ ĐỘNG (AI)'}
                               </span>
                             </div>
                           </div>
@@ -258,27 +263,26 @@ export const AddSourceModal = ({ isOpen, onClose, onAdd }) => {
                 
                 {isFlipping && <div className={`absolute inset-0 z-10 ${isNight ? 'bg-gray-900/20' : 'bg-white/20'}`}></div>}
 
-                {/* Khối chọn môn học cho từng file */}
                 <div className={`mt-2 mb-4 p-4 rounded-2xl border transition-all ${isNight ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
                   <div className="flex justify-between items-center mb-2">
                     <h4 className={`text-[11px] font-extrabold uppercase tracking-wide ${isNight ? 'text-gray-400' : 'text-slate-500'}`}>
                       📚 Môn học cho file này
                     </h4>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {SUBJECTS.map(sub => {
-                      const isSelected = fileItems[currentIndex]?.subject === sub.id;
+                      const isSelected = fileItems[currentIndex]?.subject_type === sub.id;
                       return (
                         <button
                           key={sub.id}
                           onClick={() => updateSubjectForCurrentFile(sub.id)}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
                             isSelected
                               ? "bg-[#4ecdc4] text-white shadow-md shadow-[#4ecdc4]/30 border border-[#4ecdc4]"
                               : (isNight ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200")
                           }`}
                         >
-                          <span className="text-base">{sub.emoji}</span> {sub.label}
+                          <span className="text-sm">{sub.emoji}</span> {sub.label}
                         </button>
                       )
                     })}

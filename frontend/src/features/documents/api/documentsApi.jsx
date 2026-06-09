@@ -2,36 +2,48 @@ import axiosClient from '../../../api/axiosClient';
 
 const PATH = '/document';
 
-// POST: parameter: interactionId; body: file, name, description, subject
+// POST: query: name, subject_type; body: file
 export const saveDocument = async (interactionId, file, documentInput) => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('name', documentInput.name);
-    formData.append('description', documentInput.description || '');
     
-    // THÊM DÒNG NÀY ĐỂ GỬI MÔN HỌC LÊN SERVER
-    if (documentInput.subject) {
-        formData.append('subject', documentInput.subject);
+    const params = new URLSearchParams();
+    if (documentInput.name) {
+        params.append('name', documentInput.name);
+    }
+    
+    // 🎯 CHỈ APPEND KHI subject_type CÓ GIÁ TRỊ THẬT
+    // Nếu nó là null, undefined hoặc chuỗi rỗng '', nó sẽ bị bỏ qua
+    if (documentInput.subject_type) {
+        params.append('subject_type', documentInput.subject_type);
     }
 
     const response = await axiosClient.post(
-        `${PATH}/${interactionId}/upload`, 
+        `${PATH}/${interactionId}/upload?${params.toString()}`, 
         formData, 
         {
-            headers: { 'Content-Type': 'multipart/form-data' }
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 60000 
         }
     );
     return response.data;
 };
 
-// GET: parameter: interactionId - THÊM / CUỐI
+// GET 1: Lấy danh sách tài liệu cơ bản (Chỉ gồm tên, id, định dạng)
 export const readDocuments = async (interactionId) => {
     const response = await axiosClient.get(`${PATH}/${interactionId}/`);  
     return response.data;
 };
 
+// GET 2: Lấy Full chi tiết 1 tài liệu (Có Lộ trình, Câu hỏi, Bài tập)
+export const readDocumentComplete = async (interactionId, documentId) => {
+    const response = await axiosClient.get(`${PATH}/${interactionId}/${documentId}`);
+    return response.data;
+};
+
 // PATCH: parameter: documentId
 export const updateDocument = async (documentId, updateData) => {
+    // 🎯 Huy đã mở nhận null, ta truyền thẳng updateData chứa JS null qua luôn, không cắt xén gì nữa
     const response = await axiosClient.patch(`${PATH}/${documentId}`, updateData);
     return response.data;
 };
@@ -39,5 +51,5 @@ export const updateDocument = async (documentId, updateData) => {
 // DELETE: parameter: documentId
 export const deleteDocument = async (documentId) => {
     const response = await axiosClient.delete(`${PATH}/${documentId}`);
-    return response.data;
+    return response.status === 204 || response.status === 200;
 };

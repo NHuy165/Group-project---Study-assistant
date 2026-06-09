@@ -7,9 +7,31 @@ const QuestionCard = ({
   selectedOption,
   onSelectOption,
   isSubmitted,
+  compact = false, // false | true | 'tight'
 }) => {
   const { isNight } = useTheme();
   if (!question) return null;
+
+  const hasExplanation =
+    typeof question.explanation === "string" &&
+    question.explanation.trim().length > 0;
+
+  const isTight = compact === "tight";
+  const isCompact = compact === true || isTight;
+
+  const outerPadding = isTight ? "p-2" : isCompact ? "p-3" : "p-5.5";
+  const questionTextSize = isTight
+    ? "text-base"
+    : isCompact
+      ? "text-lg"
+      : "text-xl";
+  const optionPadding = isTight ? "p-2" : isCompact ? "p-3" : "p-4";
+  const optionGap = isTight ? "gap-1" : isCompact ? "gap-1" : "gap-2";
+  const explanationPadding = isTight
+    ? "mt-4 p-4"
+    : isCompact
+      ? "mt-4 p-4"
+      : "mt-4 p-4";
 
   return (
     <>
@@ -29,17 +51,16 @@ const QuestionCard = ({
       {/* ĐIỂM QUYẾT ĐỊNH: Thuộc tính key={question.id} giúp React render lại animation mỗi khi đổi câu hỏi */}
       <div
         key={question.id}
-        className={`animate-slide-fade rounded-3xl border p-5.5 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${
+        className={`animate-slide-fade rounded-2xl border ${outerPadding} ${isTight ? "min-h-[260px]" : isCompact ? "min-h-[220px]" : ""} shadow-[0_12px_24px_rgba(15,23,42,0.08)] ${
           isNight
             ? "border-[#7d95e2]/40 bg-[#111a38]/90"
             : "border-[#7adfd9]/45 bg-gradient-to-br from-white via-[#fff3e6] to-[#e0f2fe] ring-1 ring-[#9be7e2]/40"
         }`}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
-          
           {/* ĐÃ SỬA: Đổi thẻ <p> thành <div> và bọc SmartContent cho CÂU HỎI */}
           <div
-            className={`text-xl font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
+            className={`${questionTextSize} font-semibold ${isNight ? "text-slate-100" : "text-gray-800"}`}
           >
             <SmartContent>{question.text}</SmartContent>
           </div>
@@ -58,7 +79,7 @@ const QuestionCard = ({
           )}
         </div>
 
-        <div className="mt-4 grid gap-2">
+        <div className={`mt-4 grid ${optionGap}`}>
           {question.options.map((option) => {
             const isSelected = selectedOption === option.id;
             const showCorrect = isSubmitted && option.isCorrect;
@@ -91,7 +112,7 @@ const QuestionCard = ({
                 key={option.id}
                 onClick={() => !isSubmitted && onSelectOption(option.id)}
                 disabled={isSubmitted}
-                className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 text-left font-medium transition-all duration-200 ${stateClass} ${
+                className={`flex w-full items-center justify-between rounded-lg border-2 ${optionPadding} text-left font-medium transition-all duration-200 ${stateClass} ${
                   isSubmitted
                     ? "cursor-default"
                     : "cursor-pointer hover:shadow-md"
@@ -103,6 +124,27 @@ const QuestionCard = ({
             );
           })}
         </div>
+
+        {isSubmitted && hasExplanation && (
+          <div
+            className={`rounded-2xl border ${explanationPadding} ${
+              isNight
+                ? "border-cyan-400/30 bg-cyan-500/10 text-slate-100"
+                : "border-cyan-200 bg-cyan-50 text-slate-800"
+            }`}
+          >
+            <p
+              className={`mb-1.5 ${isTight ? "text-sm" : "text-sm"} font-extrabold uppercase tracking-widest ${isNight ? "text-cyan-200" : "text-cyan-700"}`}
+            >
+              Giải thích
+            </p>
+            <div
+              className={`${isTight ? "text-sm" : isCompact ? "text-sm" : "text-base"} leading-relaxed`}
+            >
+              <SmartContent>{question.explanation}</SmartContent>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

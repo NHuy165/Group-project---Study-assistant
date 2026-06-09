@@ -6,16 +6,36 @@ import backgroundNight from "../../assets/background/background_night.png";
 import { useWeatherEngine } from "./hooks/useWeatherEngine";
 import { DayNightToggle } from "./elements/DayNightToggle";
 import { GlobalStyles } from "./elements/GlobalStyles";
-import { RainCanvas, PuddleSplashes, PetrichorMist } from "./elements/RainSystem";
-import { DriftingClouds, MorningFog, StarField, ShootingStars } from "./elements/SkyEffects";
-import { Butterflies, FallingPetals, GoldenDust, Bees, Fireflies, FallingLeaves } from "./elements/NatureCreatures";
+import {
+  RainCanvas,
+  PuddleSplashes,
+  PetrichorMist,
+} from "./elements/RainSystem";
+import {
+  DriftingClouds,
+  MorningFog,
+  StarField,
+  ShootingStars,
+} from "./elements/SkyEffects";
+import {
+  Butterflies,
+  FallingPetals,
+  GoldenDust,
+  Bees,
+  Fireflies,
+  FallingLeaves,
+} from "./elements/NatureCreatures";
 import { Rainbow } from "./elements/Rainbow";
 import { LightningSVG } from "./elements/LightningSVG";
 
 export const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
-export const ThemeWrapper = ({ children, showToggle = true }) => {
+export const ThemeWrapper = ({
+  children,
+  showToggle = true,
+  topRightActions = null,
+}) => {
   // ĐỌC THEME TỪ BỘ NHỚ LÚC MỚI VÀO TRANG (Chống nhấp nháy chuyển màu)
   const [isNight, setIsNight] = useState(() => {
     const savedTheme = localStorage.getItem("eduspark_theme");
@@ -27,11 +47,17 @@ export const ThemeWrapper = ({ children, showToggle = true }) => {
     localStorage.setItem("eduspark_theme", isNight ? "dark" : "light");
   }, [isNight]);
 
-  const toggleMode = () => setIsNight(p => !p);
+  const toggleMode = () => setIsNight((p) => !p);
 
-  const { 
-    weather, rainbowPhase, lightningBolts, shootingStar,
-    isRaining, isStopping, showFog, cloudDark 
+  const {
+    weather,
+    rainbowPhase,
+    lightningBolts,
+    shootingStar,
+    isRaining,
+    isStopping,
+    showFog,
+    cloudDark,
   } = useWeatherEngine(isNight);
 
   return (
@@ -73,12 +99,16 @@ export const ThemeWrapper = ({ children, showToggle = true }) => {
 
         {/* ── TẦNG 4: Sinh vật ── */}
         <Fireflies visible={isNight && !isRaining} />
-        
+
         {!isNight && (
           <>
             <Butterflies visible={!isRaining} hide={cloudDark} />
             <FallingPetals visible={true} />
-            <FallingLeaves visible={!isNight} cloudDark={cloudDark} isRaining={isRaining} />  
+            <FallingLeaves
+              visible={!isNight}
+              cloudDark={cloudDark}
+              isRaining={isRaining}
+            />
             <GoldenDust visible={!isRaining} />
             <Bees visible={!isRaining} hide={cloudDark} />
           </>
@@ -94,7 +124,8 @@ export const ThemeWrapper = ({ children, showToggle = true }) => {
 
         {/* ── TẦNG UI: Nút chuyển đổi ── */}
         {showToggle && (
-          <div className="absolute right-8 top-6 z-[100001]">
+          <div className="absolute right-8 top-6 z-[100001] flex items-center gap-3">
+            {topRightActions}
             <DayNightToggle isNight={isNight} onToggle={toggleMode} />
           </div>
         )}

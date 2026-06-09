@@ -1,57 +1,57 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import * as api from '../api/documentsApi';
 
-export const useLearningPath = (interactionId) => {
-  const [isPathModalOpen, setIsPathModalOpen] = useState(false);
+export const useLearningPath = () => {
+  const params = useParams();
+  
   const [isGeneratingPath, setIsGeneratingPath] = useState(false);
   const [pathData, setPathData] = useState(null);
 
-  const openPathModal = () => setIsPathModalOpen(true);
-  const closePathModal = () => setIsPathModalOpen(false);
+  const generateLearningPath = async (documentId, documentName) => {
+    // Đảm bảo bắt được Interaction ID dù cho React Router có bị ảnh hưởng bởi lớp Portal
+    const interactionId = params.interactionId || window.location.pathname.split('/')[2];
+    
+    if (!interactionId || !documentId) return;
 
-  const generateLearningPath = async () => {
     setIsGeneratingPath(true);
     setPathData(null); 
     
     try {
-      // TƯƠNG LAI: Gọi API thật từ Backend
-      // const response = await api.generateLearningPath(interactionId);
-      // setPathData(response.content);
+      const responseData = await api.readDocumentComplete(interactionId, documentId);
       
-      // HIỆN TẠI: Giả lập chờ 3.5 giây rồi hiện text
-      await new Promise(resolve => setTimeout(resolve, 3500));
+      // Bóc tách dữ liệu AI nằm lẫn trong mảng
+      let actualData = responseData.data || responseData;
+      let aiData = null;
       
-      const mockMarkdownResponse = `
-### Lộ trình ôn tập 3 ngày tới 🚀
+      if (Array.isArray(actualData)) {
+        // Tìm phần tử chứa Lộ trình AI
+        aiData = actualData.find(item => item.summary || item.material_recommendations);
+      } else {
+        aiData = actualData.summary ? actualData : null;
+      }
 
-Dựa vào các tài liệu Toán và Tiếng Việt bé vừa tải lên, Cú Mèo gợi ý lộ trình sau:
-
-#### **Ngày 1: Ôn tập cơ bản**
-* **Toán:** Làm 10 câu trắc nghiệm đầu tiên trong đề thi.
-* **Tiếng Việt:** Đọc hiểu phần văn bản trích dẫn.
-
-#### **Ngày 2: Luyện giải bài tập**
-* **Toán:** Tập trung giải 5 bài toán đố về phân số.
-* **Tiếng Việt:** Luyện viết một đoạn văn ngắn 5-7 câu.
-
-#### **Lưu ý nhỏ:**
-Bé hãy chia nhỏ thời gian học, học 25 phút thì nghỉ 5 phút để não bộ thư giãn nhé! Cú Mèo tin bé sẽ làm rất tốt! ❤️
-      `;
-      setPathData(mockMarkdownResponse);
+      if (aiData) {
+        setPathData(aiData);
+      } else {
+        setPathData(null);
+        alert("⏳ Cú Mèo đang bắt đầu đọc tài liệu này ở hậu trường. Bé hãy đợi vài phút rồi mở lại nhé!");
+      }
 
     } catch (error) {
-      console.error("Lỗi tạo lộ trình:", error);
-      setPathData("❌ Rất tiếc, Cú Mèo đang gặp sự cố khi đọc tài liệu. Bé thử lại sau nhé!");
+      console.error("Lỗi khi tải dữ liệu phân tích:", error);
+      setPathData(null); 
+      
+      // 🎯 LỖI SỐ 3: Bắt trúng tim đen lỗi 400 (Backend chưa xử lý xong)
+      if (error.response && error.response.status === 400) {
+         alert("⏳ Cú Mèo đang mải miết đọc và tóm tắt tài liệu bé vừa tải lên. Bé đợi khoảng 1-2 phút rồi bấm lại nhé!");
+      } else {
+         alert("❌ Ối, kết nối bị gián đoạn mất rồi. Bé hãy thử F5 lại trang xem sao!");
+      }
     } finally {
       setIsGeneratingPath(false);
     }
   };
 
-  return {
-    isPathModalOpen,
-    openPathModal,
-    closePathModal,
-    isGeneratingPath,
-    pathData,
-    generateLearningPath
-  };
+  return { isGeneratingPath, pathData, generateLearningPath };
 };
