@@ -232,7 +232,7 @@ const OrnateArch = () => (
 
     {/* shadow */}
     <text
-    fontFamily="Montserrat, sans-serif"
+    fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Ubuntu', sans-serif"
     fontSize="54"
     fontWeight="900"
     letterSpacing="4"
@@ -245,7 +245,7 @@ const OrnateArch = () => (
 
     {/* main text */}
     <text
-    fontFamily="Montserrat, sans-serif"
+    fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Ubuntu', sans-serif"
     fontSize="54"
     fontWeight="900"
     letterSpacing="4"
