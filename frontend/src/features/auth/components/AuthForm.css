@@ -1,5 +1,4 @@
 /* src/features/auth/components/AuthForm.css */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
 .auth-form {
   display: flex;
@@ -29,7 +28,7 @@
   border-radius: 14px;
   border: 2px solid #e0e0e0;
   background: #f7f7f8;
-  font-family: 'Nunito', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 0.97rem;
   font-weight: 700;
   color: #222;
@@ -118,7 +117,7 @@
   border: none;
   background: linear-gradient(135deg, #cc2b2b, #e84545);
   color: #fff;
-  font-family: 'Nunito', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 1.05rem;
   font-weight: 900;
   cursor: pointer;
@@ -182,7 +181,7 @@
   border-radius: 12px;
   border: 2px solid #e8e8e8;
   background: #fff;
-  font-family: 'Nunito', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 0.9rem;
   font-weight: 800;
   color: #444;

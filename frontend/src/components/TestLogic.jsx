@@ -28,7 +28,7 @@ const TestLogic = () => {
     const { chatLog, askLLM, isLoading: chatLoading, error: chatError } = useChat(selectedId);
 
     return (
-        <div style={{ padding: '40px', fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', maxWidth: '1100px', margin: 'auto', backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
+        <div style={{ padding: '40px', fontFamily: 'Montserrat, Segoe UI, Tahoma, Geneva, Verdana, sans-serif', maxWidth: '1100px', margin: 'auto', backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
             <h1 style={{ textAlign: 'center', color: '#1a73e8', marginBottom: '30px' }}>🛠 AI TUTOR INTEGRATION TEST</h1>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>

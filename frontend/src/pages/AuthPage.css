@@ -1,5 +1,4 @@
 /* src/pages/AuthPage.css */
-@import url("https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800;900&display=swap");
 
 .auth-root {
   position: relative;
@@ -7,7 +6,7 @@
   min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
-  font-family: "Nunito", sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 /* ─── SCENE ZOOM ─── */
@@ -293,7 +292,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: "Lilita One", cursive;
+  font-family: "Montserrat", sans-serif;
   font-size: 2.2rem;
   color: #c02a2a;
   text-shadow: 2px 3px 0 rgba(180, 0, 0, 0.15);
@@ -349,7 +348,7 @@
   padding: 10px 0;
   border: none;
   background: transparent;
-  font-family: "Nunito", sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 1rem;
   font-weight: 800;
   color: #888;
@@ -387,7 +386,7 @@
   flex-direction: column;
 }
 .auth-root input {
-  font-family: "Nunito", sans-serif !important;
+  font-family: "Montserrat", sans-serif !important;
 }
 
 /* ─── RESPONSIVE ─── */

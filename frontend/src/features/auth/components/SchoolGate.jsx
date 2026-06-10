@@ -232,7 +232,7 @@ const OrnateArch = () => (
 
     {/* shadow */}
     <text
-    fontFamily="'Baloo 2', cursive"
+    fontFamily="Montserrat, sans-serif"
     fontSize="54"
     fontWeight="900"
     letterSpacing="4"
@@ -245,7 +245,7 @@ const OrnateArch = () => (
 
     {/* main text */}
     <text
-    fontFamily="'Baloo 2', cursive"
+    fontFamily="Montserrat, sans-serif"
     fontSize="54"
     fontWeight="900"
     letterSpacing="4"
@@ -296,7 +296,7 @@ const OrnateArch = () => (
       <text
         x="700" y="0"
         textAnchor="middle"
-        fontFamily="'Nunito', sans-serif"
+        fontFamily="Montserrat, sans-serif"
         fontWeight="800"
         fontSize="17"
         fill="#D4AF37"
