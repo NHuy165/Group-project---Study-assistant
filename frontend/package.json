@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource/montserrat": "^5.2.8",
     "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.100.14",
     "@uiw/react-tooltip": "^4.22.3",
