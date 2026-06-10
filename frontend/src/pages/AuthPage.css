@@ -84,7 +84,7 @@
 .mascot-on-gate {
   position: absolute;
   left: 50%;
-  top: 10%;
+  top: 13.5%;
   transform: translateX(-50%);
   z-index: 60;
   filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.38));
