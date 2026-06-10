@@ -5,6 +5,7 @@ import jwt
 from fastapi import Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
@@ -22,22 +23,37 @@ from backend.src.models_schema.user.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
+# ----- SESSION DEPENDENCY ----- #
+
 SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
+# ----- DATETIME DEPENDENCY ----- #
 
-def day_overwrite(
+
+def get_current_datetime(
     overwritten_day: Annotated[date | None, Query()] = None,
-) -> date | None:
-    return overwritten_day if settings.DEV_MODE else None
+) -> datetime:
+    now = datetime.now(timezone.utc)
+
+    if overwritten_day:
+        now = now.replace(
+            year=overwritten_day.year,
+            month=overwritten_day.month,
+            day=overwritten_day.day,
+        )
+
+    return now
 
 
-DayOverwriteDep = Annotated[date, Depends(day_overwrite)]
+DatetimeDep = Annotated[datetime, Depends(get_current_datetime)]
+
+# ----- USER DEPENDENCY ----- #
 
 
 async def get_current_user(
     session: SessionDep,
     token: Annotated[str, Depends(oauth2_scheme)],
-    day_overwrite: DayOverwriteDep,
+    current_datetime: DatetimeDep,
 ):
     # No token failure
     if token is None:
@@ -77,7 +93,7 @@ async def get_current_user(
     assert isinstance(user, User)
     assert isinstance(last_check_in, CheckIn | None)
 
-    today = day_overwrite if day_overwrite else datetime.now(timezone.utc).date()
+    today = current_datetime.date()
 
     # If user has never logged in or didn't log in today
     if last_check_in is None or last_check_in.time < today:
@@ -98,22 +114,22 @@ async def get_current_user(
             elif time_between > timedelta(days=1):
                 user.login_streak = 1
 
-        new_check_in = CheckIn(
-            time=today,
-            user=user,
+        # Inserting with race condition check
+        query_insert = (
+            insert(CheckIn)
+            .values({"time": today, "user_id": user.id})
+            .on_conflict_do_nothing(index_elements=["user_id", "time"])
         )
 
-        # Check in with race condition check
-        session.add(new_check_in)
-        try:
-            await session.commit()
-        except IntegrityError:
-            await session.rollback()
+        await session.execute(query_insert)
+        await session.commit()
 
     return user
 
 
 UserDep = Annotated[User, Depends(get_current_user)]
+
+# ----- INTERACTION DEPENDENCY ----- #
 
 
 async def get_interaction_id(

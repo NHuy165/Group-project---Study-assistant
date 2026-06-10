@@ -3,9 +3,10 @@ from datetime import date, datetime, timezone
 from tabnanny import check
 from typing import Any
 
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlmodel import Date, and_, cast, col, func, or_, select
+from sqlmodel import Date, and_, cast, col, delete, func, or_, select
 from sqlmodel.sql.expression import Select
 
 from backend.src.core.ai_api import GlobalAPI
@@ -37,7 +38,9 @@ from backend.src.RAG.augmentation.formatters.purpose_built.study_assessment impo
 # ----- CREATE ----- #
 
 
-async def create_study_assessment_prompt(user: User, session, day: date) -> str:
+async def create_study_assessment_prompt(
+    user: User, session, day_to_be_assessed: date
+) -> str:
     # === Fetches data === #
 
     # Fetches documents
@@ -46,7 +49,7 @@ async def create_study_assessment_prompt(user: User, session, day: date) -> str:
         .join(Interaction)
         .where(
             Interaction.user_id == user.id,
-            func.cast(Document.created_at, Date) == day,  # type: ignore
+            func.cast(Document.created_at, Date) == day_to_be_assessed,  # type: ignore
         )
         .order_by(col(Document.created_at).desc())
         .limit(settings.DEFAULT_N_DOCUMENTS_FETCHED)
@@ -60,7 +63,7 @@ async def create_study_assessment_prompt(user: User, session, day: date) -> str:
         .join(Interaction)
         .where(
             Interaction.user_id == user.id,
-            func.cast(col(LLMResponse.created_at), Date) == day,
+            func.cast(col(LLMResponse.created_at), Date) == day_to_be_assessed,
         )
         .order_by(col(LLMResponse.created_at).desc())
         .limit(settings.DEFAULT_N_LLM_RESPONSES_FETCHED)
@@ -76,7 +79,7 @@ async def create_study_assessment_prompt(user: User, session, day: date) -> str:
         .join(Interaction)
         .where(
             Interaction.user_id == user.id,
-            func.cast(col(StudyActivity.created_at), Date) == day,
+            func.cast(col(StudyActivity.created_at), Date) == day_to_be_assessed,
             or_(
                 StudyActivity.activity_type == StudyActivityType.REVIEW,
                 and_(
@@ -124,9 +127,11 @@ async def create_study_assessment_prompt(user: User, session, day: date) -> str:
 
 
 async def create_study_assessment(
-    user: User, session: AsyncSession, day_overwrite: date | None
+    user: User,
+    session: AsyncSession,
+    current_datetime: datetime,
 ) -> StudyAssessment | None:
-    today = day_overwrite if day_overwrite else datetime.now(timezone.utc).date()
+    today = current_datetime.date()
 
     # Checks check ins without assessment
     query_last_check_in = (
@@ -146,10 +151,39 @@ async def create_study_assessment(
         (await session.execute(query_last_check_in)).scalars().all()
     )
 
-    # Creates assessments
-    final_prompts = [
-        await create_study_assessment_prompt(user, session, check_in.time)
+    if not check_ins_without_assessment:
+        return None
+
+    # Preserves space so race conditions don't happen
+    study_assessments_preservation = [
+        {
+            "assessment_of": check_in.time,
+            "content": "",  # Dummy text
+            "user_id": user.id,
+            "created_at": current_datetime,
+        }
         for check_in in check_ins_without_assessment
+    ]
+
+    query_insert_preservation = (
+        insert(StudyAssessment)
+        .values(study_assessments_preservation)
+        .on_conflict_do_nothing(index_elements=["user_id", "assessment_of"])
+        .returning(StudyAssessment)
+    )
+
+    study_assessments_preserved = (
+        (await session.execute(query_insert_preservation)).scalars().all()
+    )
+    await session.commit()
+
+    if not study_assessments_preserved:
+        return None
+
+    # Creates prompts
+    final_prompts = [
+        await create_study_assessment_prompt(user, session, assessment.assessment_of)
+        for assessment in study_assessments_preserved
     ]
 
     assessment_tasks = [
@@ -157,20 +191,28 @@ async def create_study_assessment(
         for final_prompt in final_prompts
     ]
 
-    study_assessment_texts = await asyncio.gather(*assessment_tasks)
+    # Creates assessments, rollbacks (deletes the preservations) if error encountered
+    try:
+        study_assessment_texts = await asyncio.gather(*assessment_tasks)
+    except Exception as e:
+        ids = [assessment.id for assessment in study_assessments_preserved]
+        query = delete(StudyAssessment).where(col(StudyAssessment.id).in_(ids))
+        await session.execute(query)
+        await session.commit()
+        raise e
 
-    study_assessments = [
-        StudyAssessment(assessment_of=check_in.time, content=text, user=user)  # type: ignore
-        for check_in, text in zip(check_ins_without_assessment, study_assessment_texts)
-    ]
+    for assessment, text in zip(study_assessments_preserved, study_assessment_texts):
+        assessment.content = text
 
-    session.add_all(study_assessments)
+    session.add_all(study_assessments_preserved)
     await session.commit()
 
-    return study_assessments[0] if study_assessments else None
+    return study_assessments_preserved[0] if study_assessments_preserved else None
 
 
 # ----- READ ----- #
+
+# === Study progress === #
 
 
 def process_group_bys(criteria: list[Criterion]) -> list[Any]:
@@ -300,6 +342,9 @@ async def get_study_progress(
     result = [tuple(row) for row in result]
 
     return result
+
+
+# === Study assessment === #
 
 
 async def read_latest_study_assessment(

@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from typing import Annotated
 
-from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
+from sqlmodel import Column, DateTime, Field, Index, Relationship, SQLModel
 
 from backend.src.models_schema.user.user import User
 
@@ -33,8 +33,16 @@ class StudyAssessment(StudyAssessmentBase, table=True):
         datetime,
         Field(
             sa_column=Column(DateTime(timezone=True)),
-            default_factory=lambda: datetime.now(timezone.utc),
         ),
     ]
 
     user: "User" = Relationship(back_populates="assessments")
+
+    __table_args__ = (
+        Index(
+            "UQ_USER_ASSESSMENT_OF",
+            "user_id",
+            "assessment_of",
+            unique=True,
+        ),
+    )
