@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Annotated
 
@@ -114,7 +116,10 @@ class StudyActivity(StudyActivityBase, table=True):
         Field(sa_column=Column(DateTime(timezone=True))),
     ] = None
 
-    interaction: "Interaction" = Relationship(back_populates="study_activities")
+    interaction: "backend.src.models_schema.interaction.interaction.Interaction" = Relationship(
+        "backend.src.models_schema.interaction.interaction.Interaction",
+        back_populates="study_activities",
+    )
     review_items: list["ReviewItem"] = Relationship(
         back_populates="study_activity"
     )  # Uses soft delete

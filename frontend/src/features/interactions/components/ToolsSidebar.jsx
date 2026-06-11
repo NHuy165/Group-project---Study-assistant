@@ -7,9 +7,9 @@ import { useTheme } from "../../../components/theme/ThemeWrapper";
 import { ConfirmModal } from "../../../components/ConfirmModal";
 
 const TOOLS_LIST = [
-  { id: "mindmap", name: "Tap To Review", icon: "🧠", isSvg: false },
-  { id: "flashcard", name: "Flashcard", icon: "📕", isSvg: false },
-  { id: "quiz", name: "Quiz", icon: quizIcon, isSvg: true },
+  { id: "mindmap", name: "Ôn Tập Điền Từ", icon: "🧠", isSvg: false },
+  { id: "flashcard", name: "Thẻ Học Tập", icon: "📕", isSvg: false },
+  { id: "quiz", name: "Trắc Nghiệm", icon: quizIcon, isSvg: true },
   { id: "essay", name: "Tự Luận", icon: "📝", isSvg: false },
 ];
 
